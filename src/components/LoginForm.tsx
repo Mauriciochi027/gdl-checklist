@@ -6,35 +6,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Truck, User, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
-
+  const {
+    login,
+    isLoading
+  } = useAuth();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     if (!username || !password) {
       setError('Por favor, preencha todos os campos');
       return;
     }
-
     const success = await login(username, password);
     if (!success) {
       setError('Usuário ou senha incorretos');
     }
   };
-
-  const demoUsers = [
-    { username: 'operador1', profile: 'Operador', name: 'João Silva' },
-    { username: 'mecanico1', profile: 'Mecânico', name: 'Carlos Oliveira' }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+  const demoUsers = [{
+    username: 'operador1',
+    profile: 'Operador',
+    name: 'João Silva'
+  }, {
+    username: 'mecanico1',
+    profile: 'Mecânico',
+    name: 'Carlos Oliveira'
+  }];
+  return <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -43,7 +44,7 @@ export const LoginForm = () => {
               <Truck className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">CheckLift</h1>
+          <h1 className="text-2xl font-bold text-foreground">CheckList</h1>
           <p className="text-muted-foreground">Sistema de Checklist Digital</p>
         </div>
 
@@ -61,15 +62,7 @@ export const LoginForm = () => {
                 <Label htmlFor="username">Usuário</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="Digite seu usuário"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="pl-10"
-                    disabled={isLoading}
-                  />
+                  <Input id="username" type="text" placeholder="Digite seu usuário" value={username} onChange={e => setUsername(e.target.value)} className="pl-10" disabled={isLoading} />
                 </div>
               </div>
 
@@ -77,34 +70,20 @@ export const LoginForm = () => {
                 <Label htmlFor="password">Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Digite sua senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    disabled={isLoading}
-                  />
+                  <Input id="password" type="password" placeholder="Digite sua senha" value={password} onChange={e => setPassword(e.target.value)} className="pl-10" disabled={isLoading} />
                 </div>
               </div>
 
-              {error && (
-                <Alert variant="destructive">
+              {error && <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+                </Alert>}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
+                {isLoading ? <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Entrando...
-                  </>
-                ) : (
-                  'Entrar'
-                )}
+                  </> : 'Entrar'}
               </Button>
             </form>
           </CardContent>
@@ -120,29 +99,21 @@ export const LoginForm = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {demoUsers.map((user) => (
-                <div key={user.username} className="flex justify-between items-center text-sm p-2 bg-muted rounded">
+              {demoUsers.map(user => <div key={user.username} className="flex justify-between items-center text-sm p-2 bg-muted rounded">
                   <div>
                     <span className="font-medium">{user.username}</span>
                     <span className="text-muted-foreground ml-2">({user.profile})</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setUsername(user.username);
-                      setPassword('123456');
-                    }}
-                    disabled={isLoading}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => {
+                setUsername(user.username);
+                setPassword('123456');
+              }} disabled={isLoading}>
                     Usar
                   </Button>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
