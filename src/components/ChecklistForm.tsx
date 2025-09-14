@@ -1,0 +1,772 @@
+import { useState, useRef, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { PhotoGrid } from "@/components/ui/photo-viewer";
+import { User, Truck, FileText, PenTool, Camera, QrCode } from "lucide-react";
+import { BrowserQRCodeReader } from '@zxing/library';
+import { checklistItems, type ChecklistItem } from '@/lib/checklistItems';
+import { useAuth } from '@/hooks/useAuth';
+
+interface Equipment {
+  id: string;
+  code: string;
+  brand: string;
+  model: string;
+  sector: string;
+  status: 'active' | 'maintenance' | 'inactive';
+}
+
+interface ChecklistAnswer {
+  itemId: string;
+  value: 'sim' | 'nao' | 'nao_aplica';
+  observation?: string;
+}
+
+interface ChecklistFormProps {
+  equipments: Equipment[];
+  onSubmitChecklist: (data: any) => void;
+}
+
+const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) => {
+  const [selectedEquipment, setSelectedEquipment] = useState<string>("");
+  const [operatorName, setOperatorName] = useState<string>("");
+  const [operatorId, setOperatorId] = useState<string>("");
+  const [equipmentModel, setEquipmentModel] = useState<"eletrica" | "combustao" | "">("");
+  const [location, setLocation] = useState<string>("");
+  const [unit, setUnit] = useState<"01" | "02" | "">("");
+  const [equipmentSeries, setEquipmentSeries] = useState<string>("");
+  const [equipmentNumber, setEquipmentNumber] = useState<string>("");
+  const [hourMeter, setHourMeter] = useState<string>("");
+  const [answers, setAnswers] = useState<Record<string, ChecklistAnswer>>({});
+  const [signature, setSignature] = useState<string>("");
+  const [photos, setPhotos] = useState<Record<string, string[]>>({});
+  const [qrScanned, setQrScanned] = useState<boolean>(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    if (user) {
+      setOperatorName(user.name);
+      setOperatorId(user.matricula || "");
+    }
+  }, [user]);
+
+  const groupedItems = checklistItems.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
+    }
+    acc[item.category].push(item);
+    return acc;
+  }, {} as Record<string, ChecklistItem[]>);
+
+  const handleAnswerChange = (itemId: string, value: 'sim' | 'nao' | 'nao_aplica') => {
+    setAnswers(prev => ({
+      ...prev,
+      [itemId]: {
+        itemId,
+        value,
+        observation: prev[itemId]?.observation || ""
+      }
+    }));
+  };
+
+  const handleObservationChange = (itemId: string, observation: string) => {
+    setAnswers(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        itemId,
+        value: prev[itemId]?.value || 'nao',
+        observation
+      }
+    }));
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.beginPath();
+    
+    // Handle both mouse and touch events
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1f2937';
+    
+    // Handle both mouse and touch events
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+      e.preventDefault(); // Prevent scrolling on touch
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+  };
+
+  const stopDrawing = () => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    setSignature(canvas.toDataURL());
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignature("");
+  };
+
+  const validateForm = (): boolean => {
+    if (!selectedEquipment || !operatorName || !operatorId || !equipmentModel || 
+        !location || !unit || !equipmentSeries || !equipmentNumber || !hourMeter) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const requiredItems = checklistItems.filter(item => item.required);
+    const missingAnswers = requiredItems.filter(item => !answers[item.id]);
+    
+    if (missingAnswers.length > 0) {
+      toast({
+        title: "Checklist incompleto",
+        description: "Responda todos os itens obrigatórios do checklist.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!signature) {
+      toast({
+        title: "Assinatura obrigatória",
+        description: "A assinatura digital é obrigatória.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = () => {
+    if (!validateForm()) return;
+
+    const checklistData = {
+      equipmentId: selectedEquipment,
+      operatorName,
+      operatorId,
+      equipmentModel,
+      location,
+      unit,
+      equipmentSeries,
+      equipmentNumber,
+      hourMeter: parseInt(hourMeter),
+      timestamp: new Date().toISOString(),
+      answers: Object.values(answers),
+      signature,
+      photos
+    };
+
+    onSubmitChecklist(checklistData);
+
+    // Reset form
+    setSelectedEquipment("");
+    setOperatorName("");
+    setOperatorId("");
+    setEquipmentModel("");
+    setLocation("");
+    setUnit("");
+    setEquipmentSeries("");
+    setEquipmentNumber("");
+    setHourMeter("");
+    setAnswers({});
+    setSignature("");
+    setPhotos({});
+    setQrScanned(false);
+    clearSignature();
+
+    const hasNonConformItems = Object.values(answers).some(answer => answer.value === 'nao');
+    
+    if (hasNonConformItems) {
+      toast({
+        title: "Não conformidades detectadas",
+        description: "Checklist enviado para aprovação do mecânico. Equipamento temporariamente indisponível.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Checklist concluído",
+        description: "Equipamento liberado para uso.",
+      });
+    }
+  };
+
+  const getAnswerBadge = (value: 'sim' | 'nao' | 'nao_aplica') => {
+    switch (value) {
+      case 'sim':
+        return <Badge className="bg-safety-green text-white">OK</Badge>;
+      case 'nao':
+        return <Badge className="bg-safety-red text-white">NOK</Badge>;
+      case 'nao_aplica':
+        return <Badge className="bg-gray-500 text-white">N/A</Badge>;
+      default:
+        return null;
+    }
+  };
+
+  const getProgressStats = () => {
+    const totalItems = checklistItems.length;
+    const answeredItems = Object.keys(answers).length;
+    const conformeItems = Object.values(answers).filter(a => a.value === 'sim').length;
+    const naoConformeItems = Object.values(answers).filter(a => a.value === 'nao').length;
+    
+    return {
+      total: totalItems,
+      answered: answeredItems,
+      conforme: conformeItems,
+      naoConforme: naoConformeItems,
+      progress: Math.round((answeredItems / totalItems) * 100)
+    };
+  };
+
+  const startQRScanning = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast({
+        title: "Câmera não suportada",
+        description: "Seu dispositivo não suporta acesso à câmera.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsScanning(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // Use back camera
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        
+        const codeReader = new BrowserQRCodeReader();
+        
+        try {
+          const result = await codeReader.decodeOnceFromVideoDevice(undefined, videoRef.current);
+          
+          // Parse QR code result to extract equipment info
+          const qrData = result.getText();
+          
+          // Try to find equipment by code in QR data
+          const equipment = equipments.find(eq => qrData.includes(eq.code));
+          
+          if (equipment) {
+            setSelectedEquipment(equipment.id);
+            setEquipmentNumber(equipment.code);
+            setEquipmentSeries(`${equipment.brand}-${equipment.model}`);
+            setQrScanned(true);
+            
+            toast({
+              title: "QR Code escaneado",
+              description: `Equipamento ${equipment.code} identificado automaticamente.`,
+            });
+          } else {
+            toast({
+              title: "Equipamento não encontrado",
+              description: "QR Code lido, mas equipamento não está na lista.",
+              variant: "destructive",
+            });
+          }
+          
+          // Stop camera
+          stream.getTracks().forEach(track => track.stop());
+          setIsScanning(false);
+          
+        } catch (err) {
+          console.error('Error scanning QR code:', err);
+          toast({
+            title: "Erro no escaneamento",
+            description: "Não foi possível ler o QR Code. Tente novamente.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      toast({
+        title: "Erro de câmera",
+        description: "Não foi possível acessar a câmera.",
+        variant: "destructive",
+      });
+      setIsScanning(false);
+    }
+  };
+
+  const stopQRScanning = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setIsScanning(false);
+  };
+
+  const handlePhotoUpload = (itemId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const photoData = e.target?.result as string;
+        setPhotos(prev => ({
+          ...prev,
+          [itemId]: [...(prev[itemId] || []), photoData]
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const stats = getProgressStats();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-industrial-50 to-safety-blue-50 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-industrial-900">Checklist Pré-Uso de Empilhadeira</h1>
+          <p className="text-industrial-600">Inspeção obrigatória antes da operação</p>
+        </div>
+
+        {/* Progress Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-industrial-900">{stats.progress}%</div>
+              <div className="text-sm text-industrial-600">Progresso</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-safety-green">{stats.conforme}</div>
+              <div className="text-sm text-industrial-600">OK</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-safety-red">{stats.naoConforme}</div>
+              <div className="text-sm text-industrial-600">NOK</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-industrial-900">{stats.answered}/{stats.total}</div>
+              <div className="text-sm text-industrial-600">Itens</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* QR Code Scanner */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              Identificação por QR Code
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!isScanning && !qrScanned && (
+              <Button 
+                onClick={startQRScanning}
+                className="w-full"
+                variant="outline"
+              >
+                📱 Escanear QR Code do Equipamento
+              </Button>
+            )}
+            
+            {isScanning && (
+              <div className="space-y-4">
+                <video 
+                  ref={videoRef}
+                  className="w-full max-w-md mx-auto rounded-lg"
+                  style={{ transform: 'scaleX(-1)' }} // Mirror for better UX
+                />
+                <Button 
+                  onClick={stopQRScanning}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  Parar Escaneamento
+                </Button>
+              </div>
+            )}
+            
+            {qrScanned && (
+              <div className="text-center p-4 bg-safety-green-light rounded-lg">
+                <span className="text-safety-green font-medium">✓ QR Code Escaneado com Sucesso</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Informações Básicas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="operator-name">Nome do Operador *</Label>
+                <Input
+                  id="operator-name"
+                  value={operatorName}
+                  onChange={(e) => setOperatorName(e.target.value)}
+                  placeholder="Digite seu nome completo"
+                  disabled
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="operator-id">Matrícula/ID *</Label>
+                  <Input
+                    id="operator-id"
+                    value={operatorId}
+                    onChange={(e) => setOperatorId(e.target.value)}
+                    placeholder="Digite sua matrícula"
+                    disabled
+                  />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="equipment">Equipamento *</Label>
+              <Select value={selectedEquipment} onValueChange={setSelectedEquipment}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o equipamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipments.map((equipment) => (
+                    <SelectItem key={equipment.id} value={equipment.id}>
+                      {equipment.code} - {equipment.brand} {equipment.model} ({equipment.sector})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Modelo *</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="eletrica"
+                      checked={equipmentModel === "eletrica"}
+                      onChange={(e) => setEquipmentModel(e.target.value as "eletrica")}
+                    />
+                    <span>Elétrica</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="combustao"
+                      checked={equipmentModel === "combustao"}
+                      onChange={(e) => setEquipmentModel(e.target.value as "combustao")}
+                    />
+                    <span>Combustão</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Local *</Label>
+                <Select value={location} onValueChange={setLocation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AD01">AD 01</SelectItem>
+                    <SelectItem value="AD02">AD 02</SelectItem>
+                    <SelectItem value="CD01">CD 01</SelectItem>
+                    <SelectItem value="CD02">CD 02</SelectItem>
+                    <SelectItem value="VEI01">Veículos 01</SelectItem>
+                    <SelectItem value="VEI02">Veículos 02</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Unidade *</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="01"
+                      checked={unit === "01"}
+                      onChange={(e) => setUnit(e.target.value as "01")}
+                    />
+                    <span>01</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="02"
+                      checked={unit === "02"}
+                      onChange={(e) => setUnit(e.target.value as "02")}
+                    />
+                    <span>02</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="series">Série da Empilhadeira *</Label>
+                <Input
+                  id="series"
+                  value={equipmentSeries}
+                  onChange={(e) => setEquipmentSeries(e.target.value)}
+                  placeholder="Ex: ABC123"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="number">Número de Identificação *</Label>
+                <Input
+                  id="number"
+                  value={equipmentNumber}
+                  onChange={(e) => setEquipmentNumber(e.target.value)}
+                  placeholder="Ex: EMP-001"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hour-meter">Horímetro Atual *</Label>
+                <Input
+                  id="hour-meter"
+                  type="number"
+                  value={hourMeter}
+                  onChange={(e) => setHourMeter(e.target.value)}
+                  placeholder="Ex: 1250"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Checklist Items */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Itens de Verificação
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {Object.entries(groupedItems).map(([category, items]) => (
+              <div key={category} className="space-y-4">
+                <h3 className="text-lg font-semibold text-industrial-800 border-b pb-2">{category}</h3>
+                <div className="space-y-3">
+                  {items.map((item) => (
+                    <div key={item.id} className="bg-white p-4 rounded-lg border space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-industrial-900">{item.description}</p>
+                          {item.required && (
+                            <Badge variant="outline" className="mt-1">Obrigatório</Badge>
+                          )}
+                        </div>
+                        {answers[item.id] && getAnswerBadge(answers[item.id].value)}
+                      </div>
+                      
+                      <div className="flex gap-4">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name={`item-${item.id}`}
+                            value="sim"
+                            checked={answers[item.id]?.value === 'sim'}
+                            onChange={() => handleAnswerChange(item.id, 'sim')}
+                          />
+                          <span>OK</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name={`item-${item.id}`}
+                            value="nao"
+                            checked={answers[item.id]?.value === 'nao'}
+                            onChange={() => handleAnswerChange(item.id, 'nao')}
+                          />
+                          <span>NOK</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name={`item-${item.id}`}
+                            value="nao_aplica"
+                            checked={answers[item.id]?.value === 'nao_aplica'}
+                            onChange={() => handleAnswerChange(item.id, 'nao_aplica')}
+                          />
+                          <span>N/A</span>
+                        </label>
+                      </div>
+
+                      {answers[item.id]?.value === 'nao' && (
+                        <div className="space-y-2">
+                          <Label htmlFor={`observation-${item.id}`}>Observação (obrigatória para NOK)</Label>
+                          <Textarea
+                            id={`observation-${item.id}`}
+                            value={answers[item.id]?.observation || ""}
+                            onChange={(e) => handleObservationChange(item.id, e.target.value)}
+                            placeholder="Descreva o problema encontrado..."
+                            className="min-h-[60px]"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`photo-${item.id}`} className="flex items-center gap-2 cursor-pointer text-sm">
+                              <Camera className="w-4 h-4" />
+                              Anexar foto do defeito
+                            </Label>
+                            <input
+                              id={`photo-${item.id}`}
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handlePhotoUpload(item.id, e)}
+                              className="hidden"
+                            />
+                          </div>
+                          {photos[item.id] && (
+                            <PhotoGrid 
+                              photos={photos[item.id]} 
+                              className="mt-2"
+                              maxVisible={4}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Digital Signature */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PenTool className="w-5 h-5" />
+              Assinatura Digital
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <canvas
+                ref={canvasRef}
+                width={600}
+                height={200}
+                className="w-full h-48 border rounded cursor-crosshair bg-white touch-none"
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+                style={{ touchAction: 'none' }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={clearSignature}>
+                Limpar Assinatura
+              </Button>
+              {signature && (
+                <Badge className="bg-safety-green text-white">✓ Assinatura capturada</Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <Card>
+          <CardContent className="p-6">
+            <Button 
+              onClick={handleSubmit} 
+              className="w-full h-12 text-lg"
+              disabled={stats.progress < 100 || !signature}
+            >
+              {stats.progress < 100 
+                ? `Complete o checklist (${stats.progress}%)` 
+                : !signature 
+                ? "Adicione sua assinatura" 
+                : "Finalizar Checklist"
+              }
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default ChecklistForm;
