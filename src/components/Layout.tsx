@@ -86,11 +86,13 @@ const Layout = ({
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-industrial-blue rounded-lg flex items-center justify-center">
-                <Truck className="w-6 h-6 text-white" />
-              </div>
+              <img 
+                src={gdlLogo} 
+                alt="GDL Logo" 
+                className="w-12 h-8 object-contain"
+              />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">CheckList</h1>
+                <h1 className="text-xl font-bold text-gray-900">GDL CheckList</h1>
                 <p className="text-sm text-gray-500">Sistema de Checklist Digital</p>
               </div>
             </div>
@@ -123,7 +125,7 @@ const Layout = ({
               <img 
                 src={gdlLogo} 
                 alt="GDL - Solução em movimento" 
-                className="w-24 h-16 object-contain mb-3"
+                className="w-32 h-24 object-contain mb-3"
               />
               <h2 className="text-lg font-bold text-gray-900 mb-1">GDL</h2>
               <p className="text-xs text-gray-500">Solução em movimento</p>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Truck, User, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import gdlLogo from '@/assets/gdl-logo.png';
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -38,14 +39,19 @@ export const LoginForm = () => {
   return <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-industrial-blue rounded-xl flex items-center justify-center">
-              <Truck className="w-8 h-8 text-primary-foreground" />
-            </div>
+            <img 
+              src={gdlLogo} 
+              alt="GDL - Solução em movimento" 
+              className="w-40 h-28 object-contain"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">CheckList</h1>
-          <p className="text-muted-foreground">Sistema de Checklist Digital</p>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-1">GDL CheckList</h1>
+            <p className="text-muted-foreground">Sistema de Checklist Digital</p>
+            <p className="text-sm text-muted-foreground">Solução em movimento</p>
+          </div>
         </div>
 
         {/* Login Form */}
