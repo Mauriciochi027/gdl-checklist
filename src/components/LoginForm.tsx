@@ -43,9 +43,9 @@ export const LoginForm = () => {
         <div className="text-center space-y-4">
           <div className="flex justify-center">
             <img 
-              src={gdlLogo} 
-              alt="GDL - Solução em movimento" 
-              className="w-40 h-28 object-contain"
+              src={forkliftIcon} 
+              alt="Empilhadeira" 
+              className="w-32 h-32 object-contain"
             />
           </div>
           <div>
@@ -60,8 +60,8 @@ export const LoginForm = () => {
           <CardHeader>
             <div className="flex items-center justify-center gap-3 mb-2">
               <img 
-                src={forkliftIcon} 
-                alt="Empilhadeira" 
+                src={gdlLogo} 
+                alt="GDL - Solução em movimento" 
                 className="w-8 h-8 object-contain opacity-80"
               />
               <CardTitle className="text-center">Login do Sistema</CardTitle>
