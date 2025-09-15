@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Truck, User, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import gdlLogo from '@/assets/gdl-logo.png';
+import forkliftIcon from '@/assets/forklift-icon.png';
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -57,7 +58,14 @@ export const LoginForm = () => {
         {/* Login Form */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-center">Login do Sistema</CardTitle>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <img 
+                src={forkliftIcon} 
+                alt="Empilhadeira" 
+                className="w-8 h-8 object-contain opacity-80"
+              />
+              <CardTitle className="text-center">Login do Sistema</CardTitle>
+            </div>
             <CardDescription className="text-center">
               Entre com suas credenciais para acessar o sistema
             </CardDescription>
