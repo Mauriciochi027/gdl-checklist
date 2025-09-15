@@ -2,7 +2,7 @@ import { Truck, ClipboardCheck, BarChart3, Settings, Users, LogOut, Activity } f
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import companyLogo from "@/assets/company-logo.png";
+import gdlLogo from "@/assets/gdl-logo.png";
 interface LayoutProps {
   children: React.ReactNode;
   currentPage: string;
@@ -121,12 +121,12 @@ const Layout = ({
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col items-center text-center">
               <img 
-                src={companyLogo} 
-                alt="Logo da Empresa" 
-                className="w-20 h-20 object-contain mb-3 rounded-lg shadow-sm"
+                src={gdlLogo} 
+                alt="GDL - Solução em movimento" 
+                className="w-24 h-16 object-contain mb-3"
               />
-              <h2 className="text-lg font-bold text-gray-900 mb-1">Sua Empresa</h2>
-              <p className="text-xs text-gray-500">Sistema de Gestão Industrial</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-1">GDL</h2>
+              <p className="text-xs text-gray-500">Solução em movimento</p>
             </div>
           </div>
           
