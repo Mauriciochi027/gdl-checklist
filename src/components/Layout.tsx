@@ -2,6 +2,7 @@ import { Truck, ClipboardCheck, BarChart3, Settings, Users, LogOut, Activity } f
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import companyLogo from "@/assets/company-logo.png";
 interface LayoutProps {
   children: React.ReactNode;
   currentPage: string;
@@ -116,6 +117,19 @@ const Layout = ({
       <div className="flex">
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-80px)]">
+          {/* Company Logo Section */}
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex flex-col items-center text-center">
+              <img 
+                src={companyLogo} 
+                alt="Logo da Empresa" 
+                className="w-20 h-20 object-contain mb-3 rounded-lg shadow-sm"
+              />
+              <h2 className="text-lg font-bold text-gray-900 mb-1">Sua Empresa</h2>
+              <p className="text-xs text-gray-500">Sistema de Gestão Industrial</p>
+            </div>
+          </div>
+          
           <nav className="p-4">
             <ul className="space-y-2">
               {menuItems.map(item => {
