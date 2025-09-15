@@ -223,10 +223,13 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
 
     onSubmitChecklist(checklistData);
 
-    // Reset form
+    // Reset form (keep operator data filled)
     setSelectedEquipment("");
-    setOperatorName("");
-    setOperatorId("");
+    // Don't reset operator data - keep it from authenticated user
+    if (user) {
+      setOperatorName(user.name);
+      setOperatorId(user.matricula || "");
+    }
     setEquipmentModel("");
     setLocation("");
     setUnit("");
