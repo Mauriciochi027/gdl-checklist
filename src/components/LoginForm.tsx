@@ -41,13 +41,6 @@ export const LoginForm = () => {
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <img 
-              src={forkliftIcon} 
-              alt="Empilhadeira" 
-              className="w-32 h-32 object-contain"
-            />
-          </div>
           <div>
             <div className="flex items-center justify-center gap-2 mb-1">
               <img 
