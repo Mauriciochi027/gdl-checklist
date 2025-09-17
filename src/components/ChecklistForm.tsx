@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { PhotoGrid } from "@/components/ui/photo-viewer";
-import { User, Truck, FileText, PenTool, Camera, QrCode } from "lucide-react";
+import { User, Truck, FileText, PenTool, Camera, QrCode, AlertTriangle } from "lucide-react";
 import { BrowserQRCodeReader } from '@zxing/library';
 import { checklistItems, type ChecklistItem } from '@/lib/checklistItems';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,6 +52,9 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user } = useAuth();
+  
+  // IDs dos itens críticos que podem paralisar o equipamento
+  const criticalItems = ['4', '5', '7', '11']; // Vazamento hidráulico, Buzina, Freio, Sinal de ré
   
   useEffect(() => {
     if (user) {
@@ -630,13 +633,23 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
                 <h3 className="text-lg font-semibold text-industrial-800 border-b pb-2">{category}</h3>
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.id} className="bg-white p-4 rounded-lg border space-y-3">
+                    <div key={item.id} className={`bg-white p-4 rounded-lg border space-y-3 ${criticalItems.includes(item.id) ? 'border-l-4 border-l-safety-orange bg-safety-orange-light/10' : ''}`}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="font-medium text-industrial-900">{item.description}</p>
-                          {item.required && (
-                            <Badge variant="outline" className="mt-1">Obrigatório</Badge>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {criticalItems.includes(item.id) && (
+                              <AlertTriangle className="w-5 h-5 text-safety-orange" />
+                            )}
+                            <p className="font-medium text-industrial-900">{item.description}</p>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {item.required && (
+                              <Badge variant="outline">Obrigatório</Badge>
+                            )}
+                            {criticalItems.includes(item.id) && (
+                              <Badge className="bg-safety-orange text-white text-xs">CRÍTICO - PARALISA EQUIPAMENTO</Badge>
+                            )}
+                          </div>
                         </div>
                         {answers[item.id] && getAnswerBadge(answers[item.id].value)}
                       </div>
