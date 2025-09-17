@@ -647,7 +647,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
                               <Badge variant="outline">Obrigatório</Badge>
                             )}
                             {criticalItems.includes(item.id) && (
-                              <Badge className="bg-safety-orange text-white text-xs">CRÍTICO - PARALISA EQUIPAMENTO</Badge>
+                              <Badge className="bg-safety-orange text-white text-xs">CRÍTICO</Badge>
                             )}
                           </div>
                         </div>
