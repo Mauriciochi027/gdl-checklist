@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { PhotoGrid } from "@/components/ui/photo-viewer";
-import { User, Truck, FileText, PenTool, Camera, QrCode, AlertTriangle } from "lucide-react";
+import { User, Truck, FileText, PenTool, Camera, QrCode, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import forkliftWorkingImage from "@/assets/forklift-working.png";
 import { BrowserQRCodeReader } from '@zxing/library';
 import { checklistItems, type ChecklistItem } from '@/lib/checklistItems';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,6 +51,8 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   const [qrScanned, setQrScanned] = useState<boolean>(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showCriticalDialog, setShowCriticalDialog] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user } = useAuth();
@@ -208,6 +212,12 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   const handleSubmit = () => {
     if (!validateForm()) return;
 
+    // Verificar se há itens críticos marcados como "não"
+    const hasCriticalIssues = criticalItems.some(itemId => {
+      const answer = answers[itemId];
+      return answer && answer.value === 'nao';
+    });
+
     const checklistData = {
       equipmentId: selectedEquipment,
       operatorName,
@@ -226,6 +236,17 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
 
     onSubmitChecklist(checklistData);
 
+    if (hasCriticalIssues) {
+      setShowCriticalDialog(true);
+    } else {
+      setShowSuccessDialog(true);
+    }
+  };
+
+  const handleDialogClose = () => {
+    setShowSuccessDialog(false);
+    setShowCriticalDialog(false);
+    
     // Reset form (keep operator data filled)
     setSelectedEquipment("");
     // Don't reset operator data - keep it from authenticated user
@@ -244,21 +265,6 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
     setPhotos({});
     setQrScanned(false);
     clearSignature();
-
-    const hasNonConformItems = Object.values(answers).some(answer => answer.value === 'nao');
-    
-    if (hasNonConformItems) {
-      toast({
-        title: "Não conformidades detectadas",
-        description: "Checklist enviado para aprovação do mecânico. Equipamento temporariamente indisponível.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Checklist concluído",
-        description: "Equipamento liberado para uso.",
-      });
-    }
   };
 
   const getAnswerBadge = (value: 'sim' | 'nao' | 'nao_aplica') => {
@@ -781,6 +787,55 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog de Sucesso */}
+      <Dialog open={showSuccessDialog} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md mx-auto">
+          <div className="bg-green-500 text-white p-8 rounded-lg text-center space-y-6">
+            <div className="flex justify-center">
+              <CheckCircle size={64} className="text-white" />
+            </div>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Equipamento liberado para uso!</h2>
+              <p className="text-lg">Bom trabalho!</p>
+              <div className="flex justify-center">
+                <img 
+                  src={forkliftWorkingImage} 
+                  alt="Empilhadeira trabalhando" 
+                  className="w-32 h-32 object-contain bg-white rounded-lg p-2"
+                />
+              </div>
+              <Button 
+                onClick={handleDialogClose}
+                className="bg-white text-green-500 hover:bg-gray-100 font-semibold px-8 py-2"
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Itens Críticos */}
+      <Dialog open={showCriticalDialog} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md mx-auto">
+          <div className="bg-red-500 text-white p-8 rounded-lg text-center space-y-6">
+            <div className="flex justify-center">
+              <XCircle size={64} className="text-white" />
+            </div>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Itens críticos identificados</h2>
+              <p className="text-lg">Equipamento paralisado, favor encaminhar para oficina.</p>
+              <Button 
+                onClick={handleDialogClose}
+                className="bg-white text-red-500 hover:bg-gray-100 font-semibold px-8 py-2"
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
