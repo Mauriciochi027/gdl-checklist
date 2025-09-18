@@ -11,6 +11,7 @@ import { PhotoGrid } from "@/components/ui/photo-viewer";
 import { User, Truck, FileText, PenTool, Camera, QrCode, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import forkliftWorkingImage from "@/assets/forklift-working.png";
+import mechanicIcon from "@/assets/mechanic-icon.jpg";
 import { BrowserQRCodeReader } from '@zxing/library';
 import { checklistItems, type ChecklistItem } from '@/lib/checklistItems';
 import { useAuth } from '@/hooks/useAuth';
@@ -821,7 +822,13 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
         <DialogContent className="max-w-md mx-auto">
           <div className="bg-red-500 text-white p-8 rounded-lg text-center space-y-6">
             <div className="flex justify-center">
-              <XCircle size={64} className="text-white" />
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                <img 
+                  src={mechanicIcon} 
+                  alt="Mecânico" 
+                  className="w-12 h-12 object-contain"
+                />
+              </div>
             </div>
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Itens críticos identificados</h2>
