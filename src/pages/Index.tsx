@@ -8,37 +8,18 @@ import ChecklistForm from '@/components/ChecklistForm';
 import ChecklistHistory from '@/components/ChecklistHistory';
 import ApprovalsPage from '@/components/ApprovalsPage';
 import StatusPanel from '@/components/StatusPanel';
-import { OperationControl } from '@/components/OperationControl';
-import EquipmentQRCode from '@/components/EquipmentQRCode';
-import { getChecklistItemById, checklistItems } from '@/lib/checklistItems';
-
-interface Equipment {
-  id: string;
-  code: string;
-  model: string;
-  brand: string;
-  year: number;
-  sector: string;
-  status: 'active' | 'maintenance' | 'inactive' | 'operando' | 'disponivel';
-  lastCheck: string;
-  nextMaintenance: string;
-  photo: string;
-}
+import { getChecklistItemById } from '@/lib/checklistItems';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
   
   // Mock data - in real app would come from database
-  const [equipments, setEquipments] = useState<Equipment[]>([
-    { id: "1", code: "EMP-001", model: "7FBR15", brand: "Toyota", year: 2022, sector: "Armazém", status: "disponivel", lastCheck: "2024-01-15", nextMaintenance: "2024-02-15", photo: "" },
-    { id: "2", code: "EMP-002", model: "H50", brand: "Hyster", year: 2021, sector: "Expedição", status: "disponivel", lastCheck: "2024-01-14", nextMaintenance: "2024-02-20", photo: "" },
-    { id: "3", code: "EMP-003", model: "FG25", brand: "Caterpillar", year: 2023, sector: "Recebimento", status: "maintenance", lastCheck: "2024-01-10", nextMaintenance: "2024-01-25", photo: "" }
+  const [equipments, setEquipments] = useState([
+    { id: "1", code: "EMP-001", model: "7FBR15", brand: "Toyota", year: 2022, sector: "Armazém", status: "active" as const, lastCheck: "2024-01-15", nextMaintenance: "2024-02-15", photo: "" },
+    { id: "2", code: "EMP-002", model: "H50", brand: "Hyster", year: 2021, sector: "Expedição", status: "active" as const, lastCheck: "2024-01-14", nextMaintenance: "2024-02-20", photo: "" },
+    { id: "3", code: "EMP-003", model: "FG25", brand: "Caterpillar", year: 2023, sector: "Recebimento", status: "maintenance" as const, lastCheck: "2024-01-10", nextMaintenance: "2024-01-25", photo: "" }
   ]);
-
-  // Estados para controle de operações
-  const [checklistStates, setChecklistStates] = useState<Record<string, { completed: boolean; hasNonConformities: boolean; canStartNew: boolean }>>({});
-  const [operationIssues, setOperationIssues] = useState<Record<string, { description: string; photo: string }[]>>({});
 
   const [checklistRecords, setChecklistRecords] = useState([
     {
@@ -145,32 +126,9 @@ const Index = () => {
   const handleSubmitChecklist = (data: any) => {
     // Determine status based on answers
     const hasNonConformItems = data.answers.some((a: any) => a.value === 'nao');
-    const hasCriticalIssues = data.answers.some((a: any) => {
-      const item = checklistItems.find(item => item.id === a.itemId);
-      return a.value === 'nao' && item?.isCritical;
-    });
     const status: 'pendente' | 'conforme' = hasNonConformItems ? 'pendente' : 'conforme';
 
     const eq = equipments.find(eq => eq.id === data.equipmentId);
-
-    // Atualizar estado do checklist
-    setChecklistStates(prev => ({
-      ...prev,
-      [data.equipmentId]: {
-        completed: true,
-        hasNonConformities: hasCriticalIssues,
-        canStartNew: true
-      }
-    }));
-
-    // Se há itens críticos, colocar equipamento em manutenção
-    if (hasCriticalIssues) {
-      setEquipments(prev => prev.map(eq => 
-        eq.id === data.equipmentId 
-          ? { ...eq, status: 'maintenance' }
-          : eq
-      ));
-    }
     
     const newRecord = {
       id: Date.now().toString(),
@@ -240,51 +198,9 @@ const Index = () => {
   };
 
   const handleUpdateEquipmentStatus = (equipmentId: string, status: string, reason?: string) => {
+    // Esta função seria implementada para atualizar o status do equipamento
+    // Por enquanto, apenas log para demonstração
     console.log(`Atualizando status do equipamento ${equipmentId} para ${status}`, reason);
-  };
-
-  // Funções de controle de operação
-  const handleStartOperation = (equipmentId: string) => {
-    setEquipments(prev => prev.map(eq => 
-      eq.id === equipmentId 
-        ? { ...eq, status: 'operando' }
-        : eq
-    ));
-    
-    setChecklistStates(prev => ({
-      ...prev,
-      [equipmentId]: {
-        ...prev[equipmentId],
-        canStartNew: false
-      }
-    }));
-  };
-
-  const handleEndOperation = (equipmentId: string, hasIssue: boolean, issue?: { description: string; photo: string }) => {
-    const newStatus: Equipment['status'] = hasIssue ? 'maintenance' : 'disponivel';
-    
-    setEquipments(prev => prev.map(eq => 
-      eq.id === equipmentId 
-        ? { ...eq, status: newStatus }
-        : eq
-    ));
-
-    if (hasIssue && issue) {
-      setOperationIssues(prev => ({
-        ...prev,
-        [equipmentId]: [...(prev[equipmentId] || []), issue]
-      }));
-    }
-
-    // Reset checklist state para permitir novo checklist
-    setChecklistStates(prev => ({
-      ...prev,
-      [equipmentId]: {
-        completed: false,
-        hasNonConformities: false,
-        canStartNew: true
-      }
-    }));
   };
 
   const renderPage = () => {
@@ -314,41 +230,7 @@ const Index = () => {
       case 'equipments':
         return <EquipmentList equipments={equipments} onAddEquipment={handleAddEquipment} onUpdateEquipment={handleUpdateEquipment} />;
       case 'checklist':
-        return (
-          <div className="space-y-6">
-            <ChecklistForm 
-              equipments={equipments} 
-              onSubmitChecklist={handleSubmitChecklist}
-              checklistStates={checklistStates}
-            />
-            
-            {/* Mostrar controles de operação para equipamentos selecionados */}
-            {equipments.map(equipment => {
-              const checklistState = checklistStates[equipment.id];
-              if (!checklistState?.completed && equipment.status !== 'operando') return null;
-              
-              return (
-                <div key={equipment.id} className="space-y-4">
-                  <OperationControl
-                    equipment={equipment}
-                    isChecklistCompleted={checklistState?.completed || false}
-                    hasNonConformities={checklistState?.hasNonConformities || false}
-                    onStartOperation={handleStartOperation}
-                    onEndOperation={handleEndOperation}
-                    canStartNewChecklist={checklistState?.canStartNew || true}
-                  />
-                  
-                  {/* QR Code para o equipamento */}
-                  <EquipmentQRCode
-                    equipment={equipment}
-                    operatorName={user?.name}
-                    operatorId={user?.id || 'OP001'}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        );
+        return <ChecklistForm equipments={equipments} onSubmitChecklist={handleSubmitChecklist} />;
       case 'history':
         return <ChecklistHistory 
           records={checklistRecords} 
