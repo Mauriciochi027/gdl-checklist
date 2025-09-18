@@ -16,7 +16,7 @@ interface Equipment {
   brand: string;
   year: number;
   sector: string;
-  status: 'active' | 'maintenance' | 'inactive';
+  status: 'active' | 'maintenance' | 'inactive' | 'operando' | 'disponivel';
   lastCheck: string;
   nextMaintenance: string;
   observations?: string;

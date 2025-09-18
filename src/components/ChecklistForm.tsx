@@ -22,7 +22,7 @@ interface Equipment {
   brand: string;
   model: string;
   sector: string;
-  status: 'active' | 'maintenance' | 'inactive';
+  status: 'active' | 'maintenance' | 'inactive' | 'operando' | 'disponivel';
 }
 
 interface ChecklistAnswer {
@@ -34,9 +34,10 @@ interface ChecklistAnswer {
 interface ChecklistFormProps {
   equipments: Equipment[];
   onSubmitChecklist: (data: any) => void;
+  checklistStates?: Record<string, { completed: boolean; hasNonConformities: boolean; canStartNew: boolean }>;
 }
 
-const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) => {
+const ChecklistForm = ({ equipments, onSubmitChecklist, checklistStates }: ChecklistFormProps) => {
   const [selectedEquipment, setSelectedEquipment] = useState<string>("");
   const [operatorName, setOperatorName] = useState<string>("");
   const [operatorId, setOperatorId] = useState<string>("");
