@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Truck, Calendar, MapPin, AlertCircle, CheckCircle, Upload, X } from "lucide-react";
+import { Plus, Search, Truck, Calendar, MapPin, AlertCircle, CheckCircle, Upload, X, QrCode } from "lucide-react";
+import EquipmentQRCode from "./EquipmentQRCode";
 
 interface Equipment {
   id: string;
@@ -21,6 +22,14 @@ interface Equipment {
   nextMaintenance: string;
   observations?: string;
   photo?: string;
+  // Novos campos para QR code
+  operatorName?: string;
+  operatorId?: string;
+  location?: string;
+  unit?: string;
+  equipmentSeries?: string;
+  equipmentNumber?: string;
+  hourMeter?: string;
 }
 
 interface EquipmentListProps {
@@ -34,6 +43,8 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
   const [filterStatus, setFilterStatus] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [qrEquipment, setQrEquipment] = useState<Equipment | null>(null);
 
   const [formData, setFormData] = useState<{
     code: string;
@@ -46,6 +57,13 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
     nextMaintenance: string;
     observations: string;
     photo: string;
+    operatorName: string;
+    operatorId: string;
+    location: string;
+    unit: string;
+    equipmentSeries: string;
+    equipmentNumber: string;
+    hourMeter: string;
   }>({
     code: "",
     model: "",
@@ -56,7 +74,14 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
     lastCheck: "",
     nextMaintenance: "",
     observations: "",
-    photo: ""
+    photo: "",
+    operatorName: "Carlos Oliveira",
+    operatorId: "MEC001",
+    location: "",
+    unit: "Principal",
+    equipmentSeries: "",
+    equipmentNumber: "",
+    hourMeter: "0"
   });
 
   const filteredEquipments = equipments.filter(equipment => {
@@ -72,14 +97,22 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    let equipmentWithId: Equipment;
     if (editingEquipment) {
       onUpdateEquipment(editingEquipment.id, formData);
+      equipmentWithId = { ...editingEquipment, ...formData };
     } else {
-      onAddEquipment(formData);
+      const newEquipment = { ...formData };
+      onAddEquipment(newEquipment);
+      equipmentWithId = { id: Date.now().toString(), ...formData } as Equipment;
     }
     
     resetForm();
     setIsDialogOpen(false);
+    
+    // Mostrar QR Code após cadastro/edição
+    setQrEquipment(equipmentWithId);
+    setShowQRCode(true);
   };
 
   const resetForm = () => {
@@ -93,7 +126,14 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
       lastCheck: "",
       nextMaintenance: "",
       observations: "",
-      photo: ""
+      photo: "",
+      operatorName: "Carlos Oliveira",
+      operatorId: "MEC001",
+      location: "",
+      unit: "Principal",
+      equipmentSeries: "",
+      equipmentNumber: "",
+      hourMeter: "0"
     });
     setEditingEquipment(null);
   };
@@ -110,7 +150,14 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
       lastCheck: equipment.lastCheck,
       nextMaintenance: equipment.nextMaintenance,
       observations: equipment.observations || "",
-      photo: equipment.photo || ""
+      photo: equipment.photo || "",
+      operatorName: equipment.operatorName || "Carlos Oliveira",
+      operatorId: equipment.operatorId || "MEC001",
+      location: equipment.location || "",
+      unit: equipment.unit || "Principal",
+      equipmentSeries: equipment.equipmentSeries || "",
+      equipmentNumber: equipment.equipmentNumber || "",
+      hourMeter: equipment.hourMeter || "0"
     });
     setIsDialogOpen(true);
   };
@@ -245,6 +292,94 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
                 </div>
               </div>
 
+              {/* Seção de Informações para QR Code */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <QrCode className="w-5 h-5" />
+                  Informações Básicas (QR Code)
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="operatorName">Nome do Operador *</Label>
+                    <Input
+                      id="operatorName"
+                      value={formData.operatorName}
+                      onChange={(e) => setFormData({...formData, operatorName: e.target.value})}
+                      placeholder="Carlos Oliveira"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="operatorId">Matrícula/ID *</Label>
+                    <Input
+                      id="operatorId"
+                      value={formData.operatorId}
+                      onChange={(e) => setFormData({...formData, operatorId: e.target.value})}
+                      placeholder="MEC001"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="location">Local *</Label>
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({...formData, location: e.target.value})}
+                      placeholder="Digite o local"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="unit">Unidade *</Label>
+                    <Select value={formData.unit} onValueChange={(value) => setFormData({...formData, unit: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a unidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Principal">Principal</SelectItem>
+                        <SelectItem value="Filial 1">Filial 1</SelectItem>
+                        <SelectItem value="Filial 2">Filial 2</SelectItem>
+                        <SelectItem value="Depósito">Depósito</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="equipmentSeries">Série do Equipamento</Label>
+                    <Input
+                      id="equipmentSeries"
+                      value={formData.equipmentSeries}
+                      onChange={(e) => setFormData({...formData, equipmentSeries: e.target.value})}
+                      placeholder="Série do equipamento"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="equipmentNumber">Número do Equipamento</Label>
+                    <Input
+                      id="equipmentNumber"
+                      value={formData.equipmentNumber}
+                      onChange={(e) => setFormData({...formData, equipmentNumber: e.target.value})}
+                      placeholder="Número do equipamento"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="hourMeter">Horímetro</Label>
+                    <Input
+                      id="hourMeter"
+                      value={formData.hourMeter}
+                      onChange={(e) => setFormData({...formData, hourMeter: e.target.value})}
+                      placeholder="Digite o horímetro"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="photo">Foto do Equipamento</Label>
                 <div className="space-y-3">
@@ -337,7 +472,7 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
       {/* Equipment Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEquipments.map((equipment) => (
-          <Card key={equipment.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleEdit(equipment)}>
+          <Card key={equipment.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -383,6 +518,33 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
                   <span>Manutenção: {new Date(equipment.nextMaintenance).toLocaleDateString('pt-BR')}</span>
                 </div>
               )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setQrEquipment(equipment);
+                    setShowQRCode(true);
+                  }}
+                  className="flex-1"
+                >
+                  <QrCode className="w-4 h-4 mr-1" />
+                  QR Code
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(equipment);
+                  }}
+                  className="flex-1"
+                >
+                  Editar
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -394,6 +556,27 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
           <p className="text-gray-500">Nenhum equipamento encontrado</p>
         </div>
       )}
+
+      {/* Dialog do QR Code */}
+      <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              QR Code Gerado com Sucesso!
+            </DialogTitle>
+          </DialogHeader>
+          {qrEquipment && (
+            <div className="flex justify-center">
+              <EquipmentQRCode equipment={qrEquipment} />
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button onClick={() => setShowQRCode(false)}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
