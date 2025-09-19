@@ -8,13 +8,14 @@ import ChecklistForm from '@/components/ChecklistForm';
 import ChecklistHistory from '@/components/ChecklistHistory';
 import ApprovalsPage from '@/components/ApprovalsPage';
 import StatusPanel from '@/components/StatusPanel';
+import { OperationControl } from '@/components/OperationControl';
 import { getChecklistItemById } from '@/lib/checklistItems';
+import { Equipment, ChecklistRecord } from '@/types/equipment';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
   
-  // Mock data - in real app would come from database
   const [equipments, setEquipments] = useState([
     { id: "1", code: "EMP-001", model: "7FBR15", brand: "Toyota", year: 2022, sector: "Armazém", status: "active" as const, lastCheck: "2024-01-15", nextMaintenance: "2024-02-15", photo: "" },
     { id: "2", code: "EMP-002", model: "H50", brand: "Hyster", year: 2021, sector: "Expedição", status: "active" as const, lastCheck: "2024-01-14", nextMaintenance: "2024-02-20", photo: "" },

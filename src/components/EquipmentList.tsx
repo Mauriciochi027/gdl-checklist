@@ -3,39 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Truck, Calendar, MapPin, AlertCircle, CheckCircle, Upload, X, QrCode } from "lucide-react";
 import EquipmentQRCode from "./EquipmentQRCode";
-
-interface Equipment {
-  id: string;
-  code: string;
-  model: string;
-  brand: string;
-  year: number;
-  sector: string;
-  status: 'active' | 'maintenance' | 'inactive';
-  lastCheck: string;
-  nextMaintenance: string;
-  observations?: string;
-  photo?: string;
-  // Novos campos para QR code
-  operatorName?: string;
-  operatorId?: string;
-  location?: string;
-  unit?: string;
-  equipmentSeries?: string;
-  equipmentNumber?: string;
-  hourMeter?: string;
-}
+import { Equipment } from "@/types/equipment";
 
 interface EquipmentListProps {
-  equipments: Equipment[];
-  onAddEquipment: (equipment: Omit<Equipment, 'id'>) => void;
-  onUpdateEquipment: (id: string, equipment: Partial<Equipment>) => void;
+  equipments: import('@/types/equipment').Equipment[];
+  onAddEquipment: (equipment: Omit<import('@/types/equipment').Equipment, 'id'>) => void;
+  onUpdateEquipment: (id: string, equipment: Partial<import('@/types/equipment').Equipment>) => void;
 }
 
 const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: EquipmentListProps) => {
@@ -166,6 +145,10 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
     switch (status) {
       case 'active':
         return <Badge className="bg-safety-green text-white">Ativo</Badge>;
+      case 'operando':
+        return <Badge className="bg-industrial-blue text-white">Em Operação</Badge>;
+      case 'disponivel':
+        return <Badge className="bg-safety-green text-white">Disponível</Badge>;
       case 'maintenance':
         return <Badge className="bg-safety-orange text-white">Manutenção</Badge>;
       case 'inactive':
@@ -191,12 +174,15 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
             </Button>
           </DialogTrigger>
           
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingEquipment ? 'Editar Equipamento' : 'Novo Equipamento'}
-              </DialogTitle>
-            </DialogHeader>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingEquipment ? 'Editar Equipamento' : 'Novo Equipamento'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingEquipment ? 'Atualize as informações do equipamento' : 'Preencha os dados do novo equipamento'}
+                </DialogDescription>
+              </DialogHeader>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">

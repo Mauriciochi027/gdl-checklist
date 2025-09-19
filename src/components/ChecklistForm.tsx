@@ -9,27 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { PhotoGrid } from "@/components/ui/photo-viewer";
 import { User, Truck, FileText, PenTool, Camera, QrCode, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import forkliftWorkingImage from "@/assets/forklift-working.png";
 import mechanicIcon from "@/assets/mechanic-icon.jpg";
 import { BrowserQRCodeReader } from '@zxing/library';
 import { checklistItems, type ChecklistItem } from '@/lib/checklistItems';
 import { useAuth } from '@/hooks/useAuth';
-
-interface Equipment {
-  id: string;
-  code: string;
-  brand: string;
-  model: string;
-  sector: string;
-  status: 'active' | 'maintenance' | 'inactive';
-}
-
-interface ChecklistAnswer {
-  itemId: string;
-  value: 'sim' | 'nao' | 'nao_aplica';
-  observation?: string;
-}
+import { Equipment, ChecklistAnswer } from '@/types/equipment';
 
 interface ChecklistFormProps {
   equipments: Equipment[];
@@ -328,25 +314,54 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
           // Parse QR code result to extract equipment info
           const qrData = result.getText();
           
-          // Try to find equipment by code in QR data
-          const equipment = equipments.find(eq => qrData.includes(eq.code));
-          
-          if (equipment) {
-            setSelectedEquipment(equipment.id);
-            setEquipmentNumber(equipment.code);
-            setEquipmentSeries(`${equipment.brand}-${equipment.model}`);
-            setQrScanned(true);
+          try {
+            // Try to parse as JSON first (structured QR code)
+            const parsedData = JSON.parse(qrData);
+            if (parsedData.equipmentId) {
+              const equipment = equipments.find(eq => eq.id === parsedData.equipmentId);
+              if (equipment) {
+                setSelectedEquipment(equipment.id);
+                setOperatorName(parsedData.nomeOperador || operatorName);
+                setOperatorId(parsedData.matriculaId || operatorId);
+                setEquipmentModel(equipment.model.toLowerCase().includes('eletrica') ? 'eletrica' : 'combustao');
+                setLocation(parsedData.local || equipment.sector);
+                setUnit(parsedData.unidade === 'Principal' ? '01' : '02');
+                setEquipmentSeries(parsedData.serieEquipamento || equipment.code);
+                setEquipmentNumber(parsedData.numeroEquipamento || equipment.code);
+                setHourMeter(parsedData.horimetro || '0');
+                setQrScanned(true);
+                
+                toast({
+                  title: "QR Code escaneado",
+                  description: `Equipamento ${equipment.code} identificado automaticamente.`,
+                });
+              } else {
+                throw new Error('Equipment not found');
+              }
+            } else {
+              throw new Error('Invalid QR structure');
+            }
+          } catch (error) {
+            // Fallback: try to find equipment by code in raw QR data
+            const equipment = equipments.find(eq => qrData.includes(eq.code) || qrData.includes(eq.id));
             
-            toast({
-              title: "QR Code escaneado",
-              description: `Equipamento ${equipment.code} identificado automaticamente.`,
-            });
-          } else {
-            toast({
-              title: "Equipamento não encontrado",
-              description: "QR Code lido, mas equipamento não está na lista.",
-              variant: "destructive",
-            });
+            if (equipment) {
+              setSelectedEquipment(equipment.id);
+              setEquipmentNumber(equipment.code);
+              setEquipmentSeries(`${equipment.brand}-${equipment.model}`);
+              setQrScanned(true);
+              
+              toast({
+                title: "QR Code escaneado",
+                description: `Equipamento ${equipment.code} identificado automaticamente.`,
+              });
+            } else {
+              toast({
+                title: "Equipamento não encontrado",
+                description: "QR Code lido, mas equipamento não está na lista.",
+                variant: "destructive",
+              });
+            }
           }
           
           // Stop camera
