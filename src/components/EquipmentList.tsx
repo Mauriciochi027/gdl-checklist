@@ -198,12 +198,14 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
                 </div>
                 <div>
                   <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value: any) => setFormData({...formData, status: value})}>
+                  <Select value={formData.status} onValueChange={(value: Equipment['status']) => setFormData({...formData, status: value})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="operando">Em Operação</SelectItem>
+                      <SelectItem value="disponivel">Disponível</SelectItem>
                       <SelectItem value="maintenance">Manutenção</SelectItem>
                       <SelectItem value="inactive">Inativo</SelectItem>
                     </SelectContent>
@@ -449,6 +451,8 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="active">Ativo</SelectItem>
+            <SelectItem value="operando">Em Operação</SelectItem>
+            <SelectItem value="disponivel">Disponível</SelectItem>
             <SelectItem value="maintenance">Manutenção</SelectItem>
             <SelectItem value="inactive">Inativo</SelectItem>
           </SelectContent>
