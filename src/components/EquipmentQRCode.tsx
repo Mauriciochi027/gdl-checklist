@@ -3,28 +3,7 @@ import QRCode from "qrcode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, QrCode } from "lucide-react";
-
-interface Equipment {
-  id: string;
-  code: string;
-  model: string;
-  brand: string;
-  year: number;
-  sector: string;
-  status: 'active' | 'maintenance' | 'inactive';
-  lastCheck: string;
-  nextMaintenance: string;
-  observations?: string;
-  photo?: string;
-  // Novos campos para QR code
-  operatorName?: string;
-  operatorId?: string;
-  location?: string;
-  unit?: string;
-  equipmentSeries?: string;
-  equipmentNumber?: string;
-  hourMeter?: string;
-}
+import { Equipment } from "@/types/equipment";
 
 interface EquipmentQRCodeProps {
   equipment: Equipment;

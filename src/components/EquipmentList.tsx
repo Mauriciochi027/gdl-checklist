@@ -12,9 +12,9 @@ import EquipmentQRCode from "./EquipmentQRCode";
 import { Equipment } from "@/types/equipment";
 
 interface EquipmentListProps {
-  equipments: import('@/types/equipment').Equipment[];
-  onAddEquipment: (equipment: Omit<import('@/types/equipment').Equipment, 'id'>) => void;
-  onUpdateEquipment: (id: string, equipment: Partial<import('@/types/equipment').Equipment>) => void;
+  equipments: Equipment[];
+  onAddEquipment: (equipment: Omit<Equipment, 'id'>) => void;
+  onUpdateEquipment: (id: string, equipment: Partial<Equipment>) => void;
 }
 
 const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: EquipmentListProps) => {
