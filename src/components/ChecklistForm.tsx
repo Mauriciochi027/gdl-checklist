@@ -32,6 +32,9 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   const [equipmentSeries, setEquipmentSeries] = useState<string>("");
   const [equipmentNumber, setEquipmentNumber] = useState<string>("");
   const [hourMeter, setHourMeter] = useState<string>("");
+  const [manufacturingYear, setManufacturingYear] = useState<string>("");
+  const [costCenter, setCostCenter] = useState<string>("");
+  const [businessUnit, setBusinessUnit] = useState<string>("");
   const [answers, setAnswers] = useState<Record<string, ChecklistAnswer>>({});
   const [signature, setSignature] = useState<string>("");
   const [photos, setPhotos] = useState<Record<string, string[]>>({});
@@ -163,7 +166,8 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
 
   const validateForm = (): boolean => {
     if (!selectedEquipment || !operatorName || !operatorId || !equipmentModel || 
-        !location || !unit || !equipmentSeries || !equipmentNumber || !hourMeter) {
+        !location || !unit || !equipmentSeries || !equipmentNumber || !hourMeter ||
+        !manufacturingYear || !costCenter || !businessUnit) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios.",
@@ -215,6 +219,9 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
       equipmentSeries,
       equipmentNumber,
       hourMeter: parseInt(hourMeter),
+      manufacturingYear: parseInt(manufacturingYear),
+      costCenter,
+      businessUnit,
       timestamp: new Date().toISOString(),
       answers: Object.values(answers),
       signature,
@@ -247,6 +254,9 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
     setEquipmentSeries("");
     setEquipmentNumber("");
     setHourMeter("");
+    setManufacturingYear("");
+    setCostCenter("");
+    setBusinessUnit("");
     setAnswers({});
     setSignature("");
     setPhotos({});
@@ -329,6 +339,9 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
                 setEquipmentSeries(parsedData.serieEquipamento || equipment.code);
                 setEquipmentNumber(parsedData.numeroEquipamento || equipment.code);
                 setHourMeter(parsedData.horimetro || '0');
+                setManufacturingYear(parsedData.anoFabricacao?.toString() || equipment.year.toString());
+                setCostCenter(parsedData.centroCusto || equipment.costCenter || '');
+                setBusinessUnit(parsedData.unidadeNegociosGDL || equipment.businessUnit || 'GDL Principal');
                 setQrScanned(true);
                 
                 toast({
@@ -539,6 +552,45 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="manufacturing-year">Ano de Fabricação *</Label>
+                <Input
+                  id="manufacturing-year"
+                  type="number"
+                  value={manufacturingYear}
+                  onChange={(e) => setManufacturingYear(e.target.value)}
+                  placeholder="Ex: 2023"
+                  min="1990"
+                  max="2030"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cost-center">Centro de Custo *</Label>
+                <Input
+                  id="cost-center"
+                  value={costCenter}
+                  onChange={(e) => setCostCenter(e.target.value)}
+                  placeholder="Ex: CC-001"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="business-unit">Unidade de Negócios GDL *</Label>
+                <Select value={businessUnit} onValueChange={setBusinessUnit}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GDL Principal">GDL Principal</SelectItem>
+                    <SelectItem value="GDL Norte">GDL Norte</SelectItem>
+                    <SelectItem value="GDL Sul">GDL Sul</SelectItem>
+                    <SelectItem value="GDL Leste">GDL Leste</SelectItem>
+                    <SelectItem value="GDL Oeste">GDL Oeste</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
