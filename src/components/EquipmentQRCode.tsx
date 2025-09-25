@@ -4,19 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, QrCode } from "lucide-react";
 import { Equipment } from "@/types/equipment";
-
 interface EquipmentQRCodeProps {
   equipment: Equipment;
 }
-
-const EquipmentQRCode = ({ equipment }: EquipmentQRCodeProps) => {
+const EquipmentQRCode = ({
+  equipment
+}: EquipmentQRCodeProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>("");
-
   useEffect(() => {
     generateQRCode();
   }, [equipment]);
-
   const generateQRCode = async () => {
     if (!canvasRef.current) return;
 
@@ -39,7 +37,6 @@ const EquipmentQRCode = ({ equipment }: EquipmentQRCodeProps) => {
       equipmentId: equipment.id,
       timestamp: new Date().toISOString()
     };
-
     try {
       // Gerar QR code no canvas
       await QRCode.toCanvas(canvasRef.current, JSON.stringify(equipmentData), {
@@ -61,18 +58,14 @@ const EquipmentQRCode = ({ equipment }: EquipmentQRCodeProps) => {
       console.error('Erro ao gerar QR Code:', error);
     }
   };
-
   const downloadQRCode = () => {
     if (!qrCodeDataURL) return;
-
     const link = document.createElement('a');
     link.download = `qrcode-${equipment.code}.png`;
     link.href = qrCodeDataURL;
     link.click();
   };
-
-  return (
-    <Card className="w-fit">
+  return <Card className="w-fit">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <QrCode className="w-5 h-5" />
@@ -85,8 +78,8 @@ const EquipmentQRCode = ({ equipment }: EquipmentQRCodeProps) => {
         </div>
 
         <div className="text-sm text-gray-600 space-y-1">
-          <p><strong>Operador:</strong> {equipment.operatorName || "Carlos Oliveira"}</p>
-          <p><strong>Matrícula:</strong> {equipment.operatorId || "MEC001"}</p>
+          
+          
           <p><strong>Equipamento:</strong> {equipment.brand} {equipment.model}</p>
           <p><strong>Modelo:</strong> {equipment.model}</p>
           <p><strong>Ano de Fabricação:</strong> {equipment.year}</p>
@@ -99,17 +92,11 @@ const EquipmentQRCode = ({ equipment }: EquipmentQRCodeProps) => {
           <p><strong>Horímetro:</strong> {equipment.hourMeter || "0"}</p>
         </div>
 
-        <Button 
-          onClick={downloadQRCode}
-          className="w-full"
-          variant="outline"
-        >
+        <Button onClick={downloadQRCode} className="w-full" variant="outline">
           <Download className="w-4 h-4 mr-2" />
           Baixar QR Code
         </Button>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default EquipmentQRCode;
