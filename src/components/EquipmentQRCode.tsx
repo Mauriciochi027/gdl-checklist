@@ -25,6 +25,11 @@ const EquipmentQRCode = ({ equipment }: EquipmentQRCodeProps) => {
       nomeOperador: equipment.operatorName || "Carlos Oliveira",
       matriculaId: equipment.operatorId || "MEC001",
       equipamento: `${equipment.brand} ${equipment.model}`,
+      modelo: equipment.model,
+      anoFabricacao: equipment.year,
+      serial: equipment.equipmentSeries || equipment.code,
+      centroCusto: equipment.costCenter || "Não informado",
+      unidadeNegociosGDL: equipment.businessUnit || "GDL Principal",
       modeloEquipamento: equipment.model,
       local: equipment.location || equipment.sector || "Não informado",
       unidade: equipment.unit || "Principal",
@@ -83,6 +88,11 @@ const EquipmentQRCode = ({ equipment }: EquipmentQRCodeProps) => {
           <p><strong>Operador:</strong> {equipment.operatorName || "Carlos Oliveira"}</p>
           <p><strong>Matrícula:</strong> {equipment.operatorId || "MEC001"}</p>
           <p><strong>Equipamento:</strong> {equipment.brand} {equipment.model}</p>
+          <p><strong>Modelo:</strong> {equipment.model}</p>
+          <p><strong>Ano de Fabricação:</strong> {equipment.year}</p>
+          <p><strong>Serial:</strong> {equipment.equipmentSeries || equipment.code}</p>
+          <p><strong>Centro de Custo:</strong> {equipment.costCenter || "Não informado"}</p>
+          <p><strong>Unidade de Negócios GDL:</strong> {equipment.businessUnit || "GDL Principal"}</p>
           <p><strong>Local:</strong> {equipment.location || equipment.sector}</p>
           <p><strong>Série:</strong> {equipment.equipmentSeries || equipment.code}</p>
           <p><strong>Número:</strong> {equipment.equipmentNumber || equipment.code}</p>

@@ -20,6 +20,8 @@ export interface Equipment {
   equipmentSeries?: string;
   equipmentNumber?: string;
   hourMeter?: string;
+  costCenter?: string;
+  businessUnit?: string;
   // Operation tracking
   lastChecklistId?: string;
   lastOperationStart?: string;
