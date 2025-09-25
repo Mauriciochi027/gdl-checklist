@@ -63,9 +63,6 @@ export interface ChecklistRecord {
   equipmentSeries?: string;
   equipmentNumber?: string;
   hourMeter?: number;
-  manufacturingYear?: number;
-  costCenter?: string;
-  businessUnit?: string;
 }
 
 export type EquipmentStatus = Equipment['status'];
