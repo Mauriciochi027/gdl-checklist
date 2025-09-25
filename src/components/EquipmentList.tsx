@@ -10,21 +10,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Truck, Calendar, MapPin, AlertCircle, CheckCircle, Upload, X, QrCode } from "lucide-react";
 import EquipmentQRCode from "./EquipmentQRCode";
 import { Equipment } from "@/types/equipment";
-
 interface EquipmentListProps {
   equipments: Equipment[];
   onAddEquipment: (equipment: Omit<Equipment, 'id'>) => void;
   onUpdateEquipment: (id: string, equipment: Partial<Equipment>) => void;
 }
-
-const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: EquipmentListProps) => {
+const EquipmentList = ({
+  equipments,
+  onAddEquipment,
+  onUpdateEquipment
+}: EquipmentListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrEquipment, setQrEquipment] = useState<Equipment | null>(null);
-
   const [formData, setFormData] = useState<{
     code: string;
     model: string;
@@ -62,38 +63,37 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
     equipmentNumber: "",
     hourMeter: "0"
   });
-
   const filteredEquipments = equipments.filter(equipment => {
-    const matchesSearch = equipment.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         equipment.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         equipment.brand.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const matchesSearch = equipment.code.toLowerCase().includes(searchTerm.toLowerCase()) || equipment.model.toLowerCase().includes(searchTerm.toLowerCase()) || equipment.brand.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || equipment.status === filterStatus;
-    
     return matchesSearch && matchesStatus;
   });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     let equipmentWithId: Equipment;
     if (editingEquipment) {
       onUpdateEquipment(editingEquipment.id, formData);
-      equipmentWithId = { ...editingEquipment, ...formData };
+      equipmentWithId = {
+        ...editingEquipment,
+        ...formData
+      };
     } else {
-      const newEquipment = { ...formData };
+      const newEquipment = {
+        ...formData
+      };
       onAddEquipment(newEquipment);
-      equipmentWithId = { id: Date.now().toString(), ...formData } as Equipment;
+      equipmentWithId = {
+        id: Date.now().toString(),
+        ...formData
+      } as Equipment;
     }
-    
     resetForm();
     setIsDialogOpen(false);
-    
+
     // Mostrar QR Code após cadastro/edição
     setQrEquipment(equipmentWithId);
     setShowQRCode(true);
   };
-
   const resetForm = () => {
     setFormData({
       code: "",
@@ -116,7 +116,6 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
     });
     setEditingEquipment(null);
   };
-
   const handleEdit = (equipment: Equipment) => {
     setEditingEquipment(equipment);
     setFormData({
@@ -140,7 +139,6 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
     });
     setIsDialogOpen(true);
   };
-
   const getStatusBadge = (status: Equipment['status']) => {
     switch (status) {
       case 'active':
@@ -157,9 +155,7 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Gestão de Equipamentos</h2>
@@ -188,17 +184,17 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="code">Código/Número *</Label>
-                  <Input
-                    id="code"
-                    value={formData.code}
-                    onChange={(e) => setFormData({...formData, code: e.target.value})}
-                    placeholder="EMP-001"
-                    required
-                  />
+                  <Input id="code" value={formData.code} onChange={e => setFormData({
+                  ...formData,
+                  code: e.target.value
+                })} placeholder="EMP-001" required />
                 </div>
                 <div>
                   <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value: Equipment['status']) => setFormData({...formData, status: value})}>
+                  <Select value={formData.status} onValueChange={(value: Equipment['status']) => setFormData({
+                  ...formData,
+                  status: value
+                })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -216,67 +212,51 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="brand">Marca *</Label>
-                  <Input
-                    id="brand"
-                    value={formData.brand}
-                    onChange={(e) => setFormData({...formData, brand: e.target.value})}
-                    placeholder="Toyota, Hyster, etc."
-                    required
-                  />
+                  <Input id="brand" value={formData.brand} onChange={e => setFormData({
+                  ...formData,
+                  brand: e.target.value
+                })} placeholder="Toyota, Hyster, etc." required />
                 </div>
                 <div>
                   <Label htmlFor="model">Modelo *</Label>
-                  <Input
-                    id="model"
-                    value={formData.model}
-                    onChange={(e) => setFormData({...formData, model: e.target.value})}
-                    placeholder="7FBR15"
-                    required
-                  />
+                  <Input id="model" value={formData.model} onChange={e => setFormData({
+                  ...formData,
+                  model: e.target.value
+                })} placeholder="7FBR15" required />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="year">Ano</Label>
-                  <Input
-                    id="year"
-                    type="number"
-                    value={formData.year}
-                    onChange={(e) => setFormData({...formData, year: parseInt(e.target.value)})}
-                    min="1990"
-                    max={new Date().getFullYear() + 1}
-                  />
+                  <Input id="year" type="number" value={formData.year} onChange={e => setFormData({
+                  ...formData,
+                  year: parseInt(e.target.value)
+                })} min="1990" max={new Date().getFullYear() + 1} />
                 </div>
                 <div>
                   <Label htmlFor="sector">Setor</Label>
-                  <Input
-                    id="sector"
-                    value={formData.sector}
-                    onChange={(e) => setFormData({...formData, sector: e.target.value})}
-                    placeholder="Armazém, Expedição, etc."
-                  />
+                  <Input id="sector" value={formData.sector} onChange={e => setFormData({
+                  ...formData,
+                  sector: e.target.value
+                })} placeholder="Armazém, Expedição, etc." />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="lastCheck">Último Checklist</Label>
-                  <Input
-                    id="lastCheck"
-                    type="date"
-                    value={formData.lastCheck}
-                    onChange={(e) => setFormData({...formData, lastCheck: e.target.value})}
-                  />
+                  <Input id="lastCheck" type="date" value={formData.lastCheck} onChange={e => setFormData({
+                  ...formData,
+                  lastCheck: e.target.value
+                })} />
                 </div>
                 <div>
                   <Label htmlFor="nextMaintenance">Próxima Manutenção</Label>
-                  <Input
-                    id="nextMaintenance"
-                    type="date"
-                    value={formData.nextMaintenance}
-                    onChange={(e) => setFormData({...formData, nextMaintenance: e.target.value})}
-                  />
+                  <Input id="nextMaintenance" type="date" value={formData.nextMaintenance} onChange={e => setFormData({
+                  ...formData,
+                  nextMaintenance: e.target.value
+                })} />
                 </div>
               </div>
 
@@ -287,43 +267,22 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
                   Informações Básicas (QR Code)
                 </h3>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="operatorName">Nome do Operador *</Label>
-                    <Input
-                      id="operatorName"
-                      value={formData.operatorName}
-                      onChange={(e) => setFormData({...formData, operatorName: e.target.value})}
-                      placeholder="Carlos Oliveira"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="operatorId">Matrícula/ID *</Label>
-                    <Input
-                      id="operatorId"
-                      value={formData.operatorId}
-                      onChange={(e) => setFormData({...formData, operatorId: e.target.value})}
-                      placeholder="MEC001"
-                      required
-                    />
-                  </div>
-                </div>
+                
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="location">Local *</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData({...formData, location: e.target.value})}
-                      placeholder="Digite o local"
-                      required
-                    />
+                    <Input id="location" value={formData.location} onChange={e => setFormData({
+                    ...formData,
+                    location: e.target.value
+                  })} placeholder="Digite o local" required />
                   </div>
                   <div>
                     <Label htmlFor="unit">Unidade *</Label>
-                    <Select value={formData.unit} onValueChange={(value) => setFormData({...formData, unit: value})}>
+                    <Select value={formData.unit} onValueChange={value => setFormData({
+                    ...formData,
+                    unit: value
+                  })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a unidade" />
                       </SelectTrigger>
@@ -340,30 +299,24 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="equipmentSeries">Série do Equipamento</Label>
-                    <Input
-                      id="equipmentSeries"
-                      value={formData.equipmentSeries}
-                      onChange={(e) => setFormData({...formData, equipmentSeries: e.target.value})}
-                      placeholder="Série do equipamento"
-                    />
+                    <Input id="equipmentSeries" value={formData.equipmentSeries} onChange={e => setFormData({
+                    ...formData,
+                    equipmentSeries: e.target.value
+                  })} placeholder="Série do equipamento" />
                   </div>
                   <div>
                     <Label htmlFor="equipmentNumber">Número do Equipamento</Label>
-                    <Input
-                      id="equipmentNumber"
-                      value={formData.equipmentNumber}
-                      onChange={(e) => setFormData({...formData, equipmentNumber: e.target.value})}
-                      placeholder="Número do equipamento"
-                    />
+                    <Input id="equipmentNumber" value={formData.equipmentNumber} onChange={e => setFormData({
+                    ...formData,
+                    equipmentNumber: e.target.value
+                  })} placeholder="Número do equipamento" />
                   </div>
                   <div>
                     <Label htmlFor="hourMeter">Horímetro</Label>
-                    <Input
-                      id="hourMeter"
-                      value={formData.hourMeter}
-                      onChange={(e) => setFormData({...formData, hourMeter: e.target.value})}
-                      placeholder="Digite o horímetro"
-                    />
+                    <Input id="hourMeter" value={formData.hourMeter} onChange={e => setFormData({
+                    ...formData,
+                    hourMeter: e.target.value
+                  })} placeholder="Digite o horímetro" />
                   </div>
                 </div>
               </div>
@@ -371,53 +324,38 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
               <div>
                 <Label htmlFor="photo">Foto do Equipamento</Label>
                 <div className="space-y-3">
-                  <Input
-                    id="photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                          const result = e.target?.result as string;
-                          setFormData({...formData, photo: result});
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="cursor-pointer"
-                  />
-                  {formData.photo && (
-                    <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
-                      <img 
-                        src={formData.photo} 
-                        alt="Preview do equipamento" 
-                        className="w-full h-full object-cover"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0"
-                        onClick={() => setFormData({...formData, photo: ""})}
-                      >
+                  <Input id="photo" type="file" accept="image/*" onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                      const result = e.target?.result as string;
+                      setFormData({
+                        ...formData,
+                        photo: result
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }} className="cursor-pointer" />
+                  {formData.photo && <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                      <img src={formData.photo} alt="Preview do equipamento" className="w-full h-full object-cover" />
+                      <Button type="button" variant="destructive" size="sm" className="absolute top-1 right-1 h-6 w-6 p-0" onClick={() => setFormData({
+                    ...formData,
+                    photo: ""
+                  })}>
                         <X className="w-3 h-3" />
                       </Button>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </div>
 
               <div>
                 <Label htmlFor="observations">Observações</Label>
-                <Textarea
-                  id="observations"
-                  value={formData.observations}
-                  onChange={(e) => setFormData({...formData, observations: e.target.value})}
-                  placeholder="Informações adicionais sobre o equipamento..."
-                  rows={3}
-                />
+                <Textarea id="observations" value={formData.observations} onChange={e => setFormData({
+                ...formData,
+                observations: e.target.value
+              })} placeholder="Informações adicionais sobre o equipamento..." rows={3} />
               </div>
 
               <div className="flex justify-end gap-3">
@@ -437,12 +375,7 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
       <div className="flex gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Buscar por código, modelo ou marca..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+          <Input placeholder="Buscar por código, modelo ou marca..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-40">
@@ -461,8 +394,7 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
 
       {/* Equipment Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEquipments.map((equipment) => (
-          <Card key={equipment.id} className="hover:shadow-md transition-shadow">
+        {filteredEquipments.map(equipment => <Card key={equipment.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -473,79 +405,54 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {equipment.photo && (
-                <div className="flex justify-center">
-                  <img 
-                    src={equipment.photo} 
-                    alt={`Equipamento ${equipment.code}`}
-                    className="w-24 h-24 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
+              {equipment.photo && <div className="flex justify-center">
+                  <img src={equipment.photo} alt={`Equipamento ${equipment.code}`} className="w-24 h-24 object-cover rounded-lg border" />
+                </div>}
               
               <div>
                 <p className="font-medium text-gray-900">{equipment.brand} {equipment.model}</p>
                 <p className="text-sm text-gray-600">Ano: {equipment.year}</p>
               </div>
               
-              {equipment.sector && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+              {equipment.sector && <div className="flex items-center gap-2 text-sm text-gray-600">
                   <MapPin className="w-4 h-4" />
                   {equipment.sector}
-                </div>
-              )}
+                </div>}
               
-              {equipment.lastCheck && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+              {equipment.lastCheck && <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Calendar className="w-4 h-4" />
                   Último check: {new Date(equipment.lastCheck).toLocaleDateString('pt-BR')}
-                </div>
-              )}
+                </div>}
 
-              {equipment.nextMaintenance && (
-                <div className="flex items-center gap-2 text-sm">
+              {equipment.nextMaintenance && <div className="flex items-center gap-2 text-sm">
                   <AlertCircle className="w-4 h-4 text-safety-orange" />
                   <span>Manutenção: {new Date(equipment.nextMaintenance).toLocaleDateString('pt-BR')}</span>
-                </div>
-              )}
+                </div>}
 
               <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setQrEquipment(equipment);
-                    setShowQRCode(true);
-                  }}
-                  className="flex-1"
-                >
+                <Button variant="outline" size="sm" onClick={e => {
+              e.stopPropagation();
+              setQrEquipment(equipment);
+              setShowQRCode(true);
+            }} className="flex-1">
                   <QrCode className="w-4 h-4 mr-1" />
                   QR Code
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(equipment);
-                  }}
-                  className="flex-1"
-                >
+                <Button variant="outline" size="sm" onClick={e => {
+              e.stopPropagation();
+              handleEdit(equipment);
+            }} className="flex-1">
                   Editar
                 </Button>
               </div>
             </CardContent>
-          </Card>
-        ))}
+          </Card>)}
       </div>
 
-      {filteredEquipments.length === 0 && (
-        <div className="text-center py-12">
+      {filteredEquipments.length === 0 && <div className="text-center py-12">
           <Truck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500">Nenhum equipamento encontrado</p>
-        </div>
-      )}
+        </div>}
 
       {/* Dialog do QR Code */}
       <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
@@ -555,11 +462,9 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
               QR Code Gerado com Sucesso!
             </DialogTitle>
           </DialogHeader>
-          {qrEquipment && (
-            <div className="flex justify-center">
+          {qrEquipment && <div className="flex justify-center">
               <EquipmentQRCode equipment={qrEquipment} />
-            </div>
-          )}
+            </div>}
           <div className="flex justify-end">
             <Button onClick={() => setShowQRCode(false)}>
               Fechar
@@ -567,8 +472,6 @@ const EquipmentList = ({ equipments, onAddEquipment, onUpdateEquipment }: Equipm
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default EquipmentList;
