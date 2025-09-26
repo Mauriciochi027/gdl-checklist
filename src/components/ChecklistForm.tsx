@@ -294,41 +294,95 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
 
     try {
       setIsScanning(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment', // Use back camera
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        } 
-      });
+      
+      // First, try to get devices to find the best rear camera
+      let devices = [];
+      try {
+        devices = await navigator.mediaDevices.enumerateDevices();
+      } catch (e) {
+        console.warn('Could not enumerate devices:', e);
+      }
+
+      // Find rear camera
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      const rearCamera = videoDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear') ||
+        device.label.toLowerCase().includes('environment')
+      );
+
+      // Setup video constraints with better mobile support
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          ...(rearCamera && { deviceId: { exact: rearCamera.deviceId } })
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        
+        // Wait for video to be ready
+        await new Promise((resolve) => {
+          videoRef.current!.onloadedmetadata = () => resolve(undefined);
+        });
+        
+        await videoRef.current.play();
         
         const codeReader = new BrowserQRCodeReader();
         
-        try {
-          const result = await codeReader.decodeOnceFromVideoDevice(undefined, videoRef.current);
-          
-          // Parse QR code result to extract equipment info
-          const qrData = result.getText();
-          
+        // Setup scanning with retry logic
+        let scanAttempts = 0;
+        const maxAttempts = 10;
+        
+        const attemptScan = async (): Promise<void> => {
           try {
-            // Try to parse as JSON first (structured QR code)
-            const parsedData = JSON.parse(qrData);
-            if (parsedData.equipmentId) {
-              const equipment = equipments.find(eq => eq.id === parsedData.equipmentId);
+            scanAttempts++;
+            const result = await codeReader.decodeOnceFromVideoDevice(undefined, videoRef.current!);
+            
+            // Parse QR code result to extract equipment info
+            const qrData = result.getText();
+            console.log('QR Code scanned:', qrData);
+            
+            try {
+              // Try to parse as JSON first (structured QR code)
+              const parsedData = JSON.parse(qrData);
+              if (parsedData.equipmentId) {
+                const equipment = equipments.find(eq => eq.id === parsedData.equipmentId);
+                if (equipment) {
+                  setSelectedEquipment(equipment.id);
+                  setOperatorName(parsedData.nomeOperador || operatorName);
+                  setOperatorId(parsedData.matriculaId || operatorId);
+                  setEquipmentModel(equipment.model.toLowerCase().includes('eletrica') ? 'eletrica' : 'combustao');
+                  setLocation(parsedData.local || equipment.sector);
+                  setUnit(parsedData.unidade === 'Principal' ? '01' : '02');
+                  setEquipmentSeries(parsedData.serieEquipamento || equipment.code);
+                  setEquipmentNumber(parsedData.numeroEquipamento || equipment.code);
+                  setHourMeter(parsedData.horimetro || '0');
+                  setQrScanned(true);
+                  
+                  toast({
+                    title: "QR Code escaneado",
+                    description: `Equipamento ${equipment.code} identificado automaticamente.`,
+                  });
+                } else {
+                  throw new Error('Equipment not found');
+                }
+              } else {
+                throw new Error('Invalid QR structure');
+              }
+            } catch (error) {
+              // Fallback: try to find equipment by code in raw QR data
+              const equipment = equipments.find(eq => qrData.includes(eq.code) || qrData.includes(eq.id));
+              
               if (equipment) {
                 setSelectedEquipment(equipment.id);
-                setOperatorName(parsedData.nomeOperador || operatorName);
-                setOperatorId(parsedData.matriculaId || operatorId);
-                setEquipmentModel(equipment.model.toLowerCase().includes('eletrica') ? 'eletrica' : 'combustao');
-                setLocation(parsedData.local || equipment.sector);
-                setUnit(parsedData.unidade === 'Principal' ? '01' : '02');
-                setEquipmentSeries(parsedData.serieEquipamento || equipment.code);
-                setEquipmentNumber(parsedData.numeroEquipamento || equipment.code);
-                setHourMeter(parsedData.horimetro || '0');
+                setEquipmentNumber(equipment.code);
+                setEquipmentSeries(`${equipment.brand}-${equipment.model}`);
                 setQrScanned(true);
                 
                 toast({
@@ -336,55 +390,49 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
                   description: `Equipamento ${equipment.code} identificado automaticamente.`,
                 });
               } else {
-                throw new Error('Equipment not found');
+                toast({
+                  title: "Equipamento não encontrado",
+                  description: "QR Code lido, mas equipamento não está na lista.",
+                  variant: "destructive",
+                });
               }
-            } else {
-              throw new Error('Invalid QR structure');
             }
-          } catch (error) {
-            // Fallback: try to find equipment by code in raw QR data
-            const equipment = equipments.find(eq => qrData.includes(eq.code) || qrData.includes(eq.id));
             
-            if (equipment) {
-              setSelectedEquipment(equipment.id);
-              setEquipmentNumber(equipment.code);
-              setEquipmentSeries(`${equipment.brand}-${equipment.model}`);
-              setQrScanned(true);
-              
-              toast({
-                title: "QR Code escaneado",
-                description: `Equipamento ${equipment.code} identificado automaticamente.`,
-              });
+            // Stop camera on success
+            stream.getTracks().forEach(track => track.stop());
+            setIsScanning(false);
+            
+          } catch (err) {
+            console.log(`Scan attempt ${scanAttempts} failed:`, err);
+            
+            if (scanAttempts < maxAttempts && isScanning) {
+              // Retry after a short delay
+              setTimeout(attemptScan, 1000);
             } else {
-              toast({
-                title: "Equipamento não encontrado",
-                description: "QR Code lido, mas equipamento não está na lista.",
-                variant: "destructive",
-              });
+              throw err;
             }
           }
-          
-          // Stop camera
-          stream.getTracks().forEach(track => track.stop());
-          setIsScanning(false);
-          
-        } catch (err) {
-          console.error('Error scanning QR code:', err);
-          toast({
-            title: "Erro no escaneamento",
-            description: "Não foi possível ler o QR Code. Tente novamente.",
-            variant: "destructive",
-          });
-        }
+        };
+
+        // Start scanning
+        await attemptScan();
       }
     } catch (err) {
-      console.error('Error accessing camera:', err);
+      console.error('Error in QR scanning:', err);
+      
+      // Stop any running streams
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      setIsScanning(false);
+      
       toast({
-        title: "Erro de câmera",
-        description: "Não foi possível acessar a câmera.",
+        title: "Erro no escaneamento",
+        description: "Não foi possível escanear o QR Code. Verifique se a câmera está funcionando e tente novamente.",
         variant: "destructive",
       });
-      setIsScanning(false);
     }
   };
 
@@ -470,11 +518,23 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
             
             {isScanning && (
               <div className="space-y-4">
-                <video 
-                  ref={videoRef}
-                  className="w-full max-w-md mx-auto rounded-lg"
-                  style={{ transform: 'scaleX(-1)' }} // Mirror for better UX
-                />
+                <div className="relative w-full max-w-md mx-auto">
+                  <video 
+                    ref={videoRef}
+                    className="w-full rounded-lg"
+                    playsInline
+                    muted
+                  />
+                  <div className="absolute inset-0 border-2 border-primary rounded-lg pointer-events-none">
+                    <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-primary"></div>
+                    <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-primary"></div>
+                    <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-primary"></div>
+                    <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-primary"></div>
+                  </div>
+                </div>
+                <p className="text-center text-sm text-muted-foreground">
+                  Posicione o QR code dentro da área de escaneamento
+                </p>
                 <Button 
                   onClick={stopQRScanning}
                   variant="destructive"
