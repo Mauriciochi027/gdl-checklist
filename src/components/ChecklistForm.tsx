@@ -28,7 +28,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   const [operatorId, setOperatorId] = useState<string>("");
   const [equipmentModel, setEquipmentModel] = useState<"eletrica" | "combustao" | "">("");
   const [location, setLocation] = useState<string>("");
-  const [unit, setUnit] = useState<"01" | "02" | "">("");
+  const [unit, setUnit] = useState<"01" | "02" | "03" | "">("");
   const [equipmentSeries, setEquipmentSeries] = useState<string>("");
   const [equipmentNumber, setEquipmentNumber] = useState<string>("");
   const [hourMeter, setHourMeter] = useState<string>("");
@@ -359,7 +359,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
                   setOperatorId(parsedData.matriculaId || operatorId);
                   setEquipmentModel(equipment.model.toLowerCase().includes('eletrica') ? 'eletrica' : 'combustao');
                   setLocation(parsedData.local || equipment.sector);
-                  setUnit(parsedData.unidade === 'Principal' ? '01' : '02');
+                  setUnit(parsedData.unidade === 'Principal' ? '01' : parsedData.unidade === 'Secundaria' ? '02' : '03');
                   setEquipmentSeries(parsedData.serieEquipamento || equipment.code);
                   setEquipmentNumber(parsedData.numeroEquipamento || equipment.code);
                   setHourMeter(parsedData.horimetro || '0');
@@ -663,6 +663,15 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
                       onChange={(e) => setUnit(e.target.value as "02")}
                     />
                     <span>02</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="03"
+                      checked={unit === "03"}
+                      onChange={(e) => setUnit(e.target.value as "03")}
+                    />
+                    <span>03</span>
                   </label>
                 </div>
               </div>
