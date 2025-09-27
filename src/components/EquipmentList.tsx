@@ -247,19 +247,13 @@ const EquipmentList = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="lastCheck">Último Checklist</Label>
+                      <Label htmlFor="lastCheck">Último Checklist realizado</Label>
                       <Input id="lastCheck" type="date" value={formData.lastCheck} onChange={e => setFormData({
                     ...formData,
                     lastCheck: e.target.value
                   })} />
                     </div>
-                    <div>
-                      <Label htmlFor="nextMaintenance">Próxima Manutenção</Label>
-                      <Input id="nextMaintenance" type="date" value={formData.nextMaintenance} onChange={e => setFormData({
-                    ...formData,
-                    nextMaintenance: e.target.value
-                  })} />
-                    </div>
+                    
                   </div>
 
                   {/* Seção de Informações para QR Code */}
