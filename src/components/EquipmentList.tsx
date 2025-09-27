@@ -187,16 +187,16 @@ const EquipmentList = ({
                     <div>
                       <Label htmlFor="code">Código/Número *</Label>
                       <Input id="code" value={formData.code} onChange={e => setFormData({
-                      ...formData,
-                      code: e.target.value
-                    })} placeholder="EMP-001" required />
+                    ...formData,
+                    code: e.target.value
+                  })} placeholder="EMP-001" required />
                     </div>
                     <div>
                       <Label htmlFor="status">Status</Label>
                       <Select value={formData.status} onValueChange={(value: Equipment['status']) => setFormData({
-                      ...formData,
-                      status: value
-                    })}>
+                    ...formData,
+                    status: value
+                  })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -215,16 +215,16 @@ const EquipmentList = ({
                     <div>
                       <Label htmlFor="brand">Marca *</Label>
                       <Input id="brand" value={formData.brand} onChange={e => setFormData({
-                      ...formData,
-                      brand: e.target.value
-                    })} placeholder="Toyota, Hyster, etc." required />
+                    ...formData,
+                    brand: e.target.value
+                  })} placeholder="Toyota, Hyster, etc." required />
                     </div>
                     <div>
                       <Label htmlFor="model">Modelo *</Label>
                       <Input id="model" value={formData.model} onChange={e => setFormData({
-                      ...formData,
-                      model: e.target.value
-                    })} placeholder="7FBR15" required />
+                    ...formData,
+                    model: e.target.value
+                  })} placeholder="7FBR15" required />
                     </div>
                   </div>
 
@@ -232,16 +232,16 @@ const EquipmentList = ({
                     <div>
                       <Label htmlFor="year">Ano</Label>
                       <Input id="year" type="number" value={formData.year} onChange={e => setFormData({
-                      ...formData,
-                      year: parseInt(e.target.value)
-                    })} min="1990" max={new Date().getFullYear() + 1} />
+                    ...formData,
+                    year: parseInt(e.target.value)
+                  })} min="1990" max={new Date().getFullYear() + 1} />
                     </div>
                     <div>
                       <Label htmlFor="sector">Setor</Label>
                       <Input id="sector" value={formData.sector} onChange={e => setFormData({
-                      ...formData,
-                      sector: e.target.value
-                    })} placeholder="Armazém, Expedição, etc." />
+                    ...formData,
+                    sector: e.target.value
+                  })} placeholder="Armazém, Expedição, etc." />
                     </div>
                   </div>
 
@@ -249,16 +249,16 @@ const EquipmentList = ({
                     <div>
                       <Label htmlFor="lastCheck">Último Checklist</Label>
                       <Input id="lastCheck" type="date" value={formData.lastCheck} onChange={e => setFormData({
-                      ...formData,
-                      lastCheck: e.target.value
-                    })} />
+                    ...formData,
+                    lastCheck: e.target.value
+                  })} />
                     </div>
                     <div>
                       <Label htmlFor="nextMaintenance">Próxima Manutenção</Label>
                       <Input id="nextMaintenance" type="date" value={formData.nextMaintenance} onChange={e => setFormData({
-                      ...formData,
-                      nextMaintenance: e.target.value
-                    })} />
+                    ...formData,
+                    nextMaintenance: e.target.value
+                  })} />
                     </div>
                   </div>
 
@@ -275,16 +275,16 @@ const EquipmentList = ({
                       <div>
                         <Label htmlFor="location">Local *</Label>
                         <Input id="location" value={formData.location} onChange={e => setFormData({
-                        ...formData,
-                        location: e.target.value
-                      })} placeholder="Digite o local" required />
+                      ...formData,
+                      location: e.target.value
+                    })} placeholder="Digite o local" required />
                       </div>
                       <div>
-                        <Label htmlFor="unit">Unidade *</Label>
+                        <Label htmlFor="unit">Unidade de Negócio *</Label>
                         <Select value={formData.unit} onValueChange={value => setFormData({
-                        ...formData,
-                        unit: value
-                      })}>
+                      ...formData,
+                      unit: value
+                    })}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione a unidade" />
                           </SelectTrigger>
@@ -302,23 +302,23 @@ const EquipmentList = ({
                       <div>
                         <Label htmlFor="equipmentSeries">Série do Equipamento</Label>
                         <Input id="equipmentSeries" value={formData.equipmentSeries} onChange={e => setFormData({
-                        ...formData,
-                        equipmentSeries: e.target.value
-                      })} placeholder="Série do equipamento" />
+                      ...formData,
+                      equipmentSeries: e.target.value
+                    })} placeholder="Série do equipamento" />
                       </div>
                       <div>
                         <Label htmlFor="equipmentNumber">Número do Equipamento</Label>
                         <Input id="equipmentNumber" value={formData.equipmentNumber} onChange={e => setFormData({
-                        ...formData,
-                        equipmentNumber: e.target.value
-                      })} placeholder="Número do equipamento" />
+                      ...formData,
+                      equipmentNumber: e.target.value
+                    })} placeholder="Número do equipamento" />
                       </div>
                       <div>
                         <Label htmlFor="hourMeter">Horímetro</Label>
                         <Input id="hourMeter" value={formData.hourMeter} onChange={e => setFormData({
-                        ...formData,
-                        hourMeter: e.target.value
-                      })} placeholder="Digite o horímetro" />
+                      ...formData,
+                      hourMeter: e.target.value
+                    })} placeholder="Digite o horímetro" />
                       </div>
                     </div>
                   </div>
@@ -327,25 +327,25 @@ const EquipmentList = ({
                     <Label htmlFor="photo">Foto do Equipamento</Label>
                     <div className="space-y-3">
                       <Input id="photo" type="file" accept="image/*" onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = e => {
-                          const result = e.target?.result as string;
-                          setFormData({
-                            ...formData,
-                            photo: result
-                          });
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }} className="cursor-pointer" />
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = e => {
+                        const result = e.target?.result as string;
+                        setFormData({
+                          ...formData,
+                          photo: result
+                        });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }} className="cursor-pointer" />
                       {formData.photo && <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
                           <img src={formData.photo} alt="Preview do equipamento" className="w-full h-full object-cover" />
                           <Button type="button" variant="destructive" size="sm" className="absolute top-1 right-1 h-6 w-6 p-0" onClick={() => setFormData({
-                        ...formData,
-                        photo: ""
-                      })}>
+                      ...formData,
+                      photo: ""
+                    })}>
                             <X className="w-3 h-3" />
                           </Button>
                         </div>}
@@ -355,9 +355,9 @@ const EquipmentList = ({
                   <div>
                     <Label htmlFor="observations">Observações</Label>
                     <Textarea id="observations" value={formData.observations} onChange={e => setFormData({
-                    ...formData,
-                    observations: e.target.value
-                  })} placeholder="Informações adicionais sobre o equipamento..." rows={3} />
+                  ...formData,
+                  observations: e.target.value
+                })} placeholder="Informações adicionais sobre o equipamento..." rows={3} />
                   </div>
 
                   <div className="flex justify-end gap-3">
