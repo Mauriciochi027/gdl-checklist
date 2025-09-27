@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Search, Truck, Calendar, MapPin, AlertCircle, CheckCircle, Upload, X, QrCode } from "lucide-react";
 import EquipmentQRCode from "./EquipmentQRCode";
 import { Equipment } from "@/types/equipment";
@@ -170,7 +171,7 @@ const EquipmentList = ({
             </Button>
           </DialogTrigger>
           
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[80vh]">
               <DialogHeader>
                 <DialogTitle>
                   {editingEquipment ? 'Editar Equipamento' : 'Novo Equipamento'}
@@ -180,194 +181,196 @@ const EquipmentList = ({
                 </DialogDescription>
               </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="code">Código/Número *</Label>
-                  <Input id="code" value={formData.code} onChange={e => setFormData({
-                  ...formData,
-                  code: e.target.value
-                })} placeholder="EMP-001" required />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value: Equipment['status']) => setFormData({
-                  ...formData,
-                  status: value
-                })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="operando">Em Operação</SelectItem>
-                      <SelectItem value="disponivel">Disponível</SelectItem>
-                      <SelectItem value="maintenance">Manutenção</SelectItem>
-                      <SelectItem value="inactive">Inativo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="brand">Marca *</Label>
-                  <Input id="brand" value={formData.brand} onChange={e => setFormData({
-                  ...formData,
-                  brand: e.target.value
-                })} placeholder="Toyota, Hyster, etc." required />
-                </div>
-                <div>
-                  <Label htmlFor="model">Modelo *</Label>
-                  <Input id="model" value={formData.model} onChange={e => setFormData({
-                  ...formData,
-                  model: e.target.value
-                })} placeholder="7FBR15" required />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="year">Ano</Label>
-                  <Input id="year" type="number" value={formData.year} onChange={e => setFormData({
-                  ...formData,
-                  year: parseInt(e.target.value)
-                })} min="1990" max={new Date().getFullYear() + 1} />
-                </div>
-                <div>
-                  <Label htmlFor="sector">Setor</Label>
-                  <Input id="sector" value={formData.sector} onChange={e => setFormData({
-                  ...formData,
-                  sector: e.target.value
-                })} placeholder="Armazém, Expedição, etc." />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="lastCheck">Último Checklist</Label>
-                  <Input id="lastCheck" type="date" value={formData.lastCheck} onChange={e => setFormData({
-                  ...formData,
-                  lastCheck: e.target.value
-                })} />
-                </div>
-                <div>
-                  <Label htmlFor="nextMaintenance">Próxima Manutenção</Label>
-                  <Input id="nextMaintenance" type="date" value={formData.nextMaintenance} onChange={e => setFormData({
-                  ...formData,
-                  nextMaintenance: e.target.value
-                })} />
-                </div>
-              </div>
-
-              {/* Seção de Informações para QR Code */}
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <QrCode className="w-5 h-5" />
-                  Informações Básicas (QR Code)
-                </h3>
-                
-                
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="location">Local *</Label>
-                    <Input id="location" value={formData.location} onChange={e => setFormData({
-                    ...formData,
-                    location: e.target.value
-                  })} placeholder="Digite o local" required />
+              <ScrollArea className="h-full max-h-[60vh] pr-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="code">Código/Número *</Label>
+                      <Input id="code" value={formData.code} onChange={e => setFormData({
+                      ...formData,
+                      code: e.target.value
+                    })} placeholder="EMP-001" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={formData.status} onValueChange={(value: Equipment['status']) => setFormData({
+                      ...formData,
+                      status: value
+                    })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Ativo</SelectItem>
+                          <SelectItem value="operando">Em Operação</SelectItem>
+                          <SelectItem value="disponivel">Disponível</SelectItem>
+                          <SelectItem value="maintenance">Manutenção</SelectItem>
+                          <SelectItem value="inactive">Inativo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="unit">Unidade *</Label>
-                    <Select value={formData.unit} onValueChange={value => setFormData({
-                    ...formData,
-                    unit: value
-                  })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a unidade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Principal">Principal</SelectItem>
-                        <SelectItem value="Filial 1">Filial 1</SelectItem>
-                        <SelectItem value="Filial 2">Filial 2</SelectItem>
-                        <SelectItem value="Depósito">Depósito</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="equipmentSeries">Série do Equipamento</Label>
-                    <Input id="equipmentSeries" value={formData.equipmentSeries} onChange={e => setFormData({
-                    ...formData,
-                    equipmentSeries: e.target.value
-                  })} placeholder="Série do equipamento" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="brand">Marca *</Label>
+                      <Input id="brand" value={formData.brand} onChange={e => setFormData({
+                      ...formData,
+                      brand: e.target.value
+                    })} placeholder="Toyota, Hyster, etc." required />
+                    </div>
+                    <div>
+                      <Label htmlFor="model">Modelo *</Label>
+                      <Input id="model" value={formData.model} onChange={e => setFormData({
+                      ...formData,
+                      model: e.target.value
+                    })} placeholder="7FBR15" required />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="equipmentNumber">Número do Equipamento</Label>
-                    <Input id="equipmentNumber" value={formData.equipmentNumber} onChange={e => setFormData({
-                    ...formData,
-                    equipmentNumber: e.target.value
-                  })} placeholder="Número do equipamento" />
-                  </div>
-                  <div>
-                    <Label htmlFor="hourMeter">Horímetro</Label>
-                    <Input id="hourMeter" value={formData.hourMeter} onChange={e => setFormData({
-                    ...formData,
-                    hourMeter: e.target.value
-                  })} placeholder="Digite o horímetro" />
-                  </div>
-                </div>
-              </div>
 
-              <div>
-                <Label htmlFor="photo">Foto do Equipamento</Label>
-                <div className="space-y-3">
-                  <Input id="photo" type="file" accept="image/*" onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = e => {
-                      const result = e.target?.result as string;
-                      setFormData({
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="year">Ano</Label>
+                      <Input id="year" type="number" value={formData.year} onChange={e => setFormData({
+                      ...formData,
+                      year: parseInt(e.target.value)
+                    })} min="1990" max={new Date().getFullYear() + 1} />
+                    </div>
+                    <div>
+                      <Label htmlFor="sector">Setor</Label>
+                      <Input id="sector" value={formData.sector} onChange={e => setFormData({
+                      ...formData,
+                      sector: e.target.value
+                    })} placeholder="Armazém, Expedição, etc." />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="lastCheck">Último Checklist</Label>
+                      <Input id="lastCheck" type="date" value={formData.lastCheck} onChange={e => setFormData({
+                      ...formData,
+                      lastCheck: e.target.value
+                    })} />
+                    </div>
+                    <div>
+                      <Label htmlFor="nextMaintenance">Próxima Manutenção</Label>
+                      <Input id="nextMaintenance" type="date" value={formData.nextMaintenance} onChange={e => setFormData({
+                      ...formData,
+                      nextMaintenance: e.target.value
+                    })} />
+                    </div>
+                  </div>
+
+                  {/* Seção de Informações para QR Code */}
+                  <div className="border-t pt-4">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <QrCode className="w-5 h-5" />
+                      Informações Básicas (QR Code)
+                    </h3>
+                    
+                    
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="location">Local *</Label>
+                        <Input id="location" value={formData.location} onChange={e => setFormData({
                         ...formData,
-                        photo: result
-                      });
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }} className="cursor-pointer" />
-                  {formData.photo && <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
-                      <img src={formData.photo} alt="Preview do equipamento" className="w-full h-full object-cover" />
-                      <Button type="button" variant="destructive" size="sm" className="absolute top-1 right-1 h-6 w-6 p-0" onClick={() => setFormData({
+                        location: e.target.value
+                      })} placeholder="Digite o local" required />
+                      </div>
+                      <div>
+                        <Label htmlFor="unit">Unidade *</Label>
+                        <Select value={formData.unit} onValueChange={value => setFormData({
+                        ...formData,
+                        unit: value
+                      })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a unidade" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Principal">Principal</SelectItem>
+                            <SelectItem value="Filial 1">Filial 1</SelectItem>
+                            <SelectItem value="Filial 2">Filial 2</SelectItem>
+                            <SelectItem value="Depósito">Depósito</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="equipmentSeries">Série do Equipamento</Label>
+                        <Input id="equipmentSeries" value={formData.equipmentSeries} onChange={e => setFormData({
+                        ...formData,
+                        equipmentSeries: e.target.value
+                      })} placeholder="Série do equipamento" />
+                      </div>
+                      <div>
+                        <Label htmlFor="equipmentNumber">Número do Equipamento</Label>
+                        <Input id="equipmentNumber" value={formData.equipmentNumber} onChange={e => setFormData({
+                        ...formData,
+                        equipmentNumber: e.target.value
+                      })} placeholder="Número do equipamento" />
+                      </div>
+                      <div>
+                        <Label htmlFor="hourMeter">Horímetro</Label>
+                        <Input id="hourMeter" value={formData.hourMeter} onChange={e => setFormData({
+                        ...formData,
+                        hourMeter: e.target.value
+                      })} placeholder="Digite o horímetro" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="photo">Foto do Equipamento</Label>
+                    <div className="space-y-3">
+                      <Input id="photo" type="file" accept="image/*" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = e => {
+                          const result = e.target?.result as string;
+                          setFormData({
+                            ...formData,
+                            photo: result
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }} className="cursor-pointer" />
+                      {formData.photo && <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                          <img src={formData.photo} alt="Preview do equipamento" className="w-full h-full object-cover" />
+                          <Button type="button" variant="destructive" size="sm" className="absolute top-1 right-1 h-6 w-6 p-0" onClick={() => setFormData({
+                        ...formData,
+                        photo: ""
+                      })}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="observations">Observações</Label>
+                    <Textarea id="observations" value={formData.observations} onChange={e => setFormData({
                     ...formData,
-                    photo: ""
-                  })}>
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>}
-                </div>
-              </div>
+                    observations: e.target.value
+                  })} placeholder="Informações adicionais sobre o equipamento..." rows={3} />
+                  </div>
 
-              <div>
-                <Label htmlFor="observations">Observações</Label>
-                <Textarea id="observations" value={formData.observations} onChange={e => setFormData({
-                ...formData,
-                observations: e.target.value
-              })} placeholder="Informações adicionais sobre o equipamento..." rows={3} />
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" className="bg-industrial-blue hover:bg-industrial-blue-dark">
-                  {editingEquipment ? 'Atualizar' : 'Cadastrar'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
+                  <div className="flex justify-end gap-3">
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" className="bg-industrial-blue hover:bg-industrial-blue-dark">
+                      {editingEquipment ? 'Atualizar' : 'Cadastrar'}
+                    </Button>
+                  </div>
+                </form>
+              </ScrollArea>
+            </DialogContent>
         </Dialog>
       </div>
 
