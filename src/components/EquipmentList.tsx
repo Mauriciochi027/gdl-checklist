@@ -346,13 +346,7 @@ const EquipmentList = ({
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="observations">Observações</Label>
-                    <Textarea id="observations" value={formData.observations} onChange={e => setFormData({
-                  ...formData,
-                  observations: e.target.value
-                })} placeholder="Informações adicionais sobre o equipamento..." rows={3} />
-                  </div>
+                  
 
                   <div className="flex justify-end gap-3">
                     <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
