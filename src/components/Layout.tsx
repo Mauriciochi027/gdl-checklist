@@ -23,6 +23,35 @@ const Layout = ({
       label: 'Painel',
       icon: BarChart3
     }];
+
+    if (user?.profile === 'admin') {
+      return [...baseItems, {
+        id: 'users',
+        label: 'Usuários',
+        icon: Users
+      }, {
+        id: 'status',
+        label: 'Status',
+        icon: Activity
+      }, {
+        id: 'equipments',
+        label: 'Equipamentos',
+        icon: Truck
+      }, {
+        id: 'checklist',
+        label: 'Checklist',
+        icon: ClipboardCheck
+      }, {
+        id: 'approvals',
+        label: 'Aprovações',
+        icon: ClipboardCheck
+      }, {
+        id: 'history',
+        label: 'Histórico',
+        icon: Settings
+      }];
+    }
+    
     if (user?.profile === 'operador') {
       return [...baseItems, {
         id: 'status',
@@ -35,7 +64,7 @@ const Layout = ({
       }, {
         id: 'history',
         label: 'Histórico',
-        icon: Users
+        icon: Settings
       }];
     }
 
@@ -59,7 +88,7 @@ const Layout = ({
     }, {
       id: 'history',
       label: 'Histórico',
-      icon: Users
+      icon: Settings
     }];
   };
   const menuItems = getMenuItems();
@@ -72,6 +101,10 @@ const Layout = ({
       mecanico: {
         label: 'Mecânico',
         color: 'bg-safety-orange'
+      },
+      admin: {
+        label: 'Admin',
+        color: 'bg-red-600'
       }
     };
     return badges[profile as keyof typeof badges] || {

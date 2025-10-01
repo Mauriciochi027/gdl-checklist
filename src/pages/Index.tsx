@@ -8,6 +8,7 @@ import ChecklistForm from '@/components/ChecklistForm';
 import ChecklistHistory from '@/components/ChecklistHistory';
 import ApprovalsPage from '@/components/ApprovalsPage';
 import StatusPanel from '@/components/StatusPanel';
+import UserManagement from '@/components/UserManagement';
 import { OperationControl } from '@/components/OperationControl';
 import { getChecklistItemById } from '@/lib/checklistItems';
 import { Equipment, ChecklistRecord } from '@/types/equipment';
@@ -214,6 +215,8 @@ const Index = () => {
           onApproveRecord={(recordId: string, comment: string) => handleApproveRecord(recordId, user?.name || 'Mecânico', comment)}
           onRejectRecord={(recordId: string, reason: string) => handleRejectRecord(recordId, user?.name || 'Mecânico', reason)}
         />;
+      case 'users':
+        return <UserManagement currentUser={user} />;
       case 'status':
         return <StatusPanel
           equipments={equipments}

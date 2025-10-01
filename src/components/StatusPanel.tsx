@@ -34,7 +34,7 @@ interface ChecklistRecord {
 interface StatusPanelProps {
   equipments: Equipment[];
   checklistRecords: ChecklistRecord[];
-  userProfile?: 'operador' | 'mecanico';
+  userProfile?: 'operador' | 'mecanico' | 'admin';
   onUpdateEquipmentStatus?: (equipmentId: string, status: string, reason?: string) => void;
 }
 

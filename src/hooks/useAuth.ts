@@ -4,7 +4,7 @@ export interface User {
   id: string;
   username: string;
   name: string;
-  profile: 'operador' | 'mecanico';
+  profile: 'operador' | 'mecanico' | 'admin';
   matricula?: string;
 }
 
@@ -15,47 +15,60 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
-// Usuários simulados para demonstração
-const mockUsers: Record<string, { password: string; user: User }> = {
-  'operador1': {
-    password: '123456',
-    user: {
-      id: '1',
-      username: 'operador1',
-      name: 'João Silva',
-      profile: 'operador',
-      matricula: 'OP001'
-    }
-  },
-  'operador2': {
-    password: '123456',
-    user: {
-      id: '2',
-      username: 'operador2',
-      name: 'Maria Santos',
-      profile: 'operador',
-      matricula: 'OP002'
-    }
-  },
-  'mecanico1': {
-    password: '123456',
-    user: {
-      id: '3',
-      username: 'mecanico1',
-      name: 'Carlos Oliveira',
-      profile: 'mecanico',
-      matricula: 'MEC001'
-    }
-  },
-  'mecanico2': {
-    password: '123456',
-    user: {
-      id: '4',
-      username: 'mecanico2',
-      name: 'Ana Costa',
-      profile: 'mecanico',
-      matricula: 'MEC002'
-    }
+// Função para inicializar usuários padrão
+const initializeDefaultUsers = () => {
+  const storedUsers = localStorage.getItem('checklist_users');
+  const storedPasswords = localStorage.getItem('checklist_passwords');
+  
+  if (!storedUsers || !storedPasswords) {
+    const defaultUsers: User[] = [
+      {
+        id: '1',
+        username: 'admin',
+        name: 'Administrador',
+        profile: 'admin',
+        matricula: 'ADM001'
+      },
+      {
+        id: '2',
+        username: 'operador1',
+        name: 'João Silva',
+        profile: 'operador',
+        matricula: 'OP001'
+      },
+      {
+        id: '3',
+        username: 'operador2',
+        name: 'Maria Santos',
+        profile: 'operador',
+        matricula: 'OP002'
+      },
+      {
+        id: '4',
+        username: 'mecanico1',
+        name: 'Carlos Oliveira',
+        profile: 'mecanico',
+        matricula: 'MEC001'
+      },
+      {
+        id: '5',
+        username: 'mecanico2',
+        name: 'Ana Costa',
+        profile: 'mecanico',
+        matricula: 'MEC002'
+      }
+    ];
+
+    const defaultPasswords: Record<string, string> = {
+      'admin': 'admin123',
+      'operador1': '123456',
+      'operador2': '123456',
+      'mecanico1': '123456',
+      'mecanico2': '123456'
+    };
+
+    localStorage.setItem('checklist_users', JSON.stringify(defaultUsers));
+    localStorage.setItem('checklist_passwords', JSON.stringify(defaultPasswords));
   }
 };
 
@@ -89,13 +102,21 @@ export const useAuthState = () => {
   const login = async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
+    // Inicializar usuários padrão se necessário
+    initializeDefaultUsers();
+    
     // Simular delay de autenticação
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const userData = mockUsers[username];
-    if (userData && userData.password === password) {
-      setUser(userData.user);
-      localStorage.setItem('checklist_user', JSON.stringify(userData.user));
+    // Buscar usuários e senhas do localStorage
+    const storedUsers = JSON.parse(localStorage.getItem('checklist_users') || '[]');
+    const storedPasswords = JSON.parse(localStorage.getItem('checklist_passwords') || '{}');
+    
+    const user = storedUsers.find((u: User) => u.username === username);
+    
+    if (user && storedPasswords[username] === password) {
+      setUser(user);
+      localStorage.setItem('checklist_user', JSON.stringify(user));
       setIsLoading(false);
       return true;
     }
