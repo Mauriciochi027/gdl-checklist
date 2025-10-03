@@ -297,6 +297,8 @@ const EquipmentList = ({
                             <SelectItem value="Filial 1">Filial 1</SelectItem>
                             <SelectItem value="Filial 2">Filial 2</SelectItem>
                             <SelectItem value="Depósito">Depósito</SelectItem>
+                            <SelectItem value="GDL LOGISTICA INTEGRADA">GDL LOGISTICA INTEGRADA</SelectItem>
+                            <SelectItem value="GDL TRANSPORTE E ARMAZÉNS GERAIS">GDL TRANSPORTE E ARMAZÉNS GERAIS</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
