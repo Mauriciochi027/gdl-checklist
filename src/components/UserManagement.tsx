@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,9 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/hooks/useAuth';
+
 interface UserManagementProps {
   currentUser: User | null;
 }
+
 const UserManagement = ({
   currentUser
 }: UserManagementProps) => {
@@ -26,6 +28,7 @@ const UserManagement = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -50,6 +53,7 @@ const UserManagement = ({
 
   // Filtrar usuários pela busca
   const filteredUsers = users.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()) || user.username.toLowerCase().includes(searchTerm.toLowerCase()) || user.matricula?.toLowerCase().includes(searchTerm.toLowerCase()));
+
   const handleAddUser = () => {
     // Validações
     if (!formData.username || !formData.password || !formData.name) {
@@ -90,6 +94,7 @@ const UserManagement = ({
     setIsAddDialogOpen(false);
     resetForm();
   };
+
   const handleEditUser = () => {
     if (!selectedUser) return;
 
@@ -133,6 +138,7 @@ const UserManagement = ({
     setSelectedUser(null);
     resetForm();
   };
+
   const handleDeleteUser = () => {
     if (!selectedUser) return;
 
@@ -159,6 +165,7 @@ const UserManagement = ({
     setIsDeleteDialogOpen(false);
     setSelectedUser(null);
   };
+
   const openEditDialog = (user: User) => {
     setSelectedUser(user);
     setFormData({
@@ -170,10 +177,12 @@ const UserManagement = ({
     });
     setIsEditDialogOpen(true);
   };
+
   const openDeleteDialog = (user: User) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   };
+
   const resetForm = () => {
     setFormData({
       username: '',
@@ -182,7 +191,9 @@ const UserManagement = ({
       profile: 'operador',
       matricula: ''
     });
+    setShowPassword(false);
   };
+
   const getProfileBadge = (profile: string) => {
     const badges = {
       operador: {
@@ -203,6 +214,7 @@ const UserManagement = ({
       variant: 'default' as const
     };
   };
+
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -346,11 +358,29 @@ const UserManagement = ({
               <Input id="edit-username" value={formData.username} disabled className="bg-muted" />
             </div>
             <div>
-              <Label htmlFor="edit-password">Nova Senha </Label>
-              <Input id="edit-password" type="password" value={formData.password} onChange={e => setFormData({
-              ...formData,
-              password: e.target.value
-            })} placeholder="••••••" />
+              <Label htmlFor="edit-password">Nova Senha</Label>
+              <div className="relative">
+                <Input 
+                  id="edit-password" 
+                  type={showPassword ? "text" : "password"} 
+                  value={formData.password} 
+                  onChange={e => setFormData({
+                    ...formData,
+                    password: e.target.value
+                  })} 
+                  placeholder="••••••"
+                  className="pr-10"
+                />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                </Button>
+              </div>
             </div>
             <div>
               <Label htmlFor="edit-name">Nome Completo *</Label>
@@ -412,4 +442,5 @@ const UserManagement = ({
       </AlertDialog>
     </div>;
 };
+
 export default UserManagement;
