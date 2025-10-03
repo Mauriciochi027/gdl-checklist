@@ -61,7 +61,7 @@ const EquipmentList = ({
     operatorName: "Carlos Oliveira",
     operatorId: "MEC001",
     location: "",
-    unit: "Principal",
+    unit: "GDL LOGISTICA INTEGRADA",
     equipmentSeries: "",
     equipmentNumber: "",
     hourMeter: "0"
@@ -113,7 +113,7 @@ const EquipmentList = ({
       operatorName: "Carlos Oliveira",
       operatorId: "MEC001",
       location: "",
-      unit: "Principal",
+      unit: "GDL LOGISTICA INTEGRADA",
       equipmentSeries: "",
       equipmentNumber: "",
       hourMeter: "0"
@@ -293,10 +293,6 @@ const EquipmentList = ({
                             <SelectValue placeholder="Selecione a unidade" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Principal">Principal</SelectItem>
-                            <SelectItem value="Filial 1">Filial 1</SelectItem>
-                            <SelectItem value="Filial 2">Filial 2</SelectItem>
-                            <SelectItem value="Depósito">Depósito</SelectItem>
                             <SelectItem value="GDL LOGISTICA INTEGRADA">GDL LOGISTICA INTEGRADA</SelectItem>
                             <SelectItem value="GDL TRANSPORTE E ARMAZÉNS GERAIS">GDL TRANSPORTE E ARMAZÉNS GERAIS</SelectItem>
                           </SelectContent>
