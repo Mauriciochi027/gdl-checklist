@@ -33,6 +33,7 @@ const EquipmentList = ({
     brand: string;
     year: number;
     sector: string;
+    costCenter: string;
     status: Equipment['status'];
     lastCheck: string;
     nextMaintenance: string;
@@ -51,6 +52,7 @@ const EquipmentList = ({
     brand: "",
     year: new Date().getFullYear(),
     sector: "",
+    costCenter: "",
     status: "active",
     lastCheck: "",
     nextMaintenance: "",
@@ -102,6 +104,7 @@ const EquipmentList = ({
       brand: "",
       year: new Date().getFullYear(),
       sector: "",
+      costCenter: "",
       status: "active",
       lastCheck: "",
       nextMaintenance: "",
@@ -125,6 +128,7 @@ const EquipmentList = ({
       brand: equipment.brand,
       year: equipment.year,
       sector: equipment.sector,
+      costCenter: equipment.costCenter || "",
       status: equipment.status,
       lastCheck: equipment.lastCheck,
       nextMaintenance: equipment.nextMaintenance,
@@ -247,13 +251,19 @@ const EquipmentList = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
+                      <Label htmlFor="costCenter">Centro de Custo</Label>
+                      <Input id="costCenter" value={formData.costCenter} onChange={e => setFormData({
+                    ...formData,
+                    costCenter: e.target.value
+                  })} placeholder="Digite o centro de custo" />
+                    </div>
+                    <div>
                       <Label htmlFor="lastCheck">Último Checklist realizado</Label>
                       <Input id="lastCheck" type="date" value={formData.lastCheck} onChange={e => setFormData({
                     ...formData,
                     lastCheck: e.target.value
                   })} />
                     </div>
-                    
                   </div>
 
                   {/* Seção de Informações para QR Code */}
