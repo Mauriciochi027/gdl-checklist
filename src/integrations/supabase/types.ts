@@ -14,7 +14,369 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      checklist_answers: {
+        Row: {
+          checklist_record_id: string
+          created_at: string | null
+          id: string
+          item_id: string
+          observation: string | null
+          value: string
+        }
+        Insert: {
+          checklist_record_id: string
+          created_at?: string | null
+          id?: string
+          item_id: string
+          observation?: string | null
+          value: string
+        }
+        Update: {
+          checklist_record_id?: string
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          observation?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_answers_checklist_record_id_fkey"
+            columns: ["checklist_record_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_approvals: {
+        Row: {
+          checklist_record_id: string
+          comment: string | null
+          created_at: string | null
+          id: string
+          mechanic_name: string
+          timestamp: string | null
+        }
+        Insert: {
+          checklist_record_id: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          mechanic_name: string
+          timestamp?: string | null
+        }
+        Update: {
+          checklist_record_id?: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          mechanic_name?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_approvals_checklist_record_id_fkey"
+            columns: ["checklist_record_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_photos: {
+        Row: {
+          checklist_record_id: string
+          created_at: string | null
+          id: string
+          item_id: string
+          photo_url: string
+        }
+        Insert: {
+          checklist_record_id: string
+          created_at?: string | null
+          id?: string
+          item_id: string
+          photo_url: string
+        }
+        Update: {
+          checklist_record_id?: string
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          photo_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_photos_checklist_record_id_fkey"
+            columns: ["checklist_record_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_records: {
+        Row: {
+          conforme_items: number
+          created_at: string | null
+          equipment_code: string
+          equipment_id: string
+          equipment_model: string
+          equipment_model_type: string | null
+          equipment_number: string | null
+          equipment_series: string | null
+          has_critical_issues: boolean | null
+          hour_meter: number | null
+          id: string
+          location: string | null
+          nao_conforme_items: number
+          operator_id: string
+          operator_name: string
+          signature: string
+          status: string
+          timestamp: string | null
+          total_items: number
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          conforme_items: number
+          created_at?: string | null
+          equipment_code: string
+          equipment_id: string
+          equipment_model: string
+          equipment_model_type?: string | null
+          equipment_number?: string | null
+          equipment_series?: string | null
+          has_critical_issues?: boolean | null
+          hour_meter?: number | null
+          id?: string
+          location?: string | null
+          nao_conforme_items: number
+          operator_id: string
+          operator_name: string
+          signature: string
+          status: string
+          timestamp?: string | null
+          total_items: number
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          conforme_items?: number
+          created_at?: string | null
+          equipment_code?: string
+          equipment_id?: string
+          equipment_model?: string
+          equipment_model_type?: string | null
+          equipment_number?: string | null
+          equipment_series?: string | null
+          has_critical_issues?: boolean | null
+          hour_meter?: number | null
+          id?: string
+          location?: string | null
+          nao_conforme_items?: number
+          operator_id?: string
+          operator_name?: string
+          signature?: string
+          status?: string
+          timestamp?: string | null
+          total_items?: number
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_records_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_rejections: {
+        Row: {
+          checklist_record_id: string
+          created_at: string | null
+          id: string
+          mechanic_name: string
+          reason: string
+          timestamp: string | null
+        }
+        Insert: {
+          checklist_record_id: string
+          created_at?: string | null
+          id?: string
+          mechanic_name: string
+          reason: string
+          timestamp?: string | null
+        }
+        Update: {
+          checklist_record_id?: string
+          created_at?: string | null
+          id?: string
+          mechanic_name?: string
+          reason?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_rejections_checklist_record_id_fkey"
+            columns: ["checklist_record_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment: {
+        Row: {
+          brand: string
+          business_unit: string | null
+          code: string
+          cost_center: string | null
+          created_at: string | null
+          equipment_number: string | null
+          equipment_series: string | null
+          hour_meter: string | null
+          id: string
+          last_check: string | null
+          last_checklist_id: string | null
+          last_operation_start: string | null
+          location: string | null
+          model: string
+          next_maintenance: string | null
+          observations: string | null
+          operator_id: string | null
+          operator_name: string | null
+          photo: string | null
+          sector: string
+          status: string
+          unit: string | null
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          brand: string
+          business_unit?: string | null
+          code: string
+          cost_center?: string | null
+          created_at?: string | null
+          equipment_number?: string | null
+          equipment_series?: string | null
+          hour_meter?: string | null
+          id?: string
+          last_check?: string | null
+          last_checklist_id?: string | null
+          last_operation_start?: string | null
+          location?: string | null
+          model: string
+          next_maintenance?: string | null
+          observations?: string | null
+          operator_id?: string | null
+          operator_name?: string | null
+          photo?: string | null
+          sector: string
+          status: string
+          unit?: string | null
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          brand?: string
+          business_unit?: string | null
+          code?: string
+          cost_center?: string | null
+          created_at?: string | null
+          equipment_number?: string | null
+          equipment_series?: string | null
+          hour_meter?: string | null
+          id?: string
+          last_check?: string | null
+          last_checklist_id?: string | null
+          last_operation_start?: string | null
+          location?: string | null
+          model?: string
+          next_maintenance?: string | null
+          observations?: string | null
+          operator_id?: string | null
+          operator_name?: string | null
+          photo?: string | null
+          sector?: string
+          status?: string
+          unit?: string | null
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
+      equipment_issues: {
+        Row: {
+          created_at: string | null
+          description: string
+          equipment_id: string
+          id: string
+          photo: string
+          timestamp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          equipment_id: string
+          id?: string
+          photo: string
+          timestamp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          equipment_id?: string
+          id?: string
+          photo?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_issues_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          matricula: string | null
+          name: string
+          profile: string
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          matricula?: string | null
+          name: string
+          profile: string
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          matricula?: string | null
+          name?: string
+          profile?: string
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
