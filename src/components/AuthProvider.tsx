@@ -1,12 +1,12 @@
 import React from 'react';
-import { AuthContext, useAuthState } from '@/hooks/useAuth';
+import { AuthContext, useSupabaseAuthState } from '@/hooks/useSupabaseAuth';
 
 interface AuthProviderProps {
   children: React.ReactNode;
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const auth = useAuthState();
+  const auth = useSupabaseAuthState();
   
   return (
     <AuthContext.Provider value={auth}>

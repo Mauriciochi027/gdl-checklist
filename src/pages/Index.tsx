@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useSupabaseAuth';
+import { useEquipment } from '@/hooks/useEquipment';
+import { useChecklists } from '@/hooks/useChecklists';
 import { LoginForm } from '@/components/LoginForm';
 import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
@@ -11,82 +13,12 @@ import StatusPanel from '@/components/StatusPanel';
 import UserManagement from '@/components/UserManagement';
 import { OperationControl } from '@/components/OperationControl';
 import { getChecklistItemById } from '@/lib/checklistItems';
-import { Equipment, ChecklistRecord } from '@/types/equipment';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
+  const { equipments, addEquipment, updateEquipment } = useEquipment();
+  const { checklistRecords, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
-  
-  const [equipments, setEquipments] = useState([
-    { id: "1", code: "EMP-001", model: "7FBR15", brand: "Toyota", year: 2022, sector: "Armazém", status: "active" as const, lastCheck: "2024-01-15", nextMaintenance: "2024-02-15", photo: "" },
-    { id: "2", code: "EMP-002", model: "H50", brand: "Hyster", year: 2021, sector: "Expedição", status: "active" as const, lastCheck: "2024-01-14", nextMaintenance: "2024-02-20", photo: "" },
-    { id: "3", code: "EMP-003", model: "FG25", brand: "Caterpillar", year: 2023, sector: "Recebimento", status: "maintenance" as const, lastCheck: "2024-01-10", nextMaintenance: "2024-01-25", photo: "" }
-  ]);
-
-  const [checklistRecords, setChecklistRecords] = useState([
-    {
-      id: "1",
-      equipmentCode: "EMP-001", 
-      equipmentModel: "Toyota 7FBR15",
-      operatorName: "João Silva",
-      timestamp: "2024-01-15T08:30:00",
-      status: "pendente" as const,
-      totalItems: 18,
-      conformeItems: 16,
-      naoConformeItems: 2,
-      signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-      approvals: [],
-      answers: [
-        { question: "Status do cinto de segurança", answer: "Sim", conformidade: "conforme", photos: [] },
-        { question: "Status do freio", answer: "Não", conformidade: "nao_conforme", observation: "Necessário verificar sistema hidráulico", photos: [] }
-      ]
-    },
-    {
-      id: "2",
-      equipmentCode: "EMP-002", 
-      equipmentModel: "Hyster H50",
-      operatorName: "João Silva",
-      timestamp: "2024-01-14T09:15:00",
-      status: "conforme" as const,
-      totalItems: 18,
-      conformeItems: 18,
-      naoConformeItems: 0,
-      signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-      approvals: [{
-        mechanicName: "Carlos Mecânico",
-        timestamp: "2024-01-14T10:30:00",
-        comment: "Equipamento em perfeitas condições"
-      }],
-      answers: [
-        { question: "Status do cinto de segurança", answer: "Sim", conformidade: "conforme", photos: [] },
-        { question: "Condições do assento", answer: "Sim", conformidade: "conforme", photos: [] },
-        { question: "Status do freio", answer: "Sim", conformidade: "conforme", photos: [] }
-      ]
-    },
-    {
-      id: "3",
-      equipmentCode: "EMP-003", 
-      equipmentModel: "Caterpillar FG25",
-      operatorName: "João Silva",
-      timestamp: "2024-01-13T14:20:00",
-      status: "negado" as const,
-      totalItems: 18,
-      conformeItems: 15,
-      naoConformeItems: 3,
-      signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-      approvals: [],
-      rejections: [{
-        mechanicName: "Carlos Mecânico",
-        timestamp: "2024-01-13T15:45:00",
-        reason: "Problemas críticos de segurança detectados. Equipamento deve ser retirado de operação imediatamente."
-      }],
-      answers: [
-        { question: "Status do cinto de segurança", answer: "Não", conformidade: "nao_conforme", observation: "Cinto danificado", photos: [] },
-        { question: "Status do freio", answer: "Não", conformidade: "nao_conforme", observation: "Pedal com problema", photos: [] },
-        { question: "Condições do pneu/roda", answer: "Não", conformidade: "nao_conforme", observation: "Desgaste excessivo", photos: [] }
-      ]
-    }
-  ]);
 
   // Filter data for operators - only show their own checklists
   const getUserFilteredData = () => {
@@ -116,87 +48,37 @@ const Index = () => {
   
   const dashboardData = getUserFilteredData();
 
-  const handleAddEquipment = (equipment: any) => {
-    const newEquipment = { ...equipment, id: Date.now().toString() };
-    setEquipments([...equipments, newEquipment]);
+  const handleAddEquipment = async (equipment: any) => {
+    await addEquipment(equipment);
   };
 
-  const handleUpdateEquipment = (id: string, updates: any) => {
-    setEquipments(equipments.map(eq => eq.id === id ? { ...eq, ...updates } : eq));
+  const handleUpdateEquipment = async (id: string, updates: any) => {
+    await updateEquipment(id, updates);
   };
 
-  const handleSubmitChecklist = (data: any) => {
-    // Determine status based on answers
-    const hasNonConformItems = data.answers.some((a: any) => a.value === 'nao');
-    const status: 'pendente' | 'conforme' = hasNonConformItems ? 'pendente' : 'conforme';
-
+  const handleSubmitChecklist = async (data: any) => {
     const eq = equipments.find(eq => eq.id === data.equipmentId);
     
-    const newRecord = {
-      id: Date.now().toString(),
-      equipmentCode: eq?.code ?? "",
-      equipmentModel: eq ? `${eq.brand} ${eq.model}` : "",
-      operatorName: user?.name || data.operatorName,
-      timestamp: data.timestamp,
-      status,
-      totalItems: data.answers.length,
-      conformeItems: data.answers.filter((a: any) => a.value === 'sim').length,
-      naoConformeItems: data.answers.filter((a: any) => a.value === 'nao').length,
+    if (!eq || !user) return;
+
+    await addChecklist({
+      equipmentId: eq.id,
+      equipmentCode: eq.code,
+      equipmentModel: `${eq.brand} ${eq.model}`,
+      operatorName: user.name,
+      operatorId: user.matricula || user.id,
+      answers: data.answers,
       signature: data.signature,
-      approvals: status === 'conforme' ? [{
-        mechanicName: "Sistema",
-        timestamp: new Date().toISOString(),
-        comment: "Checklist aprovado automaticamente - todos os itens conformes"
-      }] : [],
-      answers: data.answers.map((a: any) => {
-        const checklistItem = getChecklistItemById(a.itemId);
-        return {
-          question: checklistItem?.description || `Item ${a.itemId}`,
-          answer: a.value === 'sim' ? 'Sim' : a.value === 'nao' ? 'Não' : 'N/A',
-          conformidade: a.value === 'sim' ? 'conforme' : a.value === 'nao' ? 'nao_conforme' : 'nao_aplica',
-          observation: a.observation,
-          photos: data.photos?.[a.itemId] || [],
-          category: checklistItem?.category
-        };
-      })
-    };
-    setChecklistRecords(prev => [newRecord, ...prev]);
+      photos: data.photos
+    });
   };
 
-  const handleApproveRecord = (recordId: string, mechanicName: string, comment: string) => {
-    setChecklistRecords(records => 
-      records.map(record => 
-        record.id === recordId 
-          ? {
-              ...record,
-              status: 'conforme' as const,
-              approvals: [...(record.approvals || []), {
-                mechanicName,
-                timestamp: new Date().toISOString(),
-                comment
-              }] as Array<{ mechanicName: string; timestamp: string; comment: string; }>
-            } as any
-          : record
-      )
-    );
+  const handleApproveRecord = async (recordId: string, mechanicName: string, comment: string) => {
+    await approveChecklist(recordId, mechanicName, comment);
   };
 
-  const handleRejectRecord = (recordId: string, mechanicName: string, reason: string) => {
-    setChecklistRecords(records => 
-      records.map(record => 
-        record.id === recordId 
-          ? {
-              ...record,
-              status: 'negado' as const,
-              rejections: [...(record.rejections || []), {
-                mechanicName,
-                timestamp: new Date().toISOString(),
-                reason
-              }] as Array<{ mechanicName: string; timestamp: string; reason: string; }>
-            } as any
-          : record
-      )
-    );
+  const handleRejectRecord = async (recordId: string, mechanicName: string, reason: string) => {
+    await rejectChecklist(recordId, mechanicName, reason);
   };
 
   const handleUpdateEquipmentStatus = (equipmentId: string, status: string, reason?: string) => {
