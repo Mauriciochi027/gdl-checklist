@@ -14,7 +14,7 @@ import forkliftWorkingImage from "@/assets/forklift-working.png";
 import mechanicIcon from "@/assets/mechanic-icon.jpg";
 import { BrowserQRCodeReader } from '@zxing/library';
 import { checklistItems, type ChecklistItem } from '@/lib/checklistItems';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useSupabaseAuth';
 import { Equipment, ChecklistAnswer } from '@/types/equipment';
 
 interface ChecklistFormProps {
