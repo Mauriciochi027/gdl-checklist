@@ -103,11 +103,11 @@ export const LoginForm = () => {
   };
   const demoUsers = [{
     username: 'operador1',
-    profile: 'Operador',
+    profile: 'operador',
     name: 'João Silva'
   }, {
     username: 'mecanico1',
-    profile: 'Mecânico',
+    profile: 'mecanico',
     name: 'Carlos Oliveira'
   }];
   return <div className="min-h-screen bg-background flex items-center justify-center p-4">
