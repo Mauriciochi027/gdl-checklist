@@ -1,7 +1,7 @@
 import { Truck, ClipboardCheck, BarChart3, Settings, Users, LogOut, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useSupabaseAuth";
 import gdlLogo from "@/assets/gdl-logo.png";
 interface LayoutProps {
   children: React.ReactNode;
