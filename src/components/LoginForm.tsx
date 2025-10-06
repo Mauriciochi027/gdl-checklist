@@ -28,19 +28,62 @@ export const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      // Sign in with Supabase using username as email format
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: `${username}@gdl.com`,
+      const email = `${username}@gdl.com`;
+      
+      // Try to sign in
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
         password: password
       });
 
-      if (error) {
-        setError('Usuário ou senha incorretos');
-        toast({
-          title: "Erro no login",
-          description: "Verifique suas credenciais e tente novamente.",
-          variant: "destructive"
-        });
+      if (signInError) {
+        // If user doesn't exist and it's a demo user, create it
+        const demoUser = demoUsers.find(u => u.username === username);
+        
+        if (demoUser && password === '123456') {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password: password,
+            options: {
+              data: {
+                username: demoUser.username,
+                name: demoUser.name,
+                profile: demoUser.profile
+              }
+            }
+          });
+
+          if (signUpError) {
+            setError('Erro ao criar usuário de demonstração');
+            toast({
+              title: "Erro",
+              description: "Não foi possível criar o usuário.",
+              variant: "destructive"
+            });
+          } else {
+            // Try to sign in again
+            const { error: retryError } = await supabase.auth.signInWithPassword({
+              email,
+              password: password
+            });
+
+            if (retryError) {
+              setError('Usuário criado. Tente fazer login novamente.');
+            } else {
+              toast({
+                title: "Login realizado",
+                description: "Bem-vindo ao sistema!"
+              });
+            }
+          }
+        } else {
+          setError('Usuário ou senha incorretos');
+          toast({
+            title: "Erro no login",
+            description: "Verifique suas credenciais e tente novamente.",
+            variant: "destructive"
+          });
+        }
       } else {
         toast({
           title: "Login realizado",
