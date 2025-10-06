@@ -26,27 +26,22 @@ import {
   PenTool
 } from "lucide-react";
 
-interface ChecklistRecord {
-  id: string;
-  equipmentCode: string;
-  equipmentModel: string;
-  operatorName: string;
-  timestamp: string;
-  status: 'conforme' | 'pendente' | 'negado';
-  totalItems: number;
-  conformeItems: number;
-  naoConformeItems: number;
-  signature: string;
-  answers?: Array<{ 
-    question: string; 
-    answer: string; 
-    conformidade: string; 
-    photos?: string[] | Array<{ url: string; name?: string; }>; 
-    observation?: string; 
-  }>;
-  approvals?: Array<{ mechanicName: string; timestamp: string; comment: string; }>;
-  rejections?: Array<{ mechanicName: string; timestamp: string; reason: string; }>;
-}
+import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
+import { getChecklistItemById } from '@/lib/checklistItems';
+
+// Helper to transform answers for display
+const transformAnswersForDisplay = (answers: ChecklistAnswer[], photos?: Record<string, string[]>) => {
+  return answers.map(answer => {
+    const item = getChecklistItemById(answer.itemId);
+    return {
+      question: item?.description || answer.itemId,
+      answer: answer.value === 'sim' ? 'Sim' : answer.value === 'nao' ? 'Não' : 'N/A',
+      conformidade: answer.value === 'sim' ? 'conforme' : answer.value === 'nao' ? 'nao_conforme' : 'nao_aplica',
+      observation: answer.observation,
+      photos: photos?.[answer.itemId] || []
+    };
+  });
+};
 
 interface ChecklistHistoryProps {
   records: ChecklistRecord[];
@@ -384,7 +379,7 @@ const ChecklistHistory = ({ records, userProfile, currentUser }: ChecklistHistor
                     Respostas do Checklist:
                   </h4>
                   <div className="space-y-4">
-                    {selectedRecord.answers.map((answer, index) => (
+                    {transformAnswersForDisplay(selectedRecord.answers, selectedRecord.photos).map((answer, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-white">
                         <div className="space-y-3">
                           {/* Question */}

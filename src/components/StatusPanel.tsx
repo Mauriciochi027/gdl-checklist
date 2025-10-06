@@ -10,26 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Search, Edit2, Eye, Clock, Wrench, CheckCircle } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
-interface Equipment {
-  id: string;
-  code: string;
-  model: string;
-  brand: string;
-  year: number;
-  sector: string;
-  status: 'active' | 'maintenance';
-  lastCheck: string;
-  nextMaintenance: string;
-  photo?: string;
-}
-
-interface ChecklistRecord {
-  id: string;
-  equipmentCode: string;
-  status: 'conforme' | 'pendente' | 'negado';
-  naoConformeItems: number;
-  timestamp: string;
-}
+import { Equipment, ChecklistRecord } from '@/types/equipment';
 
 interface StatusPanelProps {
   equipments: Equipment[];
