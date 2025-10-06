@@ -5,27 +5,57 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Truck, User, Lock, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import gdlLogo from '@/assets/gdl-logo.png';
 import forkliftIcon from '@/assets/forklift-icon.png';
+
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const {
-    login,
-    isLoading
-  } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
     if (!username || !password) {
       setError('Por favor, preencha todos os campos');
       return;
     }
-    const success = await login(username, password);
-    if (!success) {
-      setError('Usuário ou senha incorretos');
+
+    setIsLoading(true);
+
+    try {
+      // Sign in with Supabase using username as email format
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: `${username}@gdl.com`,
+        password: password
+      });
+
+      if (error) {
+        setError('Usuário ou senha incorretos');
+        toast({
+          title: "Erro no login",
+          description: "Verifique suas credenciais e tente novamente.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Login realizado",
+          description: "Bem-vindo ao sistema!"
+        });
+      }
+    } catch (err) {
+      setError('Erro ao fazer login. Tente novamente.');
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao fazer login.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   const demoUsers = [{
