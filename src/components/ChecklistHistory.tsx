@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useSupabaseAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { PhotoGrid } from "@/components/ui/photo-viewer";
 import { 
   Clock, 
@@ -23,7 +25,8 @@ import {
   User,
   Truck,
   Camera,
-  PenTool
+  PenTool,
+  Trash2
 } from "lucide-react";
 
 import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
@@ -59,6 +62,22 @@ const ChecklistHistory = ({ records, userProfile, currentUser }: ChecklistHistor
   const [yearFilter, setYearFilter] = useState("todos");
   const [selectedRecord, setSelectedRecord] = useState<ChecklistRecord | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [checklistToDelete, setChecklistToDelete] = useState<ChecklistRecord | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single()
+        .then(({ data }) => setIsAdmin(!!data));
+    }
+  }, [user]);
 
   // Get available years and months from records
   const availableYears = [...new Set(records.map(record => 
@@ -131,6 +150,40 @@ const ChecklistHistory = ({ records, userProfile, currentUser }: ChecklistHistor
     const dateStr = date.toLocaleDateString('pt-BR');
     const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     return { dateStr, timeStr };
+  };
+
+  const handleDeleteClick = (record: ChecklistRecord) => {
+    setChecklistToDelete(record);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!checklistToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('checklist_records')
+        .delete()
+        .eq('id', checklistToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Checklist deletado",
+        description: `O checklist do equipamento ${checklistToDelete.equipmentCode} foi removido com sucesso.`,
+      });
+
+      setDeleteDialogOpen(false);
+      setChecklistToDelete(null);
+      window.location.reload();
+    } catch (error) {
+      console.error('Erro ao deletar checklist:', error);
+      toast({
+        title: "Erro ao deletar",
+        description: "Não foi possível deletar o checklist. Verifique se você tem permissão.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -292,6 +345,16 @@ const ChecklistHistory = ({ records, userProfile, currentUser }: ChecklistHistor
                         <Eye className="w-4 h-4 mr-1" />
                         Detalhes
                       </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteClick(record)}
+                          className="text-safety-red hover:text-safety-red hover:bg-safety-red/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -459,6 +522,28 @@ const ChecklistHistory = ({ records, userProfile, currentUser }: ChecklistHistor
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar este checklist do equipamento <strong>{checklistToDelete?.equipmentCode}</strong>?
+              Esta ação não pode ser desfeita e irá remover todos os dados relacionados (respostas, fotos, aprovações, etc.).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-safety-red hover:bg-safety-red/90"
+            >
+              Deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

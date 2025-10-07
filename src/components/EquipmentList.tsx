@@ -8,9 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Search, Truck, Calendar, MapPin, AlertCircle, CheckCircle, Upload, X, QrCode } from "lucide-react";
+import { Plus, Search, Truck, Calendar, MapPin, AlertCircle, CheckCircle, Upload, X, QrCode, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import EquipmentQRCode from "./EquipmentQRCode";
 import { Equipment } from "@/types/equipment";
+import { useAuth } from "@/hooks/useSupabaseAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 interface EquipmentListProps {
   equipments: Equipment[];
   onAddEquipment: (equipment: Omit<Equipment, 'id'>) => void;
@@ -21,12 +25,30 @@ const EquipmentList = ({
   onAddEquipment,
   onUpdateEquipment
 }: EquipmentListProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [showQRCode, setShowQRCode] = useState(false);
   const [qrEquipment, setQrEquipment] = useState<Equipment | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [equipmentToDelete, setEquipmentToDelete] = useState<Equipment | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user is admin
+  useState(() => {
+    if (user) {
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single()
+        .then(({ data }) => setIsAdmin(!!data));
+    }
+  });
   const [formData, setFormData] = useState<{
     code: string;
     model: string;
@@ -143,6 +165,40 @@ const EquipmentList = ({
       hourMeter: equipment.hourMeter || "0"
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (equipment: Equipment) => {
+    setEquipmentToDelete(equipment);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!equipmentToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('equipment')
+        .delete()
+        .eq('id', equipmentToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Equipamento deletado",
+        description: `O equipamento ${equipmentToDelete.code} foi removido com sucesso.`,
+      });
+
+      setDeleteDialogOpen(false);
+      setEquipmentToDelete(null);
+      window.location.reload();
+    } catch (error) {
+      console.error('Erro ao deletar equipamento:', error);
+      toast({
+        title: "Erro ao deletar",
+        description: "Não foi possível deletar o equipamento. Verifique se você tem permissão.",
+        variant: "destructive",
+      });
+    }
   };
   const getStatusBadge = (status: Equipment['status']) => {
     switch (status) {
@@ -443,6 +499,19 @@ const EquipmentList = ({
             }} className="flex-1">
                   Editar
                 </Button>
+                {isAdmin && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDeleteClick(equipment);
+                    }} 
+                    className="text-safety-red hover:text-safety-red hover:bg-safety-red/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>)}
@@ -471,6 +540,28 @@ const EquipmentList = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar o equipamento <strong>{equipmentToDelete?.code}</strong>?
+              Esta ação não pode ser desfeita e irá remover todos os dados relacionados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-safety-red hover:bg-safety-red/90"
+            >
+              Deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>;
 };
 export default EquipmentList;
