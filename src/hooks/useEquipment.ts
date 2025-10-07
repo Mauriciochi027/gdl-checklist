@@ -47,27 +47,30 @@ export const useEquipment = () => {
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {
     try {
       // Transform camelCase to snake_case for database
+      const { 
+        costCenter, 
+        businessUnit, 
+        lastCheck, 
+        nextMaintenance, 
+        operatorName, 
+        operatorId, 
+        equipmentSeries, 
+        equipmentNumber, 
+        hourMeter,
+        ...restEquipment 
+      } = equipment;
+
       const dbEquipment = {
-        ...equipment,
-        cost_center: equipment.costCenter,
-        business_unit: equipment.businessUnit,
-        last_check: equipment.lastCheck,
-        next_maintenance: equipment.nextMaintenance,
-        operator_name: equipment.operatorName,
-        operator_id: equipment.operatorId,
-        equipment_series: equipment.equipmentSeries,
-        equipment_number: equipment.equipmentNumber,
-        hour_meter: equipment.hourMeter,
-        // Remove camelCase fields
-        costCenter: undefined,
-        businessUnit: undefined,
-        lastCheck: undefined,
-        nextMaintenance: undefined,
-        operatorName: undefined,
-        operatorId: undefined,
-        equipmentSeries: undefined,
-        equipmentNumber: undefined,
-        hourMeter: undefined
+        ...restEquipment,
+        cost_center: costCenter,
+        business_unit: businessUnit,
+        last_check: lastCheck,
+        next_maintenance: nextMaintenance,
+        operator_name: operatorName,
+        operator_id: operatorId,
+        equipment_series: equipmentSeries,
+        equipment_number: equipmentNumber,
+        hour_meter: hourMeter
       };
 
       const { data, error } = await supabase
