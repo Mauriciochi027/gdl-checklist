@@ -22,7 +22,9 @@ export const useEquipment = () => {
       const transformedData = data?.map(item => ({
         ...item,
         lastCheck: item.last_check || '',
-        nextMaintenance: item.next_maintenance || ''
+        nextMaintenance: item.next_maintenance || '',
+        costCenter: item.cost_center || '',
+        businessUnit: item.business_unit || ''
       })) as Equipment[];
 
       setEquipments(transformedData || []);
@@ -44,9 +46,33 @@ export const useEquipment = () => {
 
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {
     try {
+      // Transform camelCase to snake_case for database
+      const dbEquipment = {
+        ...equipment,
+        cost_center: equipment.costCenter,
+        business_unit: equipment.businessUnit,
+        last_check: equipment.lastCheck,
+        next_maintenance: equipment.nextMaintenance,
+        operator_name: equipment.operatorName,
+        operator_id: equipment.operatorId,
+        equipment_series: equipment.equipmentSeries,
+        equipment_number: equipment.equipmentNumber,
+        hour_meter: equipment.hourMeter,
+        // Remove camelCase fields
+        costCenter: undefined,
+        businessUnit: undefined,
+        lastCheck: undefined,
+        nextMaintenance: undefined,
+        operatorName: undefined,
+        operatorId: undefined,
+        equipmentSeries: undefined,
+        equipmentNumber: undefined,
+        hourMeter: undefined
+      };
+
       const { data, error } = await supabase
         .from('equipment')
-        .insert([equipment])
+        .insert([dbEquipment])
         .select()
         .single();
 
@@ -55,7 +81,9 @@ export const useEquipment = () => {
       const transformed = {
         ...data,
         lastCheck: data.last_check || '',
-        nextMaintenance: data.next_maintenance || ''
+        nextMaintenance: data.next_maintenance || '',
+        costCenter: data.cost_center || '',
+        businessUnit: data.business_unit || ''
       } as Equipment;
 
       setEquipments(prev => [...prev, transformed]);
@@ -79,9 +107,28 @@ export const useEquipment = () => {
 
   const updateEquipment = async (id: string, updates: Partial<Equipment>) => {
     try {
+      // Transform camelCase to snake_case for database
+      const dbUpdates: any = {};
+      if (updates.costCenter !== undefined) dbUpdates.cost_center = updates.costCenter;
+      if (updates.businessUnit !== undefined) dbUpdates.business_unit = updates.businessUnit;
+      if (updates.lastCheck !== undefined) dbUpdates.last_check = updates.lastCheck;
+      if (updates.nextMaintenance !== undefined) dbUpdates.next_maintenance = updates.nextMaintenance;
+      if (updates.operatorName !== undefined) dbUpdates.operator_name = updates.operatorName;
+      if (updates.operatorId !== undefined) dbUpdates.operator_id = updates.operatorId;
+      if (updates.equipmentSeries !== undefined) dbUpdates.equipment_series = updates.equipmentSeries;
+      if (updates.equipmentNumber !== undefined) dbUpdates.equipment_number = updates.equipmentNumber;
+      if (updates.hourMeter !== undefined) dbUpdates.hour_meter = updates.hourMeter;
+      
+      // Copy other fields as-is
+      Object.keys(updates).forEach(key => {
+        if (!['costCenter', 'businessUnit', 'lastCheck', 'nextMaintenance', 'operatorName', 'operatorId', 'equipmentSeries', 'equipmentNumber', 'hourMeter'].includes(key)) {
+          dbUpdates[key] = updates[key as keyof Equipment];
+        }
+      });
+
       const { data, error } = await supabase
         .from('equipment')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -91,7 +138,9 @@ export const useEquipment = () => {
       const transformed = {
         ...data,
         lastCheck: data.last_check || '',
-        nextMaintenance: data.next_maintenance || ''
+        nextMaintenance: data.next_maintenance || '',
+        costCenter: data.cost_center || '',
+        businessUnit: data.business_unit || ''
       } as Equipment;
 
       setEquipments(prev => prev.map(eq => eq.id === id ? transformed : eq));
