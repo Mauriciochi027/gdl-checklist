@@ -29,7 +29,9 @@ export function keysToSnakeCase<T = any>(obj: any): T {
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       const snakeKey = toSnakeCase(key);
-      snakeCaseObj[snakeKey] = keysToSnakeCase(obj[key]);
+      const value = obj[key];
+      // Convert empty strings to null for proper database handling
+      snakeCaseObj[snakeKey] = value === '' ? null : keysToSnakeCase(value);
     }
   }
   return snakeCaseObj;
