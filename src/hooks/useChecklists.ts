@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
+import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 
 export const useChecklists = () => {
   const [checklistRecords, setChecklistRecords] = useState<ChecklistRecord[]>([]);
@@ -24,42 +25,27 @@ export const useChecklists = () => {
 
       if (error) throw error;
 
-      // Transform data to match expected format
-      const transformedRecords = records?.map(record => ({
-        id: record.id,
-        equipmentId: record.equipment_id,
-        equipmentCode: record.equipment_code,
-        equipmentModel: record.equipment_model,
-        operatorName: record.operator_name,
-        operatorId: record.operator_id,
-        timestamp: record.timestamp,
-        status: record.status as 'conforme' | 'pendente' | 'negado',
-        totalItems: record.total_items,
-        conformeItems: record.conforme_items,
-        naoConformeItems: record.nao_conforme_items,
-        answers: record.checklist_answers?.map((a: any) => ({
-          itemId: a.item_id,
-          value: a.value,
-          observation: a.observation
-        })) || [],
-        signature: record.signature,
-        photos: record.checklist_photos?.reduce((acc: any, photo: any) => {
-          if (!acc[photo.item_id]) acc[photo.item_id] = [];
-          acc[photo.item_id].push(photo.photo_url);
-          return acc;
-        }, {}) || {},
-        hasCriticalIssues: record.has_critical_issues,
-        approvals: record.checklist_approvals?.map((a: any) => ({
-          mechanicName: a.mechanic_name,
-          timestamp: a.timestamp,
-          comment: a.comment
-        })) || [],
-        rejections: record.checklist_rejections?.map((r: any) => ({
-          mechanicName: r.mechanic_name,
-          timestamp: r.timestamp,
-          reason: r.reason
-        })) || []
-      })) || [];
+      // Transform data to match expected format with automatic camelCase conversion
+      const transformedRecords = records?.map(record => {
+        const camelRecord = keysToCamelCase(record);
+        
+        // Handle nested photos structure
+        const photos: Record<string, string[]> = {};
+        if (camelRecord.checklistPhotos) {
+          camelRecord.checklistPhotos.forEach((photo: any) => {
+            if (!photos[photo.itemId]) photos[photo.itemId] = [];
+            photos[photo.itemId].push(photo.photoUrl);
+          });
+        }
+        
+        return {
+          ...camelRecord,
+          photos,
+          checklistAnswers: camelRecord.checklistAnswers || [],
+          checklistApprovals: camelRecord.checklistApprovals || [],
+          checklistRejections: camelRecord.checklistRejections || []
+        };
+      }) || [];
 
       setChecklistRecords(transformedRecords);
     } catch (error) {
@@ -96,33 +82,37 @@ export const useChecklists = () => {
       const status: 'conforme' | 'pendente' = hasCriticalIssues ? 'pendente' : 'conforme';
 
       // Insert checklist record
+      const recordData = keysToSnakeCase({
+        equipmentId: checklistData.equipmentId,
+        equipmentCode: checklistData.equipmentCode,
+        equipmentModel: checklistData.equipmentModel,
+        operatorName: checklistData.operatorName,
+        operatorId: checklistData.operatorId,
+        status,
+        totalItems: checklistData.answers.length,
+        conformeItems: conformeItems,
+        naoConformeItems: naoConformeItems,
+        signature: checklistData.signature,
+        hasCriticalIssues: hasCriticalIssues
+      });
+
       const { data: record, error: recordError } = await supabase
         .from('checklist_records')
-        .insert([{
-          equipment_id: checklistData.equipmentId,
-          equipment_code: checklistData.equipmentCode,
-          equipment_model: checklistData.equipmentModel,
-          operator_name: checklistData.operatorName,
-          operator_id: checklistData.operatorId,
-          status,
-          total_items: checklistData.answers.length,
-          conforme_items: conformeItems,
-          nao_conforme_items: naoConformeItems,
-          signature: checklistData.signature,
-          has_critical_issues: hasCriticalIssues
-        }])
+        .insert([recordData])
         .select()
         .single();
 
       if (recordError) throw recordError;
 
       // Insert answers
-      const answersToInsert = checklistData.answers.map(answer => ({
-        checklist_record_id: record.id,
-        item_id: answer.itemId,
-        value: answer.value,
-        observation: answer.observation
-      }));
+      const answersToInsert = checklistData.answers.map(answer => 
+        keysToSnakeCase({
+          checklistRecordId: record.id,
+          itemId: answer.itemId,
+          value: answer.value,
+          observation: answer.observation
+        })
+      );
 
       const { error: answersError } = await supabase
         .from('checklist_answers')
@@ -133,10 +123,10 @@ export const useChecklists = () => {
       // Insert photos if any
       if (checklistData.photos) {
         const photosToInsert = Object.entries(checklistData.photos).flatMap(([itemId, urls]) =>
-          urls.map(url => ({
-            checklist_record_id: record.id,
-            item_id: itemId,
-            photo_url: url
+          urls.map(url => keysToSnakeCase({
+            checklistRecordId: record.id,
+            itemId: itemId,
+            photoUrl: url
           }))
         );
 
@@ -151,13 +141,15 @@ export const useChecklists = () => {
 
       // Auto-approve if all items are conforme
       if (status === 'conforme') {
+        const approvalData = keysToSnakeCase({
+          checklistRecordId: record.id,
+          mechanicName: 'Sistema',
+          comment: 'Checklist aprovado automaticamente - todos os itens conformes'
+        });
+
         const { error: approvalError } = await supabase
           .from('checklist_approvals')
-          .insert([{
-            checklist_record_id: record.id,
-            mechanic_name: 'Sistema',
-            comment: 'Checklist aprovado automaticamente - todos os itens conformes'
-          }]);
+          .insert([approvalData]);
 
         if (approvalError) throw approvalError;
       }
@@ -193,13 +185,15 @@ export const useChecklists = () => {
       if (updateError) throw updateError;
 
       // Add approval
+      const approvalData = keysToSnakeCase({
+        checklistRecordId: recordId,
+        mechanicName: mechanicName,
+        comment
+      });
+
       const { error: approvalError } = await supabase
         .from('checklist_approvals')
-        .insert([{
-          checklist_record_id: recordId,
-          mechanic_name: mechanicName,
-          comment
-        }]);
+        .insert([approvalData]);
 
       if (approvalError) throw approvalError;
 
@@ -232,13 +226,15 @@ export const useChecklists = () => {
       if (updateError) throw updateError;
 
       // Add rejection
+      const rejectionData = keysToSnakeCase({
+        checklistRecordId: recordId,
+        mechanicName: mechanicName,
+        reason
+      });
+
       const { error: rejectionError } = await supabase
         .from('checklist_rejections')
-        .insert([{
-          checklist_record_id: recordId,
-          mechanic_name: mechanicName,
-          reason
-        }]);
+        .insert([rejectionData]);
 
       if (rejectionError) throw rejectionError;
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Equipment } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
+import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 
 export const useEquipment = () => {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
@@ -19,15 +20,9 @@ export const useEquipment = () => {
       if (error) throw error;
 
       // Transform database format to Equipment interface format
-      const transformedData = data?.map(item => ({
-        ...item,
-        lastCheck: item.last_check || '',
-        nextMaintenance: item.next_maintenance || '',
-        costCenter: item.cost_center || '',
-        businessUnit: item.business_unit || ''
-      })) as Equipment[];
+      const transformedData = keysToCamelCase<Equipment[]>(data || []);
 
-      setEquipments(transformedData || []);
+      setEquipments(transformedData);
     } catch (error) {
       console.error('Error fetching equipment:', error);
       toast({
@@ -47,31 +42,7 @@ export const useEquipment = () => {
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {
     try {
       // Transform camelCase to snake_case for database
-      const { 
-        costCenter, 
-        businessUnit, 
-        lastCheck, 
-        nextMaintenance, 
-        operatorName, 
-        operatorId, 
-        equipmentSeries, 
-        equipmentNumber, 
-        hourMeter,
-        ...restEquipment 
-      } = equipment;
-
-      const dbEquipment = {
-        ...restEquipment,
-        cost_center: costCenter,
-        business_unit: businessUnit,
-        last_check: lastCheck,
-        next_maintenance: nextMaintenance,
-        operator_name: operatorName,
-        operator_id: operatorId,
-        equipment_series: equipmentSeries,
-        equipment_number: equipmentNumber,
-        hour_meter: hourMeter
-      };
+      const dbEquipment = keysToSnakeCase(equipment);
 
       const { data, error } = await supabase
         .from('equipment')
@@ -81,13 +52,7 @@ export const useEquipment = () => {
 
       if (error) throw error;
 
-      const transformed = {
-        ...data,
-        lastCheck: data.last_check || '',
-        nextMaintenance: data.next_maintenance || '',
-        costCenter: data.cost_center || '',
-        businessUnit: data.business_unit || ''
-      } as Equipment;
+      const transformed = keysToCamelCase<Equipment>(data);
 
       setEquipments(prev => [...prev, transformed]);
       
@@ -111,23 +76,7 @@ export const useEquipment = () => {
   const updateEquipment = async (id: string, updates: Partial<Equipment>) => {
     try {
       // Transform camelCase to snake_case for database
-      const dbUpdates: any = {};
-      if (updates.costCenter !== undefined) dbUpdates.cost_center = updates.costCenter;
-      if (updates.businessUnit !== undefined) dbUpdates.business_unit = updates.businessUnit;
-      if (updates.lastCheck !== undefined) dbUpdates.last_check = updates.lastCheck;
-      if (updates.nextMaintenance !== undefined) dbUpdates.next_maintenance = updates.nextMaintenance;
-      if (updates.operatorName !== undefined) dbUpdates.operator_name = updates.operatorName;
-      if (updates.operatorId !== undefined) dbUpdates.operator_id = updates.operatorId;
-      if (updates.equipmentSeries !== undefined) dbUpdates.equipment_series = updates.equipmentSeries;
-      if (updates.equipmentNumber !== undefined) dbUpdates.equipment_number = updates.equipmentNumber;
-      if (updates.hourMeter !== undefined) dbUpdates.hour_meter = updates.hourMeter;
-      
-      // Copy other fields as-is
-      Object.keys(updates).forEach(key => {
-        if (!['costCenter', 'businessUnit', 'lastCheck', 'nextMaintenance', 'operatorName', 'operatorId', 'equipmentSeries', 'equipmentNumber', 'hourMeter'].includes(key)) {
-          dbUpdates[key] = updates[key as keyof Equipment];
-        }
-      });
+      const dbUpdates = keysToSnakeCase(updates);
 
       const { data, error } = await supabase
         .from('equipment')
@@ -138,13 +87,7 @@ export const useEquipment = () => {
 
       if (error) throw error;
 
-      const transformed = {
-        ...data,
-        lastCheck: data.last_check || '',
-        nextMaintenance: data.next_maintenance || '',
-        costCenter: data.cost_center || '',
-        businessUnit: data.business_unit || ''
-      } as Equipment;
+      const transformed = keysToCamelCase<Equipment>(data);
 
       setEquipments(prev => prev.map(eq => eq.id === id ? transformed : eq));
       
