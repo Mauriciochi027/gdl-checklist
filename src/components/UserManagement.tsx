@@ -10,25 +10,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { User } from '@/hooks/useAuth';
+import { User } from '@/hooks/useSupabaseAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserManagementProps {
   currentUser: User | null;
 }
 
+interface UserProfile {
+  id: string;
+  username: string;
+  name: string;
+  profile: 'operador' | 'mecanico' | 'admin';
+  matricula?: string;
+}
+
 const UserManagement = ({
   currentUser
 }: UserManagementProps) => {
-  const {
-    toast
-  } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
+  const { toast } = useToast();
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -37,136 +45,183 @@ const UserManagement = ({
     matricula: ''
   });
 
-  // Carregar usuários do localStorage
+  // Fetch users from Supabase
   useEffect(() => {
-    const storedUsers = localStorage.getItem('checklist_users');
-    if (storedUsers) {
-      setUsers(JSON.parse(storedUsers));
-    }
+    fetchUsers();
   }, []);
 
-  // Salvar usuários no localStorage
-  const saveUsers = (updatedUsers: User[]) => {
-    localStorage.setItem('checklist_users', JSON.stringify(updatedUsers));
-    setUsers(updatedUsers);
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
+      setUsers(data as UserProfile[]);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar os usuários.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Filtrar usuários pela busca
   const filteredUsers = users.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()) || user.username.toLowerCase().includes(searchTerm.toLowerCase()) || user.matricula?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  const handleAddUser = () => {
-    // Validações
-    if (!formData.username || !formData.password || !formData.name) {
+  const handleAddUser = async () => {
+    if (!formData.username || !formData.name || !formData.password) {
       toast({
         title: 'Erro',
-        description: 'Preencha todos os campos obrigatórios',
-        variant: 'destructive'
+        description: 'Por favor, preencha todos os campos obrigatórios.',
+        variant: 'destructive',
       });
       return;
     }
 
-    // Verificar se username já existe
-    if (users.some(u => u.username === formData.username)) {
-      toast({
-        title: 'Erro',
-        description: 'Nome de usuário já existe',
-        variant: 'destructive'
+    setIsLoading(true);
+    try {
+      // Create auth user
+      const email = `${formData.username}@checklist.local`;
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password: formData.password,
+        options: {
+          data: {
+            username: formData.username,
+            name: formData.name,
+            profile: formData.profile,
+            matricula: formData.matricula || null,
+          },
+          emailRedirectTo: `${window.location.origin}/`
+        }
       });
-      return;
-    }
-    const newUser: User = {
-      id: Date.now().toString(),
-      username: formData.username,
-      name: formData.name,
-      profile: formData.profile,
-      matricula: formData.matricula
-    };
 
-    // Salvar senha em estrutura separada
-    const passwords = JSON.parse(localStorage.getItem('checklist_passwords') || '{}');
-    passwords[formData.username] = formData.password;
-    localStorage.setItem('checklist_passwords', JSON.stringify(passwords));
-    saveUsers([...users, newUser]);
-    toast({
-      title: 'Sucesso',
-      description: 'Usuário criado com sucesso'
-    });
-    setIsAddDialogOpen(false);
-    resetForm();
-  };
+      if (authError) throw authError;
 
-  const handleEditUser = () => {
-    if (!selectedUser) return;
+      if (authData.user) {
+        // Add role to user_roles table
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: authData.user.id,
+            role: formData.profile
+          });
 
-    // Validações
-    if (!formData.name) {
-      toast({
-        title: 'Erro',
-        description: 'Nome é obrigatório',
-        variant: 'destructive'
-      });
-      return;
-    }
-    const updatedUsers = users.map(u => u.id === selectedUser.id ? {
-      ...u,
-      name: formData.name,
-      profile: formData.profile,
-      matricula: formData.matricula
-    } : u);
+        if (roleError) throw roleError;
 
-    // Atualizar senha se fornecida
-    if (formData.password) {
-      const passwords = JSON.parse(localStorage.getItem('checklist_passwords') || '{}');
-      passwords[selectedUser.username] = formData.password;
-      localStorage.setItem('checklist_passwords', JSON.stringify(passwords));
-    }
-    saveUsers(updatedUsers);
+        toast({
+          title: 'Sucesso',
+          description: 'Usuário criado com sucesso!',
+        });
 
-    // Atualizar usuário no localStorage se for o usuário logado
-    const storedUser = localStorage.getItem('checklist_user');
-    if (storedUser) {
-      const currentStoredUser = JSON.parse(storedUser);
-      if (currentStoredUser.id === selectedUser.id) {
-        localStorage.setItem('checklist_user', JSON.stringify(updatedUsers.find(u => u.id === selectedUser.id)));
+        resetForm();
+        setIsAddDialogOpen(false);
+        fetchUsers();
       }
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível criar o usuário.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-    toast({
-      title: 'Sucesso',
-      description: 'Usuário atualizado com sucesso'
-    });
-    setIsEditDialogOpen(false);
-    setSelectedUser(null);
-    resetForm();
   };
 
-  const handleDeleteUser = () => {
+  const handleEditUser = async () => {
+    if (!selectedUser || !formData.name) {
+      toast({
+        title: 'Erro',
+        description: 'Por favor, preencha todos os campos obrigatórios.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Update profile data (name and matricula only - profile is read-only)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          matricula: formData.matricula || null,
+        })
+        .eq('id', selectedUser.id);
+
+      if (profileError) throw profileError;
+
+      // Note: Password updates require admin privileges via auth.admin API
+      // This is intentionally limited for security
+      if (formData.password) {
+        toast({
+          title: 'Aviso',
+          description: 'Perfil atualizado. Alteração de senha requer privilégios administrativos do sistema.',
+        });
+      } else {
+        toast({
+          title: 'Sucesso',
+          description: 'Usuário atualizado com sucesso!',
+        });
+      }
+
+      resetForm();
+      setIsEditDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível atualizar o usuário.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
     if (!selectedUser) return;
 
-    // Não permitir deletar o próprio usuário
+    // Prevent deleting own account
     if (selectedUser.id === currentUser?.id) {
       toast({
         title: 'Erro',
-        description: 'Você não pode deletar seu próprio usuário',
-        variant: 'destructive'
+        description: 'Você não pode deletar seu próprio usuário.',
+        variant: 'destructive',
       });
       return;
     }
-    const updatedUsers = users.filter(u => u.id !== selectedUser.id);
-    saveUsers(updatedUsers);
 
-    // Remover senha
-    const passwords = JSON.parse(localStorage.getItem('checklist_passwords') || '{}');
-    delete passwords[selectedUser.username];
-    localStorage.setItem('checklist_passwords', JSON.stringify(passwords));
-    toast({
-      title: 'Sucesso',
-      description: 'Usuário deletado com sucesso'
-    });
-    setIsDeleteDialogOpen(false);
-    setSelectedUser(null);
+    setIsLoading(true);
+    try {
+      toast({
+        title: 'Aviso',
+        description: 'Exclusão de usuários requer acesso direto ao backend por questões de segurança.',
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setSelectedUser(null);
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível excluir o usuário.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const openEditDialog = (user: User) => {
+  const openEditDialog = (user: UserProfile) => {
     setSelectedUser(user);
     setFormData({
       username: user.username,
@@ -178,7 +233,7 @@ const UserManagement = ({
     setIsEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (user: User) => {
+  const openDeleteDialog = (user: UserProfile) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   };
@@ -338,7 +393,9 @@ const UserManagement = ({
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleAddUser}>Criar Usuário</Button>
+            <Button onClick={handleAddUser} disabled={isLoading}>
+              {isLoading ? 'Criando...' : 'Criar Usuário'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -391,19 +448,10 @@ const UserManagement = ({
             </div>
             <div>
               <Label htmlFor="edit-profile">Perfil</Label>
-              <Select value={formData.profile} onValueChange={(value: any) => setFormData({
-              ...formData,
-              profile: value
-            })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="operador">Operador</SelectItem>
-                  <SelectItem value="mecanico">Mecânico</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input id="edit-profile" value={getProfileBadge(formData.profile).label} disabled className="bg-muted" />
+              <p className="text-xs text-muted-foreground mt-1">
+                O perfil não pode ser alterado por questões de segurança
+              </p>
             </div>
             <div>
               <Label htmlFor="edit-matricula">Matrícula</Label>
@@ -417,7 +465,9 @@ const UserManagement = ({
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleEditUser}>Salvar Alterações</Button>
+            <Button onClick={handleEditUser} disabled={isLoading}>
+              {isLoading ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -434,8 +484,8 @@ const UserManagement = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser}>
-              Deletar
+            <AlertDialogAction onClick={handleDeleteUser} disabled={isLoading}>
+              {isLoading ? 'Excluindo...' : 'Deletar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
