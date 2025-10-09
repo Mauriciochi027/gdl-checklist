@@ -50,7 +50,8 @@ export interface ChecklistRecord {
   totalItems: number;
   conformeItems: number;
   naoConformeItems: number;
-  answers: ChecklistAnswer[];
+  answers?: ChecklistAnswer[];
+  checklistAnswers?: ChecklistAnswer[];
   signature: string;
   photos: Record<string, string[]>;
   hasCriticalIssues: boolean;
