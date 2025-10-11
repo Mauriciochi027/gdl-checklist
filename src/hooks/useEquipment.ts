@@ -12,6 +12,9 @@ export const useEquipment = () => {
   // Fetch all equipment
   const fetchEquipments = async () => {
     try {
+      setIsLoading(true);
+      console.log('[useEquipment] Iniciando carregamento de equipamentos...');
+      
       const { data, error } = await supabase
         .from('equipment')
         .select('*')
@@ -21,7 +24,8 @@ export const useEquipment = () => {
 
       // Transform database format to Equipment interface format
       const transformedData = keysToCamelCase<Equipment[]>(data || []);
-
+      
+      console.log('[useEquipment] Equipamentos carregados:', transformedData.length);
       setEquipments(transformedData);
     } catch (error) {
       console.error('Error fetching equipment:', error);
@@ -31,6 +35,7 @@ export const useEquipment = () => {
         variant: "destructive"
       });
     } finally {
+      console.log('[useEquipment] Finalizando carregamento');
       setIsLoading(false);
     }
   };

@@ -12,6 +12,9 @@ export const useChecklists = () => {
   // Fetch all checklist records with related data
   const fetchChecklists = async () => {
     try {
+      setIsLoading(true);
+      console.log('[useChecklists] Iniciando carregamento de checklists...');
+      
       const { data: records, error } = await supabase
         .from('checklist_records')
         .select(`
@@ -47,6 +50,7 @@ export const useChecklists = () => {
         };
       }) || [];
 
+      console.log('[useChecklists] Checklists carregados:', transformedRecords.length);
       setChecklistRecords(transformedRecords);
     } catch (error) {
       console.error('Error fetching checklists:', error);
@@ -56,6 +60,7 @@ export const useChecklists = () => {
         variant: "destructive"
       });
     } finally {
+      console.log('[useChecklists] Finalizando carregamento');
       setIsLoading(false);
     }
   };
