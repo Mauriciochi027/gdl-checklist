@@ -16,7 +16,7 @@ import { getChecklistItemById } from '@/lib/checklistItems';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
-  const { equipments, addEquipment, updateEquipment } = useEquipment();
+  const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment } = useEquipment();
   const { checklistRecords, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
 
@@ -114,7 +114,7 @@ const Index = () => {
           currentUser={user}
         />;
       case 'equipments':
-        return <EquipmentList equipments={equipments} onAddEquipment={handleAddEquipment} onUpdateEquipment={handleUpdateEquipment} />;
+        return <EquipmentList equipments={equipments} isLoading={isLoadingEquipments} onAddEquipment={handleAddEquipment} onUpdateEquipment={handleUpdateEquipment} />;
       case 'checklist':
         return <ChecklistForm equipments={equipments} onSubmitChecklist={handleSubmitChecklist} />;
       case 'history':

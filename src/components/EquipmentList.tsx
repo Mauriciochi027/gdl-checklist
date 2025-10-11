@@ -17,11 +17,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 interface EquipmentListProps {
   equipments: Equipment[];
+  isLoading: boolean;
   onAddEquipment: (equipment: Omit<Equipment, 'id'>) => void;
   onUpdateEquipment: (id: string, equipment: Partial<Equipment>) => void;
 }
 const EquipmentList = ({
   equipments,
+  isLoading,
   onAddEquipment,
   onUpdateEquipment
 }: EquipmentListProps) => {
@@ -447,80 +449,92 @@ const EquipmentList = ({
         </Select>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center py-12">
+          <div className="w-12 h-12 border-4 border-industrial-blue border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Carregando equipamentos...</p>
+        </div>
+      )}
+
       {/* Equipment Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEquipments.map(equipment => <Card key={equipment.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-industrial-blue" />
-                  {equipment.code}
-                </CardTitle>
-                {getStatusBadge(equipment.status)}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {equipment.photo && <div className="flex justify-center">
-                  <img src={equipment.photo} alt={`Equipamento ${equipment.code}`} className="w-24 h-24 object-cover rounded-lg border" />
-                </div>}
-              
-              <div>
-                <p className="font-medium text-gray-900">{equipment.brand} {equipment.model}</p>
-                <p className="text-sm text-gray-600">Ano: {equipment.year}</p>
-              </div>
-              
-              {equipment.sector && <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4" />
-                  {equipment.sector}
-                </div>}
-              
-              {equipment.lastCheck && <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  Último check: {new Date(equipment.lastCheck).toLocaleDateString('pt-BR')}
-                </div>}
+      {!isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredEquipments.map(equipment => <Card key={equipment.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-industrial-blue" />
+                    {equipment.code}
+                  </CardTitle>
+                  {getStatusBadge(equipment.status)}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {equipment.photo && <div className="flex justify-center">
+                    <img src={equipment.photo} alt={`Equipamento ${equipment.code}`} className="w-24 h-24 object-cover rounded-lg border" />
+                  </div>}
+                
+                <div>
+                  <p className="font-medium text-gray-900">{equipment.brand} {equipment.model}</p>
+                  <p className="text-sm text-gray-600">Ano: {equipment.year}</p>
+                </div>
+                
+                {equipment.sector && <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="w-4 h-4" />
+                    {equipment.sector}
+                  </div>}
+                
+                {equipment.lastCheck && <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4" />
+                    Último check: {new Date(equipment.lastCheck).toLocaleDateString('pt-BR')}
+                  </div>}
 
-              {equipment.nextMaintenance && <div className="flex items-center gap-2 text-sm">
-                  <AlertCircle className="w-4 h-4 text-safety-orange" />
-                  <span>Manutenção: {new Date(equipment.nextMaintenance).toLocaleDateString('pt-BR')}</span>
-                </div>}
+                {equipment.nextMaintenance && <div className="flex items-center gap-2 text-sm">
+                    <AlertCircle className="w-4 h-4 text-safety-orange" />
+                    <span>Manutenção: {new Date(equipment.nextMaintenance).toLocaleDateString('pt-BR')}</span>
+                  </div>}
 
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={e => {
-              e.stopPropagation();
-              setQrEquipment(equipment);
-              setShowQRCode(true);
-            }} className="flex-1">
-                  <QrCode className="w-4 h-4 mr-1" />
-                  QR Code
-                </Button>
-                <Button variant="outline" size="sm" onClick={e => {
-              e.stopPropagation();
-              handleEdit(equipment);
-            }} className="flex-1">
-                  Editar
-                </Button>
-                {isAdmin && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleDeleteClick(equipment);
-                    }} 
-                    className="text-safety-red hover:text-safety-red hover:bg-safety-red/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={e => {
+                e.stopPropagation();
+                setQrEquipment(equipment);
+                setShowQRCode(true);
+              }} className="flex-1">
+                    <QrCode className="w-4 h-4 mr-1" />
+                    QR Code
                   </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>)}
-      </div>
+                  <Button variant="outline" size="sm" onClick={e => {
+                e.stopPropagation();
+                handleEdit(equipment);
+              }} className="flex-1">
+                    Editar
+                  </Button>
+                  {isAdmin && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleDeleteClick(equipment);
+                      }} 
+                      className="text-safety-red hover:text-safety-red hover:bg-safety-red/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>)}
+        </div>
+      )}
 
-      {filteredEquipments.length === 0 && <div className="text-center py-12">
+      {!isLoading && filteredEquipments.length === 0 && (
+        <div className="text-center py-12">
           <Truck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500">Nenhum equipamento encontrado</p>
-        </div>}
+        </div>
+      )}
 
       {/* Dialog do QR Code */}
       <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
