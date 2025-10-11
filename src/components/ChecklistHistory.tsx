@@ -48,11 +48,12 @@ const transformAnswersForDisplay = (answers: ChecklistAnswer[], photos?: Record<
 
 interface ChecklistHistoryProps {
   records: ChecklistRecord[];
+  isLoading: boolean;
   userProfile?: string;
   currentUser?: { name: string; matricula?: string };
 }
 
-const ChecklistHistory = ({ records, userProfile, currentUser }: ChecklistHistoryProps) => {
+const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: ChecklistHistoryProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -263,10 +264,19 @@ const ChecklistHistory = ({ records, userProfile, currentUser }: ChecklistHistor
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center py-12">
+          <div className="w-12 h-12 border-4 border-industrial-blue border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Carregando histórico de checklists...</p>
+        </div>
+      )}
+
       {/* Records List */}
-      <div className="space-y-4">
-        {filteredRecords.length > 0 ? (
-          filteredRecords.map((record) => {
+      {!isLoading && (
+        <div className="space-y-4">
+          {filteredRecords.length > 0 ? (
+            filteredRecords.map((record) => {
             const { dateStr, timeStr } = formatDateTime(record.timestamp);
             
             return (
@@ -361,24 +371,25 @@ const ChecklistHistory = ({ records, userProfile, currentUser }: ChecklistHistor
               </Card>
             );
           })
-        ) : (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Nenhum registro encontrado
-              </h3>
-              <p className="text-gray-600">
-                {searchTerm || statusFilter !== "todos" || monthFilter !== "todos" || yearFilter !== "todos"
-                  ? 'Nenhum resultado encontrado para os filtros aplicados.'
-                  : 'Nenhum checklist foi realizado ainda.'}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+         ) : (
+           <Card>
+             <CardContent className="p-12 text-center">
+               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <FileText className="w-8 h-8 text-gray-400" />
+               </div>
+               <h3 className="text-lg font-medium text-gray-900 mb-2">
+                 Nenhum registro encontrado
+               </h3>
+               <p className="text-gray-600">
+                 {searchTerm || statusFilter !== "todos" || monthFilter !== "todos" || yearFilter !== "todos"
+                   ? 'Nenhum resultado encontrado para os filtros aplicados.'
+                   : 'Nenhum checklist foi realizado ainda.'}
+               </p>
+             </CardContent>
+           </Card>
+         )}
+        </div>
+      )}
 
       {/* Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>

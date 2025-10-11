@@ -17,7 +17,7 @@ import { getChecklistItemById } from '@/lib/checklistItems';
 const Index = () => {
   const { user, isLoading } = useAuth();
   const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment } = useEquipment();
-  const { checklistRecords, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
+  const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
 
   // Filter data for operators - only show their own checklists
@@ -109,6 +109,7 @@ const Index = () => {
       case 'approvals':
         return <ApprovalsPage 
           records={checklistRecords}
+          isLoading={isLoadingChecklists}
           onApproveRecord={(recordId: string, mechanicName: string, comment: string) => handleApproveRecord(recordId, mechanicName, comment)}
           onRejectRecord={(recordId: string, mechanicName: string, reason: string) => handleRejectRecord(recordId, mechanicName, reason)}
           currentUser={user}
@@ -119,7 +120,8 @@ const Index = () => {
         return <ChecklistForm equipments={equipments} onSubmitChecklist={handleSubmitChecklist} />;
       case 'history':
         return <ChecklistHistory 
-          records={checklistRecords} 
+          records={checklistRecords}
+          isLoading={isLoadingChecklists}
           userProfile={user?.profile}
           currentUser={user}
         />;

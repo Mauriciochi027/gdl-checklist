@@ -44,12 +44,13 @@ const transformAnswersForDisplay = (answers: ChecklistAnswer[], photos?: Record<
 
 interface ApprovalsPageProps {
   records: ChecklistRecord[];
+  isLoading: boolean;
   onApproveRecord: (recordId: string, mechanicName: string, comment: string) => void;
   onRejectRecord: (recordId: string, mechanicName: string, reason: string) => void;
   currentUser?: { name: string; matricula?: string };
 }
 
-const ApprovalsPage = ({ records, onApproveRecord, onRejectRecord, currentUser }: ApprovalsPageProps) => {
+const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, currentUser }: ApprovalsPageProps) => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
@@ -179,10 +180,19 @@ const ApprovalsPage = ({ records, onApproveRecord, onRejectRecord, currentUser }
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center py-12">
+          <div className="w-12 h-12 border-4 border-industrial-blue border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Carregando aprovações pendentes...</p>
+        </div>
+      )}
+
       {/* Pending Approvals List */}
-      <div className="space-y-4">
-        {filteredRecords.length > 0 ? (
-          filteredRecords.map((record) => {
+      {!isLoading && (
+        <div className="space-y-4">
+          {filteredRecords.length > 0 ? (
+            filteredRecords.map((record) => {
             const { dateStr, timeStr } = formatDateTime(record.timestamp);
             
             return (
@@ -262,27 +272,28 @@ const ApprovalsPage = ({ records, onApproveRecord, onRejectRecord, currentUser }
                         Negar
                       </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        ) : (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Nenhuma aprovação pendente
-              </h3>
-              <p className="text-gray-600">
-                {searchTerm ? 'Nenhum resultado encontrado para sua busca.' : 'Todos os checklists foram processados.'}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                   </div>
+                 </CardContent>
+               </Card>
+             );
+           })
+         ) : (
+           <Card>
+             <CardContent className="p-12 text-center">
+               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <Clock className="w-8 h-8 text-gray-400" />
+               </div>
+               <h3 className="text-lg font-medium text-gray-900 mb-2">
+                 Nenhuma aprovação pendente
+               </h3>
+               <p className="text-gray-600">
+                 {searchTerm ? 'Nenhum resultado encontrado para sua busca.' : 'Todos os checklists foram processados.'}
+               </p>
+             </CardContent>
+           </Card>
+         )}
+        </div>
+      )}
 
       {/* Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
