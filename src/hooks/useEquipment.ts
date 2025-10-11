@@ -7,6 +7,7 @@ import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 export const useEquipment = () => {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Fetch all equipment
@@ -41,7 +42,36 @@ export const useEquipment = () => {
   };
 
   useEffect(() => {
-    fetchEquipments();
+    const initFetch = async () => {
+      // Wait for auth session to be ready
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        console.log('[useEquipment] Sessão autenticada, iniciando fetch...');
+        await fetchEquipments();
+      } else {
+        console.log('[useEquipment] Sem sessão, aguardando autenticação...');
+        setIsLoading(false);
+      }
+      
+      setIsInitialized(true);
+    };
+
+    initFetch();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log('[useEquipment] Usuário autenticado, buscando dados...');
+        await fetchEquipments();
+      } else if (event === 'SIGNED_OUT') {
+        console.log('[useEquipment] Usuário deslogado, limpando dados...');
+        setEquipments([]);
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {

@@ -7,6 +7,7 @@ import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 export const useChecklists = () => {
   const [checklistRecords, setChecklistRecords] = useState<ChecklistRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Fetch all checklist records with related data
@@ -66,7 +67,36 @@ export const useChecklists = () => {
   };
 
   useEffect(() => {
-    fetchChecklists();
+    const initFetch = async () => {
+      // Wait for auth session to be ready
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        console.log('[useChecklists] Sessão autenticada, iniciando fetch...');
+        await fetchChecklists();
+      } else {
+        console.log('[useChecklists] Sem sessão, aguardando autenticação...');
+        setIsLoading(false);
+      }
+      
+      setIsInitialized(true);
+    };
+
+    initFetch();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log('[useChecklists] Usuário autenticado, buscando dados...');
+        await fetchChecklists();
+      } else if (event === 'SIGNED_OUT') {
+        console.log('[useChecklists] Usuário deslogado, limpando dados...');
+        setChecklistRecords([]);
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const addChecklist = async (checklistData: {
