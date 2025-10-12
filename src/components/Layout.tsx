@@ -87,17 +87,13 @@ const Layout = ({
         label: 'Aprovações',
         icon: ClipboardCheck
       }, {
-        id: 'accounts',
-        label: 'Contas',
-        icon: Users
-      }, {
         id: 'history',
         label: 'Histórico',
         icon: Settings
       }];
     }
 
-    // Mecânico tem acesso completo (antigas funcionalidades de gestor)
+    // Mecânico tem acesso à criação de contas
     return [...baseItems, {
       id: 'status',
       label: 'Status',
