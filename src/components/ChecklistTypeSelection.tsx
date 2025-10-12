@@ -101,11 +101,8 @@ export const LiftingAccessorySelection = ({ onSelectType, onBack }: ChecklistTyp
               onClick={() => onSelectType(type)}
             >
               <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-safety-blue to-industrial-600 flex items-center justify-center shadow-lg hover:scale-110 transition-all">
-                  {type === 'cinta_icamento' && <PackageCheck className="h-10 w-10 text-white" strokeWidth={2.5} />}
-                  {type === 'manilha' && <Anchor className="h-10 w-10 text-white" strokeWidth={2.5} />}
-                  {type === 'gancho' && <DollarSign className="h-10 w-10 text-white" strokeWidth={2.5} />}
-                  {type === 'corrente_icamento' && <Link2 className="h-10 w-10 text-white" strokeWidth={2.5} />}
+                <div className="text-5xl">
+                  {checklistTypeIcons[type]}
                 </div>
                 <h2 className="text-lg font-bold text-industrial-900">
                   {checklistTypeLabels[type]}
