@@ -31,6 +31,7 @@ import {
 
 import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
 import { getChecklistItemById } from '@/lib/checklistItems';
+import { checklistTypeLabels, ChecklistType } from '@/lib/liftingAccessoryChecklists';
 
 // Helper to transform answers for display
 const transformAnswersForDisplay = (answers: ChecklistAnswer[], photos?: Record<string, string[]>) => {
@@ -59,6 +60,7 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
+  const [typeFilter, setTypeFilter] = useState("todos");
   const [monthFilter, setMonthFilter] = useState("todos");
   const [yearFilter, setYearFilter] = useState("todos");
   const [selectedRecord, setSelectedRecord] = useState<ChecklistRecord | null>(null);
@@ -108,6 +110,7 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                          record.operatorName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "todos" || record.status === statusFilter;
+    const matchesType = typeFilter === "todos" || (record as any).checklistType === typeFilter;
     
     const recordDate = new Date(record.timestamp);
     const recordYear = recordDate.getFullYear().toString();
@@ -116,7 +119,7 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
     const matchesYear = yearFilter === "todos" || recordYear === yearFilter;
     const matchesMonth = monthFilter === "todos" || recordMonth === monthFilter;
     
-    return matchesSearch && matchesStatus && matchesYear && matchesMonth;
+    return matchesSearch && matchesStatus && matchesType && matchesYear && matchesMonth;
   }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const getStatusIcon = (status: string) => {
@@ -200,7 +203,7 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -222,6 +225,21 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                 <SelectItem value="conforme">Aprovado</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="negado">Negado</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Type Filter */}
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos Tipos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos Tipos</SelectItem>
+                <SelectItem value="empilhadeira">Empilhadeiras</SelectItem>
+                <SelectItem value="cinta_icamento">Cintas</SelectItem>
+                <SelectItem value="manilha">Manilhas</SelectItem>
+                <SelectItem value="gancho">Ganchos</SelectItem>
+                <SelectItem value="corrente_icamento">Correntes</SelectItem>
               </SelectContent>
             </Select>
 

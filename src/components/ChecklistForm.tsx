@@ -8,21 +8,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { PhotoGrid } from "@/components/ui/photo-viewer";
-import { User, Truck, FileText, PenTool, Camera, QrCode, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { User, Truck, FileText, PenTool, Camera, QrCode, AlertTriangle, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import forkliftWorkingImage from "@/assets/forklift-working.png";
 import mechanicIcon from "@/assets/mechanic-icon.jpg";
 import { BrowserQRCodeReader } from '@zxing/library';
 import { checklistItems, type ChecklistItem } from '@/lib/checklistItems';
+import { ChecklistType, getChecklistItems, checklistTypeLabels, LiftingChecklistItem } from '@/lib/liftingAccessoryChecklists';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { Equipment, ChecklistAnswer } from '@/types/equipment';
 
 interface ChecklistFormProps {
   equipments: Equipment[];
   onSubmitChecklist: (data: any) => void;
+  checklistType: ChecklistType;
+  onBack?: () => void;
 }
 
-const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) => {
+const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }: ChecklistFormProps) => {
   const [selectedEquipment, setSelectedEquipment] = useState<string>("");
   const [operatorName, setOperatorName] = useState<string>("");
   const [operatorId, setOperatorId] = useState<string>("");
@@ -54,13 +57,18 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
     }
   }, [user]);
 
-  const groupedItems = checklistItems.reduce((acc, item) => {
+  // Get the appropriate checklist items based on type
+  const currentChecklistItems = checklistType === 'empilhadeira' 
+    ? checklistItems 
+    : getChecklistItems(checklistType);
+
+  const groupedItems = currentChecklistItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }
     acc[item.category].push(item);
     return acc;
-  }, {} as Record<string, ChecklistItem[]>);
+  }, {} as Record<string, (ChecklistItem | LiftingChecklistItem)[]>);
 
   const handleAnswerChange = (itemId: string, value: 'sim' | 'nao' | 'nao_aplica') => {
     setAnswers(prev => ({
@@ -162,17 +170,29 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   };
 
   const validateForm = (): boolean => {
-    if (!selectedEquipment || !operatorName || !operatorId || !equipmentModel || 
-        !location || !unit || !equipmentSeries || !equipmentNumber || !hourMeter) {
+    // Para acessórios de içamento, alguns campos não são obrigatórios
+    const isLiftingAccessory = checklistType !== 'empilhadeira';
+    
+    if (!operatorName || !operatorId) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios.",
+        description: "Preencha o nome e matrícula do operador.",
         variant: "destructive",
       });
       return false;
     }
 
-    const requiredItems = checklistItems.filter(item => item.required);
+    if (!isLiftingAccessory && (!selectedEquipment || !equipmentModel || 
+        !location || !unit || !equipmentSeries || !equipmentNumber || !hourMeter)) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios do equipamento.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const requiredItems = currentChecklistItems.filter(item => item.required);
     const missingAnswers = requiredItems.filter(item => !answers[item.id]);
     
     if (missingAnswers.length > 0) {
@@ -199,26 +219,35 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   const handleSubmit = () => {
     if (!validateForm()) return;
 
-    // Verificar se há itens críticos marcados como "não"
-    const hasCriticalIssues = criticalItems.some(itemId => {
-      const answer = answers[itemId];
-      return answer && answer.value === 'nao';
-    });
+    // Verificar se há itens marcados como "não" (NOK)
+    const hasNonConformItems = Object.values(answers).some(answer => answer.value === 'nao');
+
+    // Para acessórios de içamento, qualquer item NOK bloqueia a operação
+    const isLiftingAccessory = checklistType !== 'empilhadeira';
+    
+    // Para empilhadeiras, apenas itens críticos bloqueiam
+    const hasCriticalIssues = isLiftingAccessory 
+      ? hasNonConformItems
+      : criticalItems.some(itemId => {
+          const answer = answers[itemId];
+          return answer && answer.value === 'nao';
+        });
 
     const checklistData = {
-      equipmentId: selectedEquipment,
+      equipmentId: selectedEquipment || 'N/A',
       operatorName,
       operatorId,
-      equipmentModel,
-      location,
-      unit,
-      equipmentSeries,
-      equipmentNumber,
-      hourMeter: parseInt(hourMeter),
+      equipmentModel: equipmentModel || checklistType,
+      location: location || 'N/A',
+      unit: unit || '01',
+      equipmentSeries: equipmentSeries || checklistType,
+      equipmentNumber: equipmentNumber || 'N/A',
+      hourMeter: hourMeter ? parseInt(hourMeter) : 0,
       timestamp: new Date().toISOString(),
       answers: Object.values(answers),
       signature,
-      photos
+      photos,
+      checklistType
     };
 
     onSubmitChecklist(checklistData);
@@ -268,7 +297,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   };
 
   const getProgressStats = () => {
-    const totalItems = checklistItems.length;
+    const totalItems = currentChecklistItems.length;
     const answeredItems = Object.keys(answers).length;
     const conformeItems = Object.values(answers).filter(a => a.value === 'sim').length;
     const naoConformeItems = Object.values(answers).filter(a => a.value === 'nao').length;
@@ -464,9 +493,26 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
   return (
     <div className="min-h-screen bg-gradient-to-br from-industrial-50 to-safety-blue-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
+        {onBack && (
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
+        )}
+        
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-industrial-900">Checklist Pré-Uso de Empilhadeira</h1>
-          <p className="text-industrial-600">Inspeção obrigatória antes da operação</p>
+          <h1 className="text-3xl font-bold text-industrial-900">
+            {checklistTypeLabels[checklistType]}
+          </h1>
+          <p className="text-industrial-600">
+            {checklistType === 'empilhadeira' 
+              ? 'Inspeção obrigatória antes da operação'
+              : 'Inspeção obrigatória do acessório de içamento'}
+          </p>
         </div>
 
         {/* Progress Cards */}
@@ -881,7 +927,11 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
               <CheckCircle size={64} className="text-white" />
             </div>
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Equipamento liberado para uso!</h2>
+              <h2 className="text-2xl font-bold">
+                {checklistType === 'empilhadeira' 
+                  ? 'Equipamento liberado para uso!' 
+                  : 'Acessório aprovado para uso!'}
+              </h2>
               <p className="text-lg">Bom trabalho!</p>
               <div className="flex justify-center">
                 <img 
@@ -915,8 +965,14 @@ const ChecklistForm = ({ equipments, onSubmitChecklist }: ChecklistFormProps) =>
               </div>
             </div>
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Itens críticos identificados</h2>
-              <p className="text-lg">Equipamento paralisado, favor encaminhar para oficina.</p>
+              <h2 className="text-2xl font-bold">
+                ⚠️ ITEM NÃO CONFORME DETECTADO
+              </h2>
+              <p className="text-lg font-semibold">
+                {checklistType === 'empilhadeira' 
+                  ? 'Equipamento paralisado. Favor encaminhar para oficina.' 
+                  : 'Operação paralisada. Favor entrar em contato com o SEMEST.'}
+              </p>
               <Button 
                 onClick={handleDialogClose}
                 className="bg-white text-red-500 hover:bg-gray-100 font-semibold px-8 py-2"

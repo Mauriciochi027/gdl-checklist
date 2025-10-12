@@ -118,6 +118,7 @@ export type Database = {
       }
       checklist_records: {
         Row: {
+          checklist_type: string
           conforme_items: number
           created_at: string | null
           equipment_code: string
@@ -141,6 +142,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          checklist_type?: string
           conforme_items: number
           created_at?: string | null
           equipment_code: string
@@ -164,6 +166,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          checklist_type?: string
           conforme_items?: number
           created_at?: string | null
           equipment_code?: string

@@ -7,6 +7,8 @@ import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
 import EquipmentList from '@/components/EquipmentList';
 import ChecklistForm from '@/components/ChecklistForm';
+import { ChecklistTypeSelection, LiftingAccessorySelection } from '@/components/ChecklistTypeSelection';
+import { ChecklistType } from '@/lib/liftingAccessoryChecklists';
 import ChecklistHistory from '@/components/ChecklistHistory';
 import ApprovalsPage from '@/components/ApprovalsPage';
 import StatusPanel from '@/components/StatusPanel';
@@ -19,6 +21,8 @@ const Index = () => {
   const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment } = useEquipment();
   const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [selectedChecklistType, setSelectedChecklistType] = useState<ChecklistType | null>(null);
+  const [showLiftingAccessorySelection, setShowLiftingAccessorySelection] = useState(false);
 
   // Filter data for operators - only show their own checklists
   const getUserFilteredData = () => {
@@ -59,18 +63,23 @@ const Index = () => {
   const handleSubmitChecklist = async (data: any) => {
     const eq = equipments.find(eq => eq.id === data.equipmentId);
     
-    if (!eq || !user) return;
+    if (!user) return;
 
     await addChecklist({
-      equipmentId: eq.id,
-      equipmentCode: eq.code,
-      equipmentModel: `${eq.brand} ${eq.model}`,
+      equipmentId: data.equipmentId,
+      equipmentCode: eq?.code || data.equipmentNumber,
+      equipmentModel: eq ? `${eq.brand} ${eq.model}` : data.checklistType,
       operatorName: user.name,
       operatorId: user.matricula || user.id,
       answers: data.answers,
       signature: data.signature,
-      photos: data.photos
+      photos: data.photos,
+      checklistType: data.checklistType
     });
+    
+    // Volta para seleção de tipo
+    setSelectedChecklistType(null);
+    setShowLiftingAccessorySelection(false);
   };
 
   const handleApproveRecord = async (recordId: string, mechanicName: string, comment: string) => {
@@ -88,6 +97,46 @@ const Index = () => {
   };
 
   const renderPage = () => {
+    // Checklist flow with type selection
+    if (currentPage === 'checklist') {
+      // Step 1: Type selection
+      if (!selectedChecklistType && !showLiftingAccessorySelection) {
+        return <ChecklistTypeSelection 
+          onSelectType={(type) => {
+            if (type === 'cinta_icamento') {
+              // Show lifting accessory subtypes
+              setShowLiftingAccessorySelection(true);
+            } else {
+              setSelectedChecklistType(type);
+            }
+          }}
+        />;
+      }
+      
+      // Step 2: Lifting accessory subtype selection
+      if (showLiftingAccessorySelection) {
+        return <LiftingAccessorySelection
+          onSelectType={(type) => {
+            setSelectedChecklistType(type);
+            setShowLiftingAccessorySelection(false);
+          }}
+          onBack={() => setShowLiftingAccessorySelection(false)}
+        />;
+      }
+      
+      // Step 3: Actual checklist form
+      if (selectedChecklistType) {
+        return <ChecklistForm 
+          equipments={equipments} 
+          onSubmitChecklist={handleSubmitChecklist}
+          checklistType={selectedChecklistType}
+          onBack={() => {
+            setSelectedChecklistType(null);
+          }}
+        />;
+      }
+    }
+    
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard 
@@ -116,8 +165,6 @@ const Index = () => {
         />;
       case 'equipments':
         return <EquipmentList equipments={equipments} isLoading={isLoadingEquipments} onAddEquipment={handleAddEquipment} onUpdateEquipment={handleUpdateEquipment} />;
-      case 'checklist':
-        return <ChecklistForm equipments={equipments} onSubmitChecklist={handleSubmitChecklist} />;
       case 'history':
         return <ChecklistHistory 
           records={checklistRecords}
@@ -152,7 +199,14 @@ const Index = () => {
   }
 
   return (
-    <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+    <Layout currentPage={currentPage} onPageChange={(page) => {
+      setCurrentPage(page);
+      // Reset checklist state when navigating away
+      if (page !== 'checklist') {
+        setSelectedChecklistType(null);
+        setShowLiftingAccessorySelection(false);
+      }
+    }}>
       {renderPage()}
     </Layout>
   );
