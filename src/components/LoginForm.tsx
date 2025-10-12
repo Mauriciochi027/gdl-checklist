@@ -129,7 +129,7 @@ export const LoginForm = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-center gap-3 mb-2">
-              <img src={gdlLogo} alt="GDL - Solução em movimento" className="w-40 h-10 object-contain opacity-100 " />
+              <img src={gdlLogo} alt="GDL - Solução em movimento" className="w-100 h-20 object-contain opacity-100 " />
               
             </div>
             <CardDescription className="text-center">
