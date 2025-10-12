@@ -968,7 +968,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
 
       {/* Dialog de Sucesso */}
       <Dialog open={showSuccessDialog} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md mx-auto">
+        <DialogContent className="max-w-md mx-auto" onInteractOutside={(e) => e.preventDefault()}>
           <div className="bg-green-500 text-white p-8 rounded-lg text-center space-y-6">
             <div className="flex justify-center">
               <CheckCircle size={64} className="text-white" />
@@ -999,8 +999,8 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
       </Dialog>
 
       {/* Dialog de Itens Críticos */}
-      <Dialog open={showCriticalDialog} onOpenChange={setShowCriticalDialog}>
-        <DialogContent className="max-w-md mx-auto">
+      <Dialog open={showCriticalDialog} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md mx-auto" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <div className="bg-red-500 text-white p-8 rounded-lg text-center space-y-6">
             <div className="flex justify-center">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
