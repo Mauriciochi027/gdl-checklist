@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +26,16 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
   const [viewingEquipment, setViewingEquipment] = useState<Equipment | null>(null);
   const [newStatus, setNewStatus] = useState<string>('');
   const [statusReason, setStatusReason] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
 
   const canEdit = userProfile === 'mecanico' || userProfile === 'gestor';
+
+  // Simular carregamento inicial
+  useEffect(() => {
+    if (equipments.length > 0) {
+      setIsLoading(false);
+    }
+  }, [equipments]);
 
   // Função para determinar o status baseado no banco de dados e nos checklists
   const getEquipmentStatus = (equipmentCode: string): { status: 'disponivel' | 'operando' | 'manutencao'; label: string; color: string; bgColor: string; icon: React.ReactNode } => {
@@ -176,8 +184,22 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Loading Spinner */}
+      {isLoading && equipments.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-industrial-blue border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-safety-orange border-b-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
+          </div>
+          <p className="text-lg font-medium text-muted-foreground animate-pulse">Carregando equipamentos...</p>
+        </div>
+      )}
+
+      {/* Content - Only show when not loading or has data */}
+      {(!isLoading || equipments.length > 0) && (
+        <>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Painel de Status</h1>
           <p className="text-muted-foreground">
@@ -508,6 +530,8 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>
+      )}
     </div>
   );
 };
