@@ -86,6 +86,10 @@ const Layout = ({
       label: 'Aprovações',
       icon: ClipboardCheck
     }, {
+      id: 'accounts',
+      label: 'Contas',
+      icon: Users
+    }, {
       id: 'history',
       label: 'Histórico',
       icon: Settings
