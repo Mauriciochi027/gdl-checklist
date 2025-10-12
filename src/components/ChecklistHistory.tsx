@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useReactToPrint } from 'react-to-print';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -199,17 +200,16 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
     }
   };
 
-  const handleDownloadPDF = () => {
-    if (!selectedRecord) return;
-
-    // Trigger browser print dialog which can save as PDF
-    window.print();
-    
-    toast({
-      title: "Imprimindo checklist",
-      description: "Use 'Salvar como PDF' na janela de impressão.",
-    });
-  };
+  const handleDownloadPDF = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Checklist_${selectedRecord?.equipmentCode}_${new Date(selectedRecord?.timestamp || '').toLocaleDateString('pt-BR').replace(/\//g, '-')}`,
+    onAfterPrint: () => {
+      toast({
+        title: "PDF gerado com sucesso",
+        description: "O documento foi gerado e está pronto para salvar.",
+      });
+    },
+  });
 
 
   return (
@@ -457,9 +457,19 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
           </DialogHeader>
           
           {selectedRecord && (
-            <div className="flex-1 overflow-y-auto pr-2" ref={printRef}>
+            <div className="print-content" ref={printRef}>
+              {/* Print Header - Only visible when printing */}
+              <div className="print-only mb-6 pb-4 border-b-2 border-gray-300">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                  Relatório de Checklist de Segurança
+                </h1>
+                <p className="text-gray-600">
+                  Documento gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}
+                </p>
+              </div>
+
               {/* Equipment Info Header */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mb-4 print:bg-gray-100">
                 <div>
                   <span className="text-sm font-medium text-gray-600">Operador:</span>
                   <p className="text-gray-900 font-semibold">{selectedRecord.operatorName}</p>
@@ -507,7 +517,7 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
               </div>
 
               {/* Summary Stats */}
-              <div className="grid grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg mb-4">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg mb-4 print:bg-blue-100">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-safety-green">{selectedRecord.conformeItems}</p>
                   <p className="text-sm text-gray-600">Conformes</p>

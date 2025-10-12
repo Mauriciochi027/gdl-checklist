@@ -141,6 +141,10 @@
 }
 
 /* Print Styles for PDF Generation */
+.print-only {
+  display: none;
+}
+
 @media print {
   @page {
     size: A4;
@@ -152,10 +156,22 @@
     -webkit-print-color-adjust: exact;
   }
 
+  .print-only {
+    display: block !important;
+  }
+
+  .print-content {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
   /* Hide elements that shouldn't be printed */
   button,
   .no-print,
-  [role="dialog"] > div:first-child {
+  [role="dialog"] > div:first-child,
+  [data-radix-dialog-overlay],
+  .lucide-x {
     display: none !important;
   }
 
@@ -165,6 +181,7 @@
     max-width: 100% !important;
     max-height: none !important;
     overflow: visible !important;
+    box-shadow: none !important;
   }
 
   /* Better page breaks */
@@ -178,7 +195,9 @@
   .bg-safety-red,
   .text-safety-red,
   .bg-safety-orange,
-  .text-safety-orange {
+  .text-safety-orange,
+  .bg-gray-50,
+  .bg-blue-50 {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
@@ -187,5 +206,14 @@
   img {
     max-width: 100%;
     page-break-inside: avoid;
+  }
+
+  /* Better borders and spacing for print */
+  .border {
+    border-color: #000 !important;
+  }
+
+  .rounded-lg {
+    border: 1px solid #ddd;
   }
 }
