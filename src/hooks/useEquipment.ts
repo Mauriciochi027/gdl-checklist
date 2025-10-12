@@ -8,12 +8,18 @@ export const useEquipment = () => {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
   // Fetch all equipment
   const fetchEquipments = async () => {
+    if (isFetching) {
+      console.log('[useEquipment] Já existe um fetch em andamento, ignorando...');
+      return;
+    }
+
     try {
-      setIsLoading(true);
+      setIsFetching(true);
       console.log('[useEquipment] Iniciando carregamento de equipamentos...');
       
       const { data, error } = await supabase
@@ -21,7 +27,12 @@ export const useEquipment = () => {
         .select('*')
         .order('code', { ascending: true });
 
-      if (error) throw error;
+      console.log('[useEquipment] Resposta do Supabase recebida', { data, error });
+
+      if (error) {
+        console.error('[useEquipment] Erro na query:', error);
+        throw error;
+      }
 
       // Transform database format to Equipment interface format
       const transformedData = keysToCamelCase<Equipment[]>(data || []);
@@ -29,14 +40,16 @@ export const useEquipment = () => {
       console.log('[useEquipment] Equipamentos carregados:', transformedData.length);
       setEquipments(transformedData);
     } catch (error) {
-      console.error('Error fetching equipment:', error);
+      console.error('[useEquipment] Error fetching equipment:', error);
       toast({
         title: "Erro ao carregar equipamentos",
         description: "Não foi possível carregar a lista de equipamentos.",
         variant: "destructive"
       });
+      setEquipments([]);
     } finally {
       console.log('[useEquipment] Finalizando carregamento');
+      setIsFetching(false);
       setIsLoading(false);
     }
   };

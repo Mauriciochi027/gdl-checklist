@@ -8,12 +8,18 @@ export const useChecklists = () => {
   const [checklistRecords, setChecklistRecords] = useState<ChecklistRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
   // Fetch all checklist records with related data
   const fetchChecklists = async () => {
+    if (isFetching) {
+      console.log('[useChecklists] Já existe um fetch em andamento, ignorando...');
+      return;
+    }
+
     try {
-      setIsLoading(true);
+      setIsFetching(true);
       console.log('[useChecklists] Iniciando carregamento de checklists...');
       
       const { data: records, error } = await supabase
@@ -27,7 +33,12 @@ export const useChecklists = () => {
         `)
         .order('timestamp', { ascending: false });
 
-      if (error) throw error;
+      console.log('[useChecklists] Resposta do Supabase recebida', { records, error });
+
+      if (error) {
+        console.error('[useChecklists] Erro na query:', error);
+        throw error;
+      }
 
       // Transform data to match expected format with automatic camelCase conversion
       const transformedRecords = records?.map(record => {
@@ -54,14 +65,16 @@ export const useChecklists = () => {
       console.log('[useChecklists] Checklists carregados:', transformedRecords.length);
       setChecklistRecords(transformedRecords);
     } catch (error) {
-      console.error('Error fetching checklists:', error);
+      console.error('[useChecklists] Error fetching checklists:', error);
       toast({
         title: "Erro ao carregar checklists",
         description: "Não foi possível carregar os registros de checklist.",
         variant: "destructive"
       });
+      setChecklistRecords([]);
     } finally {
       console.log('[useChecklists] Finalizando carregamento');
+      setIsFetching(false);
       setIsLoading(false);
     }
   };
