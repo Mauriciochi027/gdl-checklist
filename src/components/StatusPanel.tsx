@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Edit2, Eye, Clock, Wrench, CheckCircle } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -385,7 +386,7 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
 
       {/* View Equipment Dialog */}
       <Dialog open={!!viewingEquipment} onOpenChange={() => setViewingEquipment(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Detalhes do Equipamento</DialogTitle>
             <DialogDescription>
@@ -393,113 +394,115 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
             </DialogDescription>
           </DialogHeader>
           
-          {viewingEquipment && (
-            <div className="space-y-6">
-              {/* Equipment Photo */}
-              {viewingEquipment.photo && (
-                <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={viewingEquipment.photo}
-                    alt={`${viewingEquipment.brand} ${viewingEquipment.model}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
+          <ScrollArea className="max-h-[60vh] pr-4">
+            {viewingEquipment && (
+              <div className="space-y-6">
+                {/* Equipment Photo */}
+                {viewingEquipment.photo && (
+                  <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                    <img
+                      src={viewingEquipment.photo}
+                      alt={`${viewingEquipment.brand} ${viewingEquipment.model}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
 
-              {/* Equipment Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Código</Label>
-                  <p className="text-lg font-semibold">{viewingEquipment.code}</p>
+                {/* Equipment Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Código</Label>
+                    <p className="text-lg font-semibold">{viewingEquipment.code}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                    <div className="mt-1">
+                      {(() => {
+                        const status = getEquipmentStatus(viewingEquipment.code);
+                        return (
+                          <Badge className={cn(status.bgColor, status.color)}>
+                            <div className="flex items-center gap-1">
+                              {status.icon}
+                              {status.label}
+                            </div>
+                          </Badge>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Marca</Label>
+                    <p className="text-base">{viewingEquipment.brand}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Modelo</Label>
+                    <p className="text-base">{viewingEquipment.model}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Ano</Label>
+                    <p className="text-base">{viewingEquipment.year}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Setor</Label>
+                    <p className="text-base">{viewingEquipment.sector}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Último Check</Label>
+                    <p className="text-base">{new Date(viewingEquipment.lastCheck).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Próxima Manutenção</Label>
+                    <p className="text-base">{new Date(viewingEquipment.nextMaintenance).toLocaleDateString('pt-BR')}</p>
+                  </div>
                 </div>
+
+                {/* Observações do Mecânico */}
+                {viewingEquipment.observations && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Observações / Motivo da Alteração de Status</Label>
+                    <div className="mt-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingEquipment.observations}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Checklists */}
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
-                  <div className="mt-1">
-                    {(() => {
-                      const status = getEquipmentStatus(viewingEquipment.code);
-                      return (
-                        <Badge className={cn(status.bgColor, status.color)}>
-                          <div className="flex items-center gap-1">
-                            {status.icon}
-                            {status.label}
+                  <Label className="text-sm font-medium text-muted-foreground">Histórico Recente</Label>
+                  <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                    {checklistRecords
+                      .filter(record => record.equipmentCode === viewingEquipment.code)
+                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                      .slice(0, 5)
+                      .map(record => (
+                        <div key={record.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <div>
+                            <p className="text-sm font-medium">
+                              {new Date(record.timestamp).toLocaleDateString('pt-BR')} - {new Date(record.timestamp).toLocaleTimeString('pt-BR')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {record.naoConformeItems > 0 ? `${record.naoConformeItems} não conformidades` : 'Todas conformidades OK'}
+                            </p>
                           </div>
-                        </Badge>
-                      );
-                    })()}
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Marca</Label>
-                  <p className="text-base">{viewingEquipment.brand}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Modelo</Label>
-                  <p className="text-base">{viewingEquipment.model}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Ano</Label>
-                  <p className="text-base">{viewingEquipment.year}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Setor</Label>
-                  <p className="text-base">{viewingEquipment.sector}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Último Check</Label>
-                  <p className="text-base">{new Date(viewingEquipment.lastCheck).toLocaleDateString('pt-BR')}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Próxima Manutenção</Label>
-                  <p className="text-base">{new Date(viewingEquipment.nextMaintenance).toLocaleDateString('pt-BR')}</p>
-                </div>
-              </div>
-
-              {/* Observações do Mecânico */}
-              {viewingEquipment.observations && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Observações / Motivo da Alteração de Status</Label>
-                  <div className="mt-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingEquipment.observations}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Recent Checklists */}
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Histórico Recente</Label>
-                <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
-                  {checklistRecords
-                    .filter(record => record.equipmentCode === viewingEquipment.code)
-                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                    .slice(0, 5)
-                    .map(record => (
-                      <div key={record.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium">
-                            {new Date(record.timestamp).toLocaleDateString('pt-BR')} - {new Date(record.timestamp).toLocaleTimeString('pt-BR')}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {record.naoConformeItems > 0 ? `${record.naoConformeItems} não conformidades` : 'Todas conformidades OK'}
-                          </p>
+                          <Badge variant={
+                            record.status === 'conforme' ? 'default' : 
+                            record.status === 'pendente' ? 'secondary' : 
+                            'destructive'
+                          }>
+                            {record.status === 'conforme' ? 'Aprovado' : 
+                             record.status === 'pendente' ? 'Pendente' : 
+                             'Reprovado'}
+                          </Badge>
                         </div>
-                        <Badge variant={
-                          record.status === 'conforme' ? 'default' : 
-                          record.status === 'pendente' ? 'secondary' : 
-                          'destructive'
-                        }>
-                          {record.status === 'conforme' ? 'Aprovado' : 
-                           record.status === 'pendente' ? 'Pendente' : 
-                           'Reprovado'}
-                        </Badge>
-                      </div>
-                    ))}
-                  {checklistRecords.filter(record => record.equipmentCode === viewingEquipment.code).length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum checklist registrado</p>
-                  )}
+                      ))}
+                    {checklistRecords.filter(record => record.equipmentCode === viewingEquipment.code).length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">Nenhum checklist registrado</p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </ScrollArea>
 
           <DialogFooter>
             <Button onClick={() => setViewingEquipment(null)}>
