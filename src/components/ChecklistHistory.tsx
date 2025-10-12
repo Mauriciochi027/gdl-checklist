@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useSupabaseAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +16,6 @@ import {
   XCircle, 
   Search, 
   Filter, 
-  AlertTriangle,
   Eye,
   Calendar,
   FileText,
@@ -54,12 +51,10 @@ interface ChecklistHistoryProps {
   currentUser?: { name: string; matricula?: string };
 }
 
-const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: ChecklistHistoryProps) => {
+const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  
-  console.log('[ChecklistHistory] Total records:', records.length);
-  console.log('[ChecklistHistory] Record types:', records.map(r => r.checklistType || 'undefined'));
+  const printRef = useRef<HTMLDivElement>(null);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
@@ -101,7 +96,7 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
     return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   };
 
-  // Filter records based on user role (operators only see their own checklists)
+  // Filter records based on user role
   const userFilteredRecords = user?.profile === 'operador' 
     ? records.filter(record => record.operatorName === user.name)
     : records;
@@ -124,8 +119,6 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
     
     return matchesSearch && matchesStatus && matchesType && matchesYear && matchesMonth;
   }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  
-  console.log('[ChecklistHistory] After filters:', filteredRecords.length);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -152,7 +145,6 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
-
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -189,20 +181,19 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
       console.error('Erro ao deletar checklist:', error);
       toast({
         title: "Erro ao deletar",
-        description: "Não foi possível deletar o checklist. Verifique se você tem permissão.",
+        description: "Não foi possível deletar o checklist.",
         variant: "destructive",
       });
     }
   };
+
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Histórico de Checklists</h2>
-        <p className="text-gray-600">
-          Consulta e gestão de inspeções realizadas
-        </p>
+        <p className="text-gray-600">Consulta e gestão de inspeções realizadas</p>
       </div>
 
       {/* Filters */}
@@ -418,19 +409,19 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
 
       {/* Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-5xl h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0 pb-4">
+            <div className="flex items-center gap-2">
               <Truck className="w-5 h-5" />
-              Detalhes do Checklist
-            </DialogTitle>
+              <DialogTitle>Detalhes do Checklist</DialogTitle>
+            </div>
             <DialogDescription>
               {selectedRecord && `${selectedRecord.equipmentCode} - ${selectedRecord.equipmentModel}`}
             </DialogDescription>
           </DialogHeader>
           
           {selectedRecord && (
-            <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-y-auto pr-2" ref={printRef}>
               {/* Equipment Info Header */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mb-4">
                 <div>
@@ -495,12 +486,9 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                 </div>
               </div>
 
-              {/* Scrollable Answers Section */}
-              <div className="flex-1 overflow-y-auto pr-2">
-
               {/* Answers */}
               {selectedRecord.checklistAnswers && selectedRecord.checklistAnswers.length > 0 && (
-                <div>
+                <div className="mb-4">
                   <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <FileText className="w-5 h-5" />
                     Respostas do Checklist:
@@ -509,14 +497,12 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                     {transformAnswersForDisplay(selectedRecord.checklistAnswers, selectedRecord.photos).map((answer, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-white">
                         <div className="space-y-3">
-                          {/* Question */}
                           <div>
                             <h5 className="font-semibold text-gray-900 text-sm mb-2">
                               {index + 1}. {answer.question}
                             </h5>
                           </div>
                           
-                          {/* Answer and Conformity */}
                           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             <div className="flex-1">
                               <span className="text-sm text-gray-600">Resposta:</span>
@@ -540,7 +526,6 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                              </Badge>
                           </div>
 
-                          {/* Photos section - if answer has photos */}
                           {answer.photos && answer.photos.length > 0 && (
                             <div className="border-t pt-3">
                               <h6 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
@@ -551,7 +536,6 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                             </div>
                           )}
 
-                          {/* Observation or comments if available */}
                           {answer.observation && (
                             <div className="border-t pt-3">
                               <span className="text-sm font-medium text-gray-700">Observação:</span>
@@ -581,7 +565,6 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                   </div>
                 </div>
               )}
-              </div>
             </div>
           )}
         </DialogContent>
@@ -594,7 +577,7 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja deletar este checklist do equipamento <strong>{checklistToDelete?.equipmentCode}</strong>?
-              Esta ação não pode ser desfeita e irá remover todos os dados relacionados (respostas, fotos, aprovações, etc.).
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
