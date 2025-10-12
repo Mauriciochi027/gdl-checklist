@@ -117,11 +117,11 @@ export const LoginForm = () => {
         <div className="text-center space-y-4">
           <div>
             <div className="flex items-center justify-center gap-2 mb-1">
-              <img src={forkliftIcon} alt="Empilhadeira" className="w-8 h-8 object-contain" />
-              <h1 className="text-2xl font-bold text-foreground">GDL CheckList</h1>
+              
+              
             </div>
-            <p className="text-muted-foreground">Sistema de Checklist Digital</p>
-            <p className="text-sm text-muted-foreground">Solução em movimento</p>
+            
+            
           </div>
         </div>
 
