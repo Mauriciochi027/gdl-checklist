@@ -127,7 +127,15 @@ export const LoginForm = () => {
 
         {/* Login Form */}
         <Card>
-          
+          <CardHeader>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <img src={gdlLogo} alt="GDL - Solução em movimento" className="w-40 h-10 object-contain opacity-100 " />
+              <CardTitle className="-bottom-0.5 ">Login do Sistema</CardTitle>
+            </div>
+            <CardDescription className="text-center">
+              Entre com suas credenciais para acessar o sistema
+            </CardDescription>
+          </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -162,30 +170,7 @@ export const LoginForm = () => {
         </Card>
 
         {/* Demo Users */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Usuários de Demonstração</CardTitle>
-            <CardDescription className="text-xs">
-              Senha para todos: 123456
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {demoUsers.map(user => <div key={user.username} className="flex justify-between items-center text-sm p-2 bg-muted rounded">
-                  <div>
-                    <span className="font-medium">{user.username}</span>
-                    <span className="text-muted-foreground ml-2">({user.profile})</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => {
-                setUsername(user.username);
-                setPassword('123456');
-              }} disabled={isLoading}>
-                    Usar
-                  </Button>
-                </div>)}
-            </div>
-          </CardContent>
-        </Card>
+        
       </div>
     </div>;
 };
