@@ -169,9 +169,19 @@ const UserManagement = ({
       }
     } catch (error: any) {
       console.error('Error adding user:', error);
+      
+      // Tratamento específico para usuário já existente
+      let errorMessage = 'Não foi possível criar o usuário.';
+      
+      if (error.message?.includes('User already registered') || error.code === 'user_already_exists') {
+        errorMessage = `O nome de usuário "${formData.username}" já está em uso. Por favor, escolha outro nome de usuário.`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: 'Erro',
-        description: error.message || 'Não foi possível criar o usuário.',
+        title: 'Erro ao criar usuário',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
