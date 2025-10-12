@@ -42,6 +42,25 @@ const UserManagement = ({
 }: UserManagementProps) => {
   const { toast } = useToast();
   const [users, setUsers] = useState<UserProfile[]>([]);
+
+  // Verificação de segurança: apenas admins podem acessar
+  if (currentUser?.profile !== 'admin') {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <Shield className="w-16 h-16 mx-auto text-muted-foreground" />
+              <h2 className="text-2xl font-bold">Acesso Negado</h2>
+              <p className="text-muted-foreground">
+                Apenas administradores podem acessar o gerenciamento de contas.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -403,17 +422,15 @@ const UserManagement = ({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">
-            {currentUser?.profile === 'mecanico' || currentUser?.profile === 'gestor' ? 'Gerenciamento de Contas' : 'Gerenciamento de Usuários'}
+            Gerenciamento de Usuários
           </h1>
           <p className="text-muted-foreground mt-1">
-            {currentUser?.profile === 'mecanico' || currentUser?.profile === 'gestor'
-              ? 'Crie e gerencie contas de usuários com permissões personalizadas' 
-              : 'Gerencie usuários e seus perfis de acesso'}
+            Gerencie usuários e seus perfis de acesso
           </p>
         </div>
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          {currentUser?.profile === 'mecanico' || currentUser?.profile === 'gestor' ? 'Nova Conta' : 'Novo Usuário'}
+          Novo Usuário
         </Button>
       </div>
 

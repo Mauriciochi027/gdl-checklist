@@ -152,8 +152,6 @@ const Index = () => {
         />;
       case 'users':
         return <UserManagement currentUser={user} />;
-      case 'accounts':
-        return <UserManagement currentUser={user} />;
       case 'status':
         return <StatusPanel
           equipments={equipments}
