@@ -999,7 +999,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
       </Dialog>
 
       {/* Dialog de Itens Críticos */}
-      <Dialog open={showCriticalDialog} onOpenChange={() => {}}>
+      <Dialog open={showCriticalDialog} onOpenChange={setShowCriticalDialog}>
         <DialogContent className="max-w-md mx-auto">
           <div className="bg-red-500 text-white p-8 rounded-lg text-center space-y-6">
             <div className="flex justify-center">
