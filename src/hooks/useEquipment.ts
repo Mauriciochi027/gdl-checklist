@@ -12,20 +12,28 @@ export const useEquipment = () => {
   // Fetch all equipment
   const fetchEquipments = async () => {
     try {
-      console.log('[useEquipment] Iniciando carregamento...');
+      console.log('[useEquipment] ==> Iniciando carregamento de equipamentos...');
+      
+      // Verificar se o usuário está autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[useEquipment] Sessão autenticada:', !!session);
+      console.log('[useEquipment] User ID:', session?.user?.id);
       
       const { data, error } = await supabase
         .from('equipment')
         .select('*')
         .order('code', { ascending: true });
 
+      console.log('[useEquipment] Resposta da query:', { data, error });
+
       if (error) throw error;
 
       const transformedData = keysToCamelCase<Equipment[]>(data || []);
-      console.log('[useEquipment] Carregados:', transformedData.length);
+      console.log('[useEquipment] Equipamentos transformados:', transformedData.length);
+      console.log('[useEquipment] Dados:', transformedData);
       setEquipments(transformedData);
     } catch (error) {
-      console.error('[useEquipment] Erro:', error);
+      console.error('[useEquipment] ERRO CRÍTICO:', error);
       toast({
         title: "Erro ao carregar equipamentos",
         description: "Não foi possível carregar a lista de equipamentos.",
