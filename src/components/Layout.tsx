@@ -20,7 +20,7 @@ const Layout = ({
   const getMenuItems = () => {
     const baseItems = [{
       id: 'dashboard',
-      label: 'Painel',
+      label: 'DashBoard',
       icon: BarChart3
     }];
 
