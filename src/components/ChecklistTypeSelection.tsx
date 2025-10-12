@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Truck, PackageCheck, Link2, Anchor, DollarSign } from "lucide-react";
+import { ArrowLeft, Forklift, PackageCheck, Link2, Anchor, DollarSign } from "lucide-react";
 import { ChecklistType, checklistTypeLabels, checklistTypeIcons } from "@/lib/liftingAccessoryChecklists";
 
 interface ChecklistTypeSelectionProps {
@@ -36,7 +36,7 @@ export const ChecklistTypeSelection = ({ onSelectType, onBack }: ChecklistTypeSe
           >
             <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-safety-orange to-safety-orange-light flex items-center justify-center shadow-lg animate-pulse hover:animate-none transition-all hover:scale-110">
-                <Truck className="h-10 w-10 text-white" strokeWidth={2.5} />
+                <Forklift className="h-10 w-10 text-white" strokeWidth={2.5} />
               </div>
               <h2 className="text-xl font-bold text-industrial-900">
                 {checklistTypeLabels.empilhadeira}
