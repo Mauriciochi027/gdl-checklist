@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useChecklists } from '@/hooks/useChecklists';
 import { LoginForm } from '@/components/LoginForm';
@@ -20,11 +21,22 @@ import { Equipment } from '@/types/equipment';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
+  const { canAccess } = usePermissions(user);
   const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment, refreshEquipments } = useEquipment();
   const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedChecklistType, setSelectedChecklistType] = useState<ChecklistType | null>(null);
   const [showLiftingAccessorySelection, setShowLiftingAccessorySelection] = useState(false);
+
+  // Redirecionar para dashboard se usuário não tiver permissão para a página atual
+  useEffect(() => {
+    if (user && currentPage !== 'dashboard') {
+      const pagePermission = currentPage as any;
+      if (!canAccess(pagePermission)) {
+        setCurrentPage('dashboard');
+      }
+    }
+  }, [user, currentPage, canAccess]);
 
   // Filter data for operators - only show their own checklists
   const getUserFilteredData = () => {
@@ -106,6 +118,25 @@ const Index = () => {
   };
 
   const renderPage = () => {
+    // Verificar permissão antes de renderizar qualquer página (exceto dashboard)
+    if (currentPage !== 'dashboard' && !canAccess(currentPage as any)) {
+      return (
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 mx-auto bg-destructive/10 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">Acesso Negado</h2>
+            <p className="text-muted-foreground">
+              Você não tem permissão para acessar esta página.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     // Checklist flow with type selection
     if (currentPage === 'checklist') {
       // Step 1: Type selection

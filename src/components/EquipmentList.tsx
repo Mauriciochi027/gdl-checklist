@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import EquipmentQRCode from "./EquipmentQRCode";
 import { Equipment } from "@/types/equipment";
 import { useAuth } from "@/hooks/useSupabaseAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 interface EquipmentListProps {
@@ -28,6 +29,7 @@ const EquipmentList = ({
   onUpdateEquipment
 }: EquipmentListProps) => {
   const { user } = useAuth();
+  const { canEdit, canDelete } = usePermissions(user);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -37,20 +39,10 @@ const EquipmentList = ({
   const [qrEquipment, setQrEquipment] = useState<Equipment | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [equipmentToDelete, setEquipmentToDelete] = useState<Equipment | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check if user is admin
-  useState(() => {
-    if (user) {
-      supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .single()
-        .then(({ data }) => setIsAdmin(!!data));
-    }
-  });
+  // Verificar permissões usando o novo sistema
+  const canManageEquipment = canEdit('equipments');
+  const canDeleteEquipment = canDelete('equipments');
   const [formData, setFormData] = useState<{
     code: string;
     model: string;
@@ -227,7 +219,12 @@ const EquipmentList = ({
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-industrial-blue hover:bg-industrial-blue-dark" onClick={resetForm}>
+            <Button 
+              className="bg-industrial-blue hover:bg-industrial-blue-dark" 
+              onClick={resetForm}
+              disabled={!canManageEquipment}
+              title={!canManageEquipment ? "Você não tem permissão para adicionar equipamentos" : undefined}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Novo Equipamento
             </Button>
@@ -507,10 +504,10 @@ const EquipmentList = ({
                   <Button variant="outline" size="sm" onClick={e => {
                 e.stopPropagation();
                 handleEdit(equipment);
-              }} className="flex-1">
+              }} className="flex-1" disabled={!canManageEquipment}>
                     Editar
                   </Button>
-                  {isAdmin && (
+                  {canDeleteEquipment && (
                     <Button 
                       variant="outline" 
                       size="sm" 

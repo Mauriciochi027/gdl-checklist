@@ -1,7 +1,8 @@
-import { USER_PROFILES } from './constants';
-
 /**
- * Sistema de permissões centralizado
+ * Sistema de permissões centralizado baseado em perfil
+ * 
+ * IMPORTANTE: Este arquivo contém verificações de permissões baseadas em PERFIL.
+ * Para permissões granulares por usuário, use o hook usePermissions.
  */
 
 type UserProfile = 'operador' | 'mecanico' | 'gestor' | 'admin';
@@ -15,7 +16,7 @@ export const canApproveChecklists = (profile?: UserProfile): boolean => {
 };
 
 /**
- * Verifica se o usuário pode gerenciar equipamentos
+ * Verifica se o usuário pode gerenciar equipamentos (adicionar/editar)
  */
 export const canManageEquipment = (profile?: UserProfile): boolean => {
   if (!profile) return false;
@@ -27,7 +28,7 @@ export const canManageEquipment = (profile?: UserProfile): boolean => {
  */
 export const canEditEquipmentStatus = (profile?: UserProfile): boolean => {
   if (!profile) return false;
-  return ['mecanico', 'admin'].includes(profile);
+  return ['mecanico', 'gestor', 'admin'].includes(profile);
 };
 
 /**
@@ -55,23 +56,9 @@ export const canDeleteRecords = (profile?: UserProfile): boolean => {
 };
 
 /**
- * Retorna as páginas disponíveis para o perfil do usuário
+ * Verifica se o usuário pode rejeitar checklists
  */
-export const getAvailablePages = (profile?: UserProfile): string[] => {
-  if (!profile) return ['dashboard'];
-  
-  const basePages = ['dashboard', 'checklist', 'history'];
-  
-  switch (profile) {
-    case 'admin':
-      return [...basePages, 'users', 'status', 'approvals', 'equipments', 'equipment-management'];
-    case 'gestor':
-      return [...basePages, 'status', 'approvals', 'equipments', 'equipment-management'];
-    case 'mecanico':
-      return [...basePages, 'status', 'approvals'];
-    case 'operador':
-      return basePages;
-    default:
-      return basePages;
-  }
+export const canRejectChecklists = (profile?: UserProfile): boolean => {
+  if (!profile) return false;
+  return ['mecanico', 'gestor', 'admin'].includes(profile);
 };

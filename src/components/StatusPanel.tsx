@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Edit2, Eye, Clock, Wrench, CheckCircle } from 'lucide-react';
 import { cn } from "@/lib/utils";
-
+import { useAuth } from "@/hooks/useSupabaseAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Equipment, ChecklistRecord } from '@/types/equipment';
 
 interface StatusPanelProps {
@@ -21,6 +22,9 @@ interface StatusPanelProps {
 }
 
 const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipmentStatus }: StatusPanelProps) => {
+  const { user } = useAuth();
+  const { canEdit: hasEditPermission } = usePermissions(user);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
@@ -28,7 +32,8 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
   const [newStatus, setNewStatus] = useState<string>('');
   const [statusReason, setStatusReason] = useState<string>('');
 
-  const canEdit = userProfile === 'mecanico' || userProfile === 'admin';
+  // Verificar permissão de edição usando o novo sistema
+  const canEdit = hasEditPermission('status');
 
   // Função para determinar o status baseado no banco de dados e nos checklists
   const getEquipmentStatus = (equipmentCode: string): { status: 'disponivel' | 'operando' | 'manutencao'; label: string; color: string; bgColor: string; icon: React.ReactNode } => {

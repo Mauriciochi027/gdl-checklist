@@ -2,6 +2,7 @@ import { Truck, ClipboardCheck, BarChart3, Settings, Users, LogOut, Activity, La
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useSupabaseAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import gdlLogo from "@/assets/gdl-logo.png";
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,124 +14,63 @@ const Layout = ({
   currentPage,
   onPageChange
 }: LayoutProps) => {
-  const {
-    user,
-    logout
-  } = useAuth();
-  const getMenuItems = () => {
-    const baseItems = [
-      {
-        id: 'dashboard',
-        label: 'DashBoard',
-        icon: BarChart3
-      }
-    ];
+  const { user, logout } = useAuth();
+  const { canAccess } = usePermissions(user);
 
-    if (user?.profile === 'admin') {
-      return [...baseItems, {
-        id: 'users',
-        label: 'Usuários',
-        icon: Users
-      }, {
-        id: 'status',
-        label: 'Status',
-        icon: Activity
-      }, {
-        id: 'equipments',
-        label: 'Equipamentos',
-        icon: Truck
-      }, {
-        id: 'equipment-management',
-        label: 'Painel',
-        icon: LayoutDashboard
-      }, {
-        id: 'checklist',
-        label: 'Checklist',
-        icon: ClipboardCheck
-      }, {
-        id: 'approvals',
-        label: 'Aprovações',
-        icon: CheckSquare
-      }, {
-        id: 'history',
-        label: 'Histórico',
-        icon: Settings
-      }];
-    }
-    
-    if (user?.profile === 'operador') {
-      return [...baseItems, {
-        id: 'status',
-        label: 'Status',
-        icon: Activity
-      }, {
-        id: 'checklist',
-        label: 'Checklist',
-        icon: ClipboardCheck
-      }, {
-        id: 'history',
-        label: 'Histórico',
-        icon: Settings
-      }];
-    }
-
-    // Gestor tem acesso completo exceto usuários
-    if (user?.profile === 'gestor') {
-      return [...baseItems, {
-        id: 'status',
-        label: 'Status',
-        icon: Activity
-      }, {
-        id: 'equipments',
-        label: 'Equipamentos',
-        icon: Truck
-      }, {
-        id: 'equipment-management',
-        label: 'Painel',
-        icon: LayoutDashboard
-      }, {
-        id: 'checklist',
-        label: 'Checklist',
-        icon: ClipboardCheck
-      }, {
-        id: 'approvals',
-        label: 'Aprovações',
-        icon: CheckSquare
-      }, {
-        id: 'history',
-        label: 'Histórico',
-        icon: Settings
-      }];
-    }
-
-    // Mecânico não tem acesso à criação de contas
-    return [...baseItems, {
+  // Define todos os itens de menu possíveis
+  const allMenuItems = [
+    {
+      id: 'dashboard',
+      label: 'DashBoard',
+      icon: BarChart3,
+      permission: 'dashboard' as const
+    },
+    {
+      id: 'users',
+      label: 'Usuários',
+      icon: Users,
+      permission: 'users' as const
+    },
+    {
       id: 'status',
       label: 'Status',
-      icon: Activity
-    }, {
+      icon: Activity,
+      permission: 'status' as const
+    },
+    {
       id: 'equipments',
       label: 'Equipamentos',
-      icon: Truck
-    }, {
+      icon: Truck,
+      permission: 'equipments' as const
+    },
+    {
       id: 'equipment-management',
       label: 'Painel',
-      icon: LayoutDashboard
-    }, {
+      icon: LayoutDashboard,
+      permission: 'equipment-management' as const
+    },
+    {
       id: 'checklist',
       label: 'Checklist',
-      icon: ClipboardCheck
-    }, {
+      icon: ClipboardCheck,
+      permission: 'checklist' as const
+    },
+    {
       id: 'approvals',
       label: 'Aprovações',
-      icon: CheckSquare
-    }, {
+      icon: CheckSquare,
+      permission: 'approvals' as const
+    },
+    {
       id: 'history',
       label: 'Histórico',
-      icon: Settings
-    }];
-  };
-  const menuItems = getMenuItems();
+      icon: Settings,
+      permission: 'history' as const
+    }
+  ];
+
+  // Filtrar itens de menu baseado nas permissões do usuário
+  const menuItems = allMenuItems.filter(item => canAccess(item.permission));
   const getProfileBadge = (profile: string) => {
     const badges = {
       operador: {
