@@ -88,7 +88,7 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
         .eq('id', user.id)
         .single()
         .then(({ data }) => {
-          setIsMechanic(data?.profile === 'mecanico' || data?.profile === 'admin');
+          setIsMechanic(data?.profile === 'mecanico' || data?.profile === 'gestor' || data?.profile === 'admin');
         });
     }
   }, [user]);

@@ -68,6 +68,35 @@ const Layout = ({
       }];
     }
 
+    // Gestor tem acesso completo exceto usuários
+    if (user?.profile === 'gestor') {
+      return [...baseItems, {
+        id: 'status',
+        label: 'Status',
+        icon: Activity
+      }, {
+        id: 'equipments',
+        label: 'Equipamentos',
+        icon: Truck
+      }, {
+        id: 'checklist',
+        label: 'Checklist',
+        icon: ClipboardCheck
+      }, {
+        id: 'approvals',
+        label: 'Aprovações',
+        icon: ClipboardCheck
+      }, {
+        id: 'accounts',
+        label: 'Contas',
+        icon: Users
+      }, {
+        id: 'history',
+        label: 'Histórico',
+        icon: Settings
+      }];
+    }
+
     // Mecânico tem acesso completo (antigas funcionalidades de gestor)
     return [...baseItems, {
       id: 'status',
@@ -105,6 +134,10 @@ const Layout = ({
       mecanico: {
         label: 'Mecânico',
         color: 'bg-safety-orange'
+      },
+      gestor: {
+        label: 'Gestor',
+        color: 'bg-purple-600'
       },
       admin: {
         label: 'Admin',

@@ -40,7 +40,7 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
   const { toast } = useToast();
   // Operator dashboard shows only personal data
   const isOperator = userProfile === 'operador';
-  const isMechanic = userProfile === 'mecanico';
+  const isMechanic = userProfile === 'mecanico' || userProfile === 'gestor';
   const stats = [
     {
       title: "Total de Equipamentos",

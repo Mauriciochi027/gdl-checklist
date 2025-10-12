@@ -15,7 +15,7 @@ import { Equipment, ChecklistRecord } from '@/types/equipment';
 interface StatusPanelProps {
   equipments: Equipment[];
   checklistRecords: ChecklistRecord[];
-  userProfile?: 'operador' | 'mecanico' | 'admin';
+  userProfile?: 'operador' | 'mecanico' | 'gestor' | 'admin';
   onUpdateEquipmentStatus?: (equipmentId: string, status: string, reason?: string) => void;
 }
 
@@ -27,7 +27,7 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
   const [newStatus, setNewStatus] = useState<string>('');
   const [statusReason, setStatusReason] = useState<string>('');
 
-  const canEdit = userProfile === 'mecanico';
+  const canEdit = userProfile === 'mecanico' || userProfile === 'gestor';
 
   // Função para determinar o status baseado nos checklists
   const getEquipmentStatus = (equipmentCode: string): { status: 'disponivel' | 'operando' | 'manutencao'; label: string; color: string; bgColor: string; icon: React.ReactNode } => {

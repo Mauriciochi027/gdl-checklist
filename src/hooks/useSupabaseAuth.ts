@@ -6,7 +6,7 @@ export interface User {
   id: string;
   username: string;
   name: string;
-  profile: 'operador' | 'mecanico' | 'admin';
+  profile: 'operador' | 'mecanico' | 'gestor' | 'admin';
   matricula?: string;
 }
 
@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   login: (username: string, password: string) => Promise<boolean>;
-  signup: (username: string, password: string, name: string, profile: 'operador' | 'mecanico' | 'admin', matricula?: string) => Promise<boolean>;
+  signup: (username: string, password: string, name: string, profile: 'operador' | 'mecanico' | 'gestor' | 'admin', matricula?: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -89,7 +89,7 @@ export const useSupabaseAuthState = () => {
     username: string, 
     password: string, 
     name: string, 
-    profile: 'operador' | 'mecanico' | 'admin',
+    profile: 'operador' | 'mecanico' | 'gestor' | 'admin',
     matricula?: string
   ): Promise<boolean> => {
     try {

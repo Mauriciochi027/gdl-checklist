@@ -22,7 +22,7 @@ interface UserProfile {
   id: string;
   username: string;
   name: string;
-  profile: 'operador' | 'mecanico' | 'admin';
+  profile: 'operador' | 'mecanico' | 'gestor' | 'admin';
   matricula?: string;
   permissions?: string[];
 }
@@ -55,7 +55,7 @@ const UserManagement = ({
     username: '',
     password: '',
     name: '',
-    profile: 'operador' as 'operador' | 'mecanico' | 'admin',
+    profile: 'operador' as 'operador' | 'mecanico' | 'gestor' | 'admin',
     matricula: '',
     permissions: [] as string[]
   });
@@ -374,6 +374,10 @@ const UserManagement = ({
         label: 'Mecânico',
         variant: 'secondary' as const
       },
+      gestor: {
+        label: 'Gestor',
+        variant: 'outline' as const
+      },
       admin: {
         label: 'Admin',
         variant: 'destructive' as const
@@ -389,17 +393,17 @@ const UserManagement = ({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">
-            {currentUser?.profile === 'mecanico' ? 'Gerenciamento de Contas' : 'Gerenciamento de Usuários'}
+            {currentUser?.profile === 'mecanico' || currentUser?.profile === 'gestor' ? 'Gerenciamento de Contas' : 'Gerenciamento de Usuários'}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {currentUser?.profile === 'mecanico' 
+            {currentUser?.profile === 'mecanico' || currentUser?.profile === 'gestor'
               ? 'Crie e gerencie contas de usuários com permissões personalizadas' 
               : 'Gerencie usuários e seus perfis de acesso'}
           </p>
         </div>
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          {currentUser?.profile === 'mecanico' ? 'Nova Conta' : 'Novo Usuário'}
+          {currentUser?.profile === 'mecanico' || currentUser?.profile === 'gestor' ? 'Nova Conta' : 'Novo Usuário'}
         </Button>
       </div>
 
@@ -567,6 +571,7 @@ const UserManagement = ({
                   <SelectContent>
                     <SelectItem value="operador">Operador</SelectItem>
                     <SelectItem value="mecanico">Mecânico</SelectItem>
+                    <SelectItem value="gestor">Gestor</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
