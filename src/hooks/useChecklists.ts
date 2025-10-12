@@ -85,7 +85,17 @@ export const useChecklists = () => {
       const conformeItems = checklistData.answers.filter(a => a.value === 'sim').length;
       const naoConformeItems = checklistData.answers.filter(a => a.value === 'nao').length;
       const hasCriticalIssues = naoConformeItems > 0;
-      const status: 'conforme' | 'pendente' = hasCriticalIssues ? 'pendente' : 'conforme';
+      
+      // Para checklists de içamento com não conformes: status = negado (não passa por aprovação)
+      // Para empilhadeiras com não conformes: status = pendente (passa por aprovação)
+      const isLiftingAccessory = checklistData.checklistType && checklistData.checklistType !== 'empilhadeira';
+      let status: 'conforme' | 'pendente' | 'negado';
+      
+      if (hasCriticalIssues) {
+        status = isLiftingAccessory ? 'negado' : 'pendente';
+      } else {
+        status = 'conforme';
+      }
 
       // Insert checklist record
       const recordData = keysToSnakeCase({
@@ -148,11 +158,9 @@ export const useChecklists = () => {
         }
       }
 
-      // Para checklists de içamento, não fazer auto-aprovação
-      // Todos devem passar por aprovação manual do mecânico
-      const isLiftingAccessory = checklistData.checklistType !== 'empilhadeira';
-      
       // Auto-approve only for empilhadeira checklists if all items are conforme
+      // Checklists de içamento nunca são auto-aprovados
+      
       if (status === 'conforme' && !isLiftingAccessory) {
         const approvalData = keysToSnakeCase({
           checklistRecordId: record.id,
@@ -166,19 +174,30 @@ export const useChecklists = () => {
 
         if (approvalError) {
           console.error('Error auto-approving:', approvalError);
-          // Don't throw - checklist was saved successfully, just approval failed
         }
       }
-
-      const isLiftingAccessoryChecklist = checklistData.checklistType !== 'empilhadeira';
+      
+      // Toast messages based on checklist type and status
+      let toastDescription = '';
+      
+      if (isLiftingAccessory) {
+        if (status === 'negado') {
+          toastDescription = "Checklist registrado. Equipamento bloqueado devido a itens não conformes.";
+        } else {
+          toastDescription = "Checklist de acessório de içamento registrado com sucesso!";
+        }
+      } else {
+        if (status === 'conforme') {
+          toastDescription = "Checklist aprovado automaticamente!";
+        } else {
+          toastDescription = "Checklist enviado para aprovação do mecânico.";
+        }
+      }
       
       toast({
         title: "Checklist registrado",
-        description: isLiftingAccessoryChecklist
-          ? "Checklist de acessório de içamento registrado com sucesso!"
-          : status === 'conforme' 
-            ? "Checklist aprovado automaticamente!" 
-            : "Checklist enviado para aprovação do mecânico."
+        description: toastDescription,
+        variant: status === 'negado' ? 'destructive' : 'default'
       });
 
       await fetchChecklists();
