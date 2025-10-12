@@ -656,7 +656,22 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
               <>
                 <div className="space-y-2">
                   <Label htmlFor="equipment">Equipamento *</Label>
-                  <Select value={selectedEquipment} onValueChange={setSelectedEquipment}>
+                  <Select 
+                    value={selectedEquipment} 
+                    onValueChange={(value) => {
+                      setSelectedEquipment(value);
+                      // Auto-preencher dados do equipamento selecionado
+                      const equipment = equipments.find(eq => eq.id === value);
+                      if (equipment) {
+                        setEquipmentModel(equipment.model.toLowerCase().includes('eletrica') ? 'eletrica' : 'combustao');
+                        setLocation(equipment.location || equipment.sector);
+                        setEquipmentSeries(equipment.equipmentSeries || `${equipment.brand}-${equipment.model}`);
+                        setEquipmentNumber(equipment.equipmentNumber || equipment.code);
+                        setUnit(equipment.unit as "01" | "02" | "03" || "01");
+                      }
+                    }}
+                    disabled={qrScanned}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o equipamento" />
                     </SelectTrigger>
@@ -680,6 +695,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
                           value="eletrica"
                           checked={equipmentModel === "eletrica"}
                           onChange={(e) => setEquipmentModel(e.target.value as "eletrica")}
+                          disabled={qrScanned}
                         />
                         <span>Elétrica</span>
                       </label>
@@ -689,6 +705,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
                           value="combustao"
                           checked={equipmentModel === "combustao"}
                           onChange={(e) => setEquipmentModel(e.target.value as "combustao")}
+                          disabled={qrScanned}
                         />
                         <span>Combustão</span>
                       </label>
@@ -697,7 +714,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
 
                   <div className="space-y-2">
                     <Label htmlFor="location">Local *</Label>
-                    <Select value={location} onValueChange={setLocation}>
+                    <Select value={location} onValueChange={setLocation} disabled={qrScanned}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -721,6 +738,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
                           value="01"
                           checked={unit === "01"}
                           onChange={(e) => setUnit(e.target.value as "01")}
+                          disabled={qrScanned}
                         />
                         <span>01</span>
                       </label>
@@ -730,6 +748,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
                           value="02"
                           checked={unit === "02"}
                           onChange={(e) => setUnit(e.target.value as "02")}
+                          disabled={qrScanned}
                         />
                         <span>02</span>
                       </label>
@@ -739,6 +758,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
                           value="03"
                           checked={unit === "03"}
                           onChange={(e) => setUnit(e.target.value as "03")}
+                          disabled={qrScanned}
                         />
                         <span>03</span>
                       </label>
@@ -754,6 +774,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
                       value={equipmentSeries}
                       onChange={(e) => setEquipmentSeries(e.target.value)}
                       placeholder="Ex: ABC123"
+                      disabled={qrScanned}
                     />
                   </div>
                   <div className="space-y-2">
@@ -763,6 +784,7 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
                       value={equipmentNumber}
                       onChange={(e) => setEquipmentNumber(e.target.value)}
                       placeholder="Ex: EMP-001"
+                      disabled={qrScanned}
                     />
                   </div>
                   <div className="space-y-2">
