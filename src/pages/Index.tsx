@@ -20,7 +20,7 @@ import { Equipment } from '@/types/equipment';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
-  const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment } = useEquipment();
+  const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment, refreshEquipments } = useEquipment();
   const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedChecklistType, setSelectedChecklistType] = useState<ChecklistType | null>(null);
@@ -101,6 +101,8 @@ const Index = () => {
       status: status as Equipment['status'],
       observations: reason || undefined
     });
+    // Recarregar a lista de equipamentos para mostrar a atualização
+    await refreshEquipments();
   };
 
   const renderPage = () => {
