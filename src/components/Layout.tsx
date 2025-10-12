@@ -1,4 +1,4 @@
-import { Truck, ClipboardCheck, BarChart3, Settings, Users, LogOut, Activity } from "lucide-react";
+import { Truck, ClipboardCheck, BarChart3, Settings, Users, LogOut, Activity, LayoutDashboard, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useSupabaseAuth";
@@ -42,7 +42,7 @@ const Layout = ({
       }, {
         id: 'equipment-management',
         label: 'Painel',
-        icon: Truck
+        icon: LayoutDashboard
       }, {
         id: 'checklist',
         label: 'Checklist',
@@ -50,7 +50,7 @@ const Layout = ({
       }, {
         id: 'approvals',
         label: 'Aprovações',
-        icon: ClipboardCheck
+        icon: CheckSquare
       }, {
         id: 'history',
         label: 'Histórico',
@@ -87,7 +87,7 @@ const Layout = ({
       }, {
         id: 'equipment-management',
         label: 'Painel',
-        icon: Truck
+        icon: LayoutDashboard
       }, {
         id: 'checklist',
         label: 'Checklist',
@@ -95,7 +95,7 @@ const Layout = ({
       }, {
         id: 'approvals',
         label: 'Aprovações',
-        icon: ClipboardCheck
+        icon: CheckSquare
       }, {
         id: 'history',
         label: 'Histórico',
@@ -115,7 +115,7 @@ const Layout = ({
     }, {
       id: 'equipment-management',
       label: 'Painel',
-      icon: Truck
+      icon: LayoutDashboard
     }, {
       id: 'checklist',
       label: 'Checklist',
@@ -123,7 +123,7 @@ const Layout = ({
     }, {
       id: 'approvals',
       label: 'Aprovações',
-      icon: ClipboardCheck
+      icon: CheckSquare
     }, {
       id: 'history',
       label: 'Histórico',
