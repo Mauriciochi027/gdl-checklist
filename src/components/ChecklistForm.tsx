@@ -249,15 +249,15 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
         });
 
     const checklistData = {
-      equipmentId: selectedEquipment || 'N/A',
+      equipmentId: selectedEquipment || null,
       operatorName,
       operatorId,
       equipmentModel: equipmentModel || checklistType,
-      location: location || 'N/A',
-      unit: unit || '01',
+      location: location || null,
+      unit: unit || null,
       equipmentSeries: equipmentSeries || checklistType,
-      equipmentNumber: equipmentNumber || 'N/A',
-      hourMeter: hourMeter ? parseInt(hourMeter) : 0,
+      equipmentNumber: equipmentNumber || null,
+      hourMeter: hourMeter ? parseInt(hourMeter) : null,
       timestamp: new Date().toISOString(),
       answers: Object.values(answers),
       signature,

@@ -122,7 +122,7 @@ export type Database = {
           conforme_items: number
           created_at: string | null
           equipment_code: string
-          equipment_id: string
+          equipment_id: string | null
           equipment_model: string
           equipment_model_type: string | null
           equipment_number: string | null
@@ -148,7 +148,7 @@ export type Database = {
           conforme_items: number
           created_at?: string | null
           equipment_code: string
-          equipment_id: string
+          equipment_id?: string | null
           equipment_model: string
           equipment_model_type?: string | null
           equipment_number?: string | null
@@ -174,7 +174,7 @@ export type Database = {
           conforme_items?: number
           created_at?: string | null
           equipment_code?: string
-          equipment_id?: string
+          equipment_id?: string | null
           equipment_model?: string
           equipment_model_type?: string | null
           equipment_number?: string | null

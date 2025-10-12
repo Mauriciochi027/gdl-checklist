@@ -40,7 +40,7 @@ export interface ChecklistAnswer {
 
 export interface ChecklistRecord {
   id: string;
-  equipmentId: string;
+  equipmentId: string | null;
   equipmentCode: string;
   equipmentModel: string;
   operatorName: string;

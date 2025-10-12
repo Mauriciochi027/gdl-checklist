@@ -61,15 +61,15 @@ const Index = () => {
   };
 
   const handleSubmitChecklist = async (data: any) => {
-    const eq = equipments.find(eq => eq.id === data.equipmentId);
+    const eq = data.equipmentId ? equipments.find(eq => eq.id === data.equipmentId) : null;
     
     if (!user) return;
 
     const isLiftingAccessory = data.checklistType !== 'empilhadeira';
 
     await addChecklist({
-      equipmentId: data.equipmentId,
-      equipmentCode: eq?.code || (isLiftingAccessory ? data.checklistType : data.equipmentNumber),
+      equipmentId: data.equipmentId || null,
+      equipmentCode: eq?.code || (isLiftingAccessory ? data.checklistType : data.equipmentNumber || 'N/A'),
       equipmentModel: eq ? `${eq.brand} ${eq.model}` : data.checklistType,
       operatorName: user.name,
       operatorId: user.matricula || user.id,

@@ -67,7 +67,7 @@ export const useChecklists = () => {
   }, []);
 
   const addChecklist = async (checklistData: {
-    equipmentId: string;
+    equipmentId: string | null;
     equipmentCode: string;
     equipmentModel: string;
     operatorName: string;
