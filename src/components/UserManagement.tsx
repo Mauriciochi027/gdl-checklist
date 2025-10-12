@@ -487,66 +487,112 @@ const UserManagement = ({
 
       {/* Dialog Adicionar Usuário */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Novo Usuário</DialogTitle>
             <DialogDescription>
               Adicione um novo usuário ao sistema
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="username">Username *</Label>
-              <Input id="username" value={formData.username} onChange={e => setFormData({
-              ...formData,
-              username: e.target.value
-            })} placeholder="usuario123" />
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="username">Username *</Label>
+                <Input 
+                  id="username" 
+                  value={formData.username} 
+                  onChange={e => setFormData({
+                    ...formData,
+                    username: e.target.value
+                  })} 
+                  placeholder="usuario123" 
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Senha *</Label>
+                <div className="relative">
+                  <Input 
+                    id="password" 
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password} 
+                    onChange={e => setFormData({
+                      ...formData,
+                      password: e.target.value
+                    })} 
+                    placeholder="••••••"
+                    className="pr-10"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mínimo 6 caracteres
+                </p>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="password">Senha *</Label>
-              <Input id="password" type="password" value={formData.password} onChange={e => setFormData({
-              ...formData,
-              password: e.target.value
-            })} placeholder="••••••" />
-            </div>
+            
             <div>
               <Label htmlFor="name">Nome Completo *</Label>
-              <Input id="name" value={formData.name} onChange={e => setFormData({
-              ...formData,
-              name: e.target.value
-            })} placeholder="João Silva" />
+              <Input 
+                id="name" 
+                value={formData.name} 
+                onChange={e => setFormData({
+                  ...formData,
+                  name: e.target.value
+                })} 
+                placeholder="João Silva" 
+              />
             </div>
-            <div>
-              <Label htmlFor="profile">Perfil</Label>
-              <Select value={formData.profile} onValueChange={(value: any) => setFormData({
-              ...formData,
-              profile: value
-            })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="operador">Operador</SelectItem>
-                  <SelectItem value="mecanico">Mecânico</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="profile">Perfil *</Label>
+                <Select 
+                  value={formData.profile} 
+                  onValueChange={(value: any) => setFormData({
+                    ...formData,
+                    profile: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="operador">Operador</SelectItem>
+                    <SelectItem value="mecanico">Mecânico</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="matricula">Matrícula</Label>
+                <Input 
+                  id="matricula" 
+                  value={formData.matricula} 
+                  onChange={e => setFormData({
+                    ...formData,
+                    matricula: e.target.value
+                  })} 
+                  placeholder="OP001" 
+                />
+              </div>
             </div>
+            
             <div>
-              <Label htmlFor="matricula">Matrícula</Label>
-              <Input id="matricula" value={formData.matricula} onChange={e => setFormData({
-              ...formData,
-              matricula: e.target.value
-            })} placeholder="OP001" />
-            </div>
-            <div>
-              <Label className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 mb-3">
                 <Shield className="w-4 h-4" />
                 Permissões de Acesso
               </Label>
-              <div className="mt-3 space-y-3 border rounded-md p-4 bg-muted/50">
+              <div className="border rounded-md p-3 bg-muted/30 space-y-2 max-h-48 overflow-y-auto">
                 {AVAILABLE_PERMISSIONS.map((permission) => (
-                  <div key={permission.id} className="flex items-center space-x-2">
+                  <div key={permission.id} className="flex items-center space-x-2 py-1">
                     <Checkbox
                       id={`perm-add-${permission.id}`}
                       checked={formData.permissions.includes(permission.id)}
@@ -566,7 +612,7 @@ const UserManagement = ({
                     />
                     <label
                       htmlFor={`perm-add-${permission.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      className="text-sm font-medium leading-none cursor-pointer"
                     >
                       {permission.label}
                     </label>
@@ -578,8 +624,14 @@ const UserManagement = ({
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+          <DialogFooter className="flex-shrink-0 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsAddDialogOpen(false);
+                resetForm();
+              }}
+            >
               Cancelar
             </Button>
             <Button onClick={handleAddUser} disabled={isLoading}>
@@ -591,47 +643,66 @@ const UserManagement = ({
 
       {/* Dialog Editar Usuário */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Editar Usuário</DialogTitle>
             <DialogDescription>
               Atualize as informações do usuário
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div>
               <Label htmlFor="edit-username">Username</Label>
               <Input id="edit-username" value={formData.username} disabled className="bg-muted" />
             </div>
             <div>
               <Label htmlFor="edit-name">Nome Completo *</Label>
-              <Input id="edit-name" value={formData.name} onChange={e => setFormData({
-              ...formData,
-              name: e.target.value
-            })} placeholder="João Silva" />
+              <Input 
+                id="edit-name" 
+                value={formData.name} 
+                onChange={e => setFormData({
+                  ...formData,
+                  name: e.target.value
+                })} 
+                placeholder="João Silva" 
+              />
             </div>
-            <div>
-              <Label htmlFor="edit-profile">Perfil</Label>
-              <Input id="edit-profile" value={getProfileBadge(formData.profile).label} disabled className="bg-muted" />
-              <p className="text-xs text-muted-foreground mt-1">
-                O perfil não pode ser alterado por questões de segurança
-              </p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-profile">Perfil</Label>
+                <Input 
+                  id="edit-profile" 
+                  value={getProfileBadge(formData.profile).label} 
+                  disabled 
+                  className="bg-muted" 
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Não pode ser alterado
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="edit-matricula">Matrícula</Label>
+                <Input 
+                  id="edit-matricula" 
+                  value={formData.matricula} 
+                  onChange={e => setFormData({
+                    ...formData,
+                    matricula: e.target.value
+                  })} 
+                  placeholder="OP001" 
+                />
+              </div>
             </div>
+            
             <div>
-              <Label htmlFor="edit-matricula">Matrícula</Label>
-              <Input id="edit-matricula" value={formData.matricula} onChange={e => setFormData({
-              ...formData,
-              matricula: e.target.value
-            })} placeholder="OP001" />
-            </div>
-            <div>
-              <Label className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 mb-3">
                 <Shield className="w-4 h-4" />
                 Permissões de Acesso
               </Label>
-              <div className="mt-3 space-y-3 border rounded-md p-4 bg-muted/50">
+              <div className="border rounded-md p-3 bg-muted/30 space-y-2 max-h-48 overflow-y-auto">
                 {AVAILABLE_PERMISSIONS.map((permission) => (
-                  <div key={permission.id} className="flex items-center space-x-2">
+                  <div key={permission.id} className="flex items-center space-x-2 py-1">
                     <Checkbox
                       id={`perm-edit-${permission.id}`}
                       checked={formData.permissions.includes(permission.id)}
@@ -651,7 +722,7 @@ const UserManagement = ({
                     />
                     <label
                       htmlFor={`perm-edit-${permission.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      className="text-sm font-medium leading-none cursor-pointer"
                     >
                       {permission.label}
                     </label>
@@ -663,8 +734,14 @@ const UserManagement = ({
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+          <DialogFooter className="flex-shrink-0 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsEditDialogOpen(false);
+                resetForm();
+              }}
+            >
               Cancelar
             </Button>
             <Button onClick={handleEditUser} disabled={isLoading}>
