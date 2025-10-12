@@ -29,8 +29,65 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
 
   const canEdit = userProfile === 'mecanico' || userProfile === 'gestor';
 
-  // Função para determinar o status baseado nos checklists
+  // Função para determinar o status baseado no banco de dados e nos checklists
   const getEquipmentStatus = (equipmentCode: string): { status: 'disponivel' | 'operando' | 'manutencao'; label: string; color: string; bgColor: string; icon: React.ReactNode } => {
+    // Primeiro verifica o status direto do equipamento no banco
+    const equipment = equipments.find(eq => eq.code === equipmentCode);
+    
+    // Mapear status do banco para status de exibição
+    if (equipment?.status) {
+      const statusMap: Record<string, { status: 'disponivel' | 'operando' | 'manutencao'; label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
+        'disponivel': {
+          status: 'disponivel',
+          label: 'Disponível',
+          color: 'text-white',
+          bgColor: 'bg-safety-green',
+          icon: <CheckCircle className="w-4 h-4" />
+        },
+        'active': {
+          status: 'disponivel',
+          label: 'Disponível',
+          color: 'text-white',
+          bgColor: 'bg-safety-green',
+          icon: <CheckCircle className="w-4 h-4" />
+        },
+        'operando': {
+          status: 'operando',
+          label: 'Operando',
+          color: 'text-white',
+          bgColor: 'bg-industrial-blue',
+          icon: <Clock className="w-4 h-4" />
+        },
+        'manutencao': {
+          status: 'manutencao',
+          label: 'Em Manutenção',
+          color: 'text-white',
+          bgColor: 'bg-safety-red',
+          icon: <Wrench className="w-4 h-4" />
+        },
+        'maintenance': {
+          status: 'manutencao',
+          label: 'Em Manutenção',
+          color: 'text-white',
+          bgColor: 'bg-safety-red',
+          icon: <Wrench className="w-4 h-4" />
+        },
+        'inactive': {
+          status: 'manutencao',
+          label: 'Em Manutenção',
+          color: 'text-white',
+          bgColor: 'bg-safety-red',
+          icon: <Wrench className="w-4 h-4" />
+        }
+      };
+      
+      const mappedStatus = statusMap[equipment.status.toLowerCase()];
+      if (mappedStatus) {
+        return mappedStatus;
+      }
+    }
+
+    // Fallback: usa lógica dos checklists se não houver status no banco
     const equipmentChecklists = checklistRecords
       .filter(record => record.equipmentCode === equipmentCode)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
