@@ -13,18 +13,27 @@ interface EquipmentManagementProps {
 const EquipmentManagement = ({ equipments }: EquipmentManagementProps) => {
   const { refreshEquipments } = useEquipment();
 
+  // Mapear status do banco para status de exibição
+  const isOperating = (status: string) => {
+    const operatingStatuses = ['active', 'disponível', 'em operação', 'disponivel', 'operando'];
+    return operatingStatuses.includes(status?.toLowerCase() || '');
+  };
+
+  const isStopped = (status: string) => {
+    const stoppedStatuses = ['manutenção', 'indisponível', 'maintenance', 'stopped', 'parado', 'manutencao', 'indisponivel'];
+    return stoppedStatuses.includes(status?.toLowerCase() || '');
+  };
+
   // Calcular estatísticas
-  const operatingEquipments = equipments.filter(eq => eq.status === 'Disponível' || eq.status === 'Em Operação').length;
-  const stoppedEquipments = equipments.filter(eq => eq.status === 'Manutenção' || eq.status === 'Indisponível').length;
+  const operatingEquipments = equipments.filter(eq => isOperating(eq.status)).length;
+  const stoppedEquipments = equipments.filter(eq => isStopped(eq.status)).length;
   const totalEquipments = equipments.length;
   
   const availability = totalEquipments > 0 ? ((operatingEquipments / totalEquipments) * 100).toFixed(1) : '0.0';
   const unavailability = totalEquipments > 0 ? ((stoppedEquipments / totalEquipments) * 100).toFixed(1) : '0.0';
 
   // Equipamentos paralisados
-  const stoppedEquipmentsList = equipments.filter(
-    eq => eq.status === 'Manutenção' || eq.status === 'Indisponível'
-  );
+  const stoppedEquipmentsList = equipments.filter(eq => isStopped(eq.status));
 
   const handleRefresh = async () => {
     await refreshEquipments();
