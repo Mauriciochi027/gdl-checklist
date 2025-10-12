@@ -96,7 +96,7 @@ export const useSupabaseAuthState = () => {
       setIsLoading(true);
       
       // Create auth user with email format (username@domain.com)
-      const email = `${username}@checklist.local`;
+      const email = `${username}@gdl.com`;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -137,7 +137,7 @@ export const useSupabaseAuthState = () => {
       setIsLoading(true);
       
       // Convert username to email format
-      const email = `${username}@checklist.local`;
+      const email = `${username}@gdl.com`;
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,

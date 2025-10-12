@@ -116,7 +116,7 @@ const UserManagement = ({
     setIsLoading(true);
     try {
       // Create auth user
-      const email = `${formData.username}@checklist.local`;
+      const email = `${formData.username}@gdl.com`;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password: formData.password,
