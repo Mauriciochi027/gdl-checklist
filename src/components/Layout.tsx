@@ -18,11 +18,13 @@ const Layout = ({
     logout
   } = useAuth();
   const getMenuItems = () => {
-    const baseItems = [{
-      id: 'dashboard',
-      label: 'DashBoard',
-      icon: BarChart3
-    }];
+    const baseItems = [
+      {
+        id: 'dashboard',
+        label: 'DashBoard',
+        icon: BarChart3
+      }
+    ];
 
     if (user?.profile === 'admin') {
       return [...baseItems, {
