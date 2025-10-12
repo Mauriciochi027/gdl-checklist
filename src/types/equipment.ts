@@ -64,6 +64,10 @@ export interface ChecklistRecord {
   equipmentSeries?: string;
   equipmentNumber?: string;
   hourMeter?: number;
+  // Lifting accessory specific data
+  checklistType?: string;
+  operationDescription?: string;
+  loadDescription?: string;
 }
 
 export type EquipmentStatus = Equipment['status'];

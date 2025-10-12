@@ -35,6 +35,8 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
   const [equipmentSeries, setEquipmentSeries] = useState<string>("");
   const [equipmentNumber, setEquipmentNumber] = useState<string>("");
   const [hourMeter, setHourMeter] = useState<string>("");
+  const [operationDescription, setOperationDescription] = useState<string>("");
+  const [loadDescription, setLoadDescription] = useState<string>("");
   const [answers, setAnswers] = useState<Record<string, ChecklistAnswer>>({});
   const [signature, setSignature] = useState<string>("");
   const [photos, setPhotos] = useState<Record<string, string[]>>({});
@@ -182,14 +184,27 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
       return false;
     }
 
-    if (!isLiftingAccessory && (!selectedEquipment || !equipmentModel || 
-        !location || !unit || !equipmentSeries || !equipmentNumber || !hourMeter)) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios do equipamento.",
-        variant: "destructive",
-      });
-      return false;
+    if (isLiftingAccessory) {
+      // Para acessórios de içamento, validar descrição da operação e carga
+      if (!operationDescription || !loadDescription) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Preencha a descrição da operação e a carga a ser içada.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } else {
+      // Para empilhadeira, validar campos de equipamento
+      if (!selectedEquipment || !equipmentModel || 
+          !location || !unit || !equipmentSeries || !equipmentNumber || !hourMeter) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Preencha todos os campos obrigatórios do equipamento.",
+          variant: "destructive",
+        });
+        return false;
+      }
     }
 
     const requiredItems = currentChecklistItems.filter(item => item.required);
@@ -247,7 +262,9 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
       answers: Object.values(answers),
       signature,
       photos,
-      checklistType
+      checklistType,
+      operationDescription: isLiftingAccessory ? operationDescription : undefined,
+      loadDescription: isLiftingAccessory ? loadDescription : undefined
     };
 
     onSubmitChecklist(checklistData);
@@ -276,6 +293,8 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
     setEquipmentSeries("");
     setEquipmentNumber("");
     setHourMeter("");
+    setOperationDescription("");
+    setLoadDescription("");
     setAnswers({});
     setSignature("");
     setPhotos({});
@@ -543,61 +562,63 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
           </Card>
         </div>
 
-        {/* QR Code Scanner */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <QrCode className="w-5 h-5" />
-              Identificação por QR Code
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!isScanning && !qrScanned && (
-              <Button 
-                onClick={startQRScanning}
-                className="w-full"
-                variant="outline"
-              >
-                📱 Escanear QR Code do Equipamento
-              </Button>
-            )}
-            
-            {isScanning && (
-              <div className="space-y-4">
-                <div className="relative w-full max-w-md mx-auto">
-                  <video 
-                    ref={videoRef}
-                    className="w-full rounded-lg"
-                    playsInline
-                    muted
-                  />
-                  <div className="absolute inset-0 border-2 border-primary rounded-lg pointer-events-none">
-                    <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-primary"></div>
-                    <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-primary"></div>
-                    <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-primary"></div>
-                    <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-primary"></div>
-                  </div>
-                </div>
-                <p className="text-center text-sm text-muted-foreground">
-                  Posicione o QR code dentro da área de escaneamento
-                </p>
+        {/* QR Code Scanner - only for empilhadeira */}
+        {checklistType === 'empilhadeira' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <QrCode className="w-5 h-5" />
+                Identificação por QR Code
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!isScanning && !qrScanned && (
                 <Button 
-                  onClick={stopQRScanning}
-                  variant="destructive"
+                  onClick={startQRScanning}
                   className="w-full"
+                  variant="outline"
                 >
-                  Parar Escaneamento
+                  📱 Escanear QR Code do Equipamento
                 </Button>
-              </div>
-            )}
-            
-            {qrScanned && (
-              <div className="text-center p-4 bg-safety-green-light rounded-lg">
-                <span className="text-safety-green font-medium">✓ QR Code Escaneado com Sucesso</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+              
+              {isScanning && (
+                <div className="space-y-4">
+                  <div className="relative w-full max-w-md mx-auto">
+                    <video 
+                      ref={videoRef}
+                      className="w-full rounded-lg"
+                      playsInline
+                      muted
+                    />
+                    <div className="absolute inset-0 border-2 border-primary rounded-lg pointer-events-none">
+                      <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-primary"></div>
+                      <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-primary"></div>
+                      <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-primary"></div>
+                      <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-primary"></div>
+                    </div>
+                  </div>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Posicione o QR code dentro da área de escaneamento
+                  </p>
+                  <Button 
+                    onClick={stopQRScanning}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    Parar Escaneamento
+                  </Button>
+                </div>
+              )}
+              
+              {qrScanned && (
+                <div className="text-center p-4 bg-safety-green-light rounded-lg">
+                  <span className="text-safety-green font-medium">✓ QR Code Escaneado com Sucesso</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Basic Information */}
         <Card>
@@ -631,128 +652,154 @@ const ChecklistForm = ({ equipments, onSubmitChecklist, checklistType, onBack }:
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="equipment">Equipamento *</Label>
-              <Select value={selectedEquipment} onValueChange={setSelectedEquipment}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o equipamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {equipments.map((equipment) => (
-                    <SelectItem key={equipment.id} value={equipment.id}>
-                      {equipment.code} - {equipment.brand} {equipment.model} ({equipment.sector})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Modelo *</Label>
-                <div className="flex gap-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      value="eletrica"
-                      checked={equipmentModel === "eletrica"}
-                      onChange={(e) => setEquipmentModel(e.target.value as "eletrica")}
-                    />
-                    <span>Elétrica</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      value="combustao"
-                      checked={equipmentModel === "combustao"}
-                      onChange={(e) => setEquipmentModel(e.target.value as "combustao")}
-                    />
-                    <span>Combustão</span>
-                  </label>
+            {checklistType === 'empilhadeira' ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="equipment">Equipamento *</Label>
+                  <Select value={selectedEquipment} onValueChange={setSelectedEquipment}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o equipamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {equipments.map((equipment) => (
+                        <SelectItem key={equipment.id} value={equipment.id}>
+                          {equipment.code} - {equipment.brand} {equipment.model} ({equipment.sector})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Local *</Label>
-                <Select value={location} onValueChange={setLocation}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AD01">AD 01</SelectItem>
-                    <SelectItem value="AD02">AD 02</SelectItem>
-                    <SelectItem value="CD01">CD 01</SelectItem>
-                    <SelectItem value="CD02">CD 02</SelectItem>
-                    <SelectItem value="VEI01">Veículos 01</SelectItem>
-                    <SelectItem value="VEI02">Veículos 02</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Modelo *</Label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          value="eletrica"
+                          checked={equipmentModel === "eletrica"}
+                          onChange={(e) => setEquipmentModel(e.target.value as "eletrica")}
+                        />
+                        <span>Elétrica</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          value="combustao"
+                          checked={equipmentModel === "combustao"}
+                          onChange={(e) => setEquipmentModel(e.target.value as "combustao")}
+                        />
+                        <span>Combustão</span>
+                      </label>
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <Label>Unidade *</Label>
-                <div className="flex gap-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      value="01"
-                      checked={unit === "01"}
-                      onChange={(e) => setUnit(e.target.value as "01")}
-                    />
-                    <span>01</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      value="02"
-                      checked={unit === "02"}
-                      onChange={(e) => setUnit(e.target.value as "02")}
-                    />
-                    <span>02</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      value="03"
-                      checked={unit === "03"}
-                      onChange={(e) => setUnit(e.target.value as "03")}
-                    />
-                    <span>03</span>
-                  </label>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Local *</Label>
+                    <Select value={location} onValueChange={setLocation}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AD01">AD 01</SelectItem>
+                        <SelectItem value="AD02">AD 02</SelectItem>
+                        <SelectItem value="CD01">CD 01</SelectItem>
+                        <SelectItem value="CD02">CD 02</SelectItem>
+                        <SelectItem value="VEI01">Veículos 01</SelectItem>
+                        <SelectItem value="VEI02">Veículos 02</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Unidade *</Label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          value="01"
+                          checked={unit === "01"}
+                          onChange={(e) => setUnit(e.target.value as "01")}
+                        />
+                        <span>01</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          value="02"
+                          checked={unit === "02"}
+                          onChange={(e) => setUnit(e.target.value as "02")}
+                        />
+                        <span>02</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          value="03"
+                          checked={unit === "03"}
+                          onChange={(e) => setUnit(e.target.value as "03")}
+                        />
+                        <span>03</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="series">Série da Empilhadeira *</Label>
-                <Input
-                  id="series"
-                  value={equipmentSeries}
-                  onChange={(e) => setEquipmentSeries(e.target.value)}
-                  placeholder="Ex: ABC123"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="number">Número de Identificação *</Label>
-                <Input
-                  id="number"
-                  value={equipmentNumber}
-                  onChange={(e) => setEquipmentNumber(e.target.value)}
-                  placeholder="Ex: EMP-001"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hour-meter">Horímetro Atual *</Label>
-                <Input
-                  id="hour-meter"
-                  type="number"
-                  value={hourMeter}
-                  onChange={(e) => setHourMeter(e.target.value)}
-                  placeholder="Ex: 1250"
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="series">Série da Empilhadeira *</Label>
+                    <Input
+                      id="series"
+                      value={equipmentSeries}
+                      onChange={(e) => setEquipmentSeries(e.target.value)}
+                      placeholder="Ex: ABC123"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="number">Número de Identificação *</Label>
+                    <Input
+                      id="number"
+                      value={equipmentNumber}
+                      onChange={(e) => setEquipmentNumber(e.target.value)}
+                      placeholder="Ex: EMP-001"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="hour-meter">Horímetro Atual *</Label>
+                    <Input
+                      id="hour-meter"
+                      type="number"
+                      value={hourMeter}
+                      onChange={(e) => setHourMeter(e.target.value)}
+                      placeholder="Ex: 1250"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="operation-description">Descrição da Operação *</Label>
+                  <Textarea
+                    id="operation-description"
+                    value={operationDescription}
+                    onChange={(e) => setOperationDescription(e.target.value)}
+                    placeholder="Descreva detalhadamente a operação que irá realizar..."
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="load-description">Carga a ser Içada *</Label>
+                  <Input
+                    id="load-description"
+                    value={loadDescription}
+                    onChange={(e) => setLoadDescription(e.target.value)}
+                    placeholder="Ex: Bobina de aço 2000kg, Viga metálica 500kg..."
+                  />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

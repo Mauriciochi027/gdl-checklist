@@ -1,3 +1,5 @@
+import { getChecklistItems, ChecklistType, liftingAccessoryChecklists } from './liftingAccessoryChecklists';
+
 export interface ChecklistItem {
   id: string;
   category: string;
@@ -27,5 +29,17 @@ export const checklistItems: ChecklistItem[] = [
 ];
 
 export const getChecklistItemById = (id: string): ChecklistItem | undefined => {
-  return checklistItems.find(item => item.id === id);
+  // First search in empilhadeira checklist
+  const empilhadeiraItem = checklistItems.find(item => item.id === id);
+  if (empilhadeiraItem) return empilhadeiraItem;
+  
+  // Then search in lifting accessory checklists
+  for (const [type, items] of Object.entries(liftingAccessoryChecklists)) {
+    if (type !== 'empilhadeira') {
+      const item = items.find(item => item.id === id);
+      if (item) return item as ChecklistItem;
+    }
+  }
+  
+  return undefined;
 };

@@ -306,7 +306,9 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="font-semibold text-lg text-gray-900">
-                            {record.equipmentCode} - {record.equipmentModel}
+                            {record.checklistType && record.checklistType !== 'empilhadeira' 
+                              ? checklistTypeLabels[record.checklistType as ChecklistType]
+                              : `${record.equipmentCode} - ${record.equipmentModel}`}
                           </h3>
                           {getStatusBadge(record.status)}
                         </div>
@@ -442,6 +444,34 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
                     {getStatusBadge(selectedRecord.status)}
                   </div>
                 </div>
+                
+                {selectedRecord.checklistType && selectedRecord.checklistType !== 'empilhadeira' ? (
+                  <>
+                    <div className="col-span-full">
+                      <span className="text-sm font-medium text-gray-600">Tipo de Checklist:</span>
+                      <p className="text-gray-900 font-semibold">
+                        {checklistTypeLabels[selectedRecord.checklistType as ChecklistType] || selectedRecord.checklistType}
+                      </p>
+                    </div>
+                    {selectedRecord.operationDescription && (
+                      <div className="col-span-full">
+                        <span className="text-sm font-medium text-gray-600">Descrição da Operação:</span>
+                        <p className="text-gray-900">{selectedRecord.operationDescription}</p>
+                      </div>
+                    )}
+                    {selectedRecord.loadDescription && (
+                      <div className="col-span-full">
+                        <span className="text-sm font-medium text-gray-600">Carga:</span>
+                        <p className="text-gray-900">{selectedRecord.loadDescription}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="col-span-full">
+                    <span className="text-sm font-medium text-gray-600">Tipo de Checklist:</span>
+                    <p className="text-gray-900 font-semibold">Equipamento Móvel</p>
+                  </div>
+                )}
               </div>
 
               {/* Summary Stats */}

@@ -65,16 +65,20 @@ const Index = () => {
     
     if (!user) return;
 
+    const isLiftingAccessory = data.checklistType !== 'empilhadeira';
+
     await addChecklist({
       equipmentId: data.equipmentId,
-      equipmentCode: eq?.code || data.equipmentNumber,
+      equipmentCode: eq?.code || (isLiftingAccessory ? data.checklistType : data.equipmentNumber),
       equipmentModel: eq ? `${eq.brand} ${eq.model}` : data.checklistType,
       operatorName: user.name,
       operatorId: user.matricula || user.id,
       answers: data.answers,
       signature: data.signature,
       photos: data.photos,
-      checklistType: data.checklistType
+      checklistType: data.checklistType,
+      operationDescription: data.operationDescription,
+      loadDescription: data.loadDescription
     });
     
     // Volta para seleção de tipo

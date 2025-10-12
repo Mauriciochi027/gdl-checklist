@@ -130,8 +130,10 @@ export type Database = {
           has_critical_issues: boolean | null
           hour_meter: number | null
           id: string
+          load_description: string | null
           location: string | null
           nao_conforme_items: number
+          operation_description: string | null
           operator_id: string
           operator_name: string
           signature: string
@@ -154,8 +156,10 @@ export type Database = {
           has_critical_issues?: boolean | null
           hour_meter?: number | null
           id?: string
+          load_description?: string | null
           location?: string | null
           nao_conforme_items: number
+          operation_description?: string | null
           operator_id: string
           operator_name: string
           signature: string
@@ -178,8 +182,10 @@ export type Database = {
           has_critical_issues?: boolean | null
           hour_meter?: number | null
           id?: string
+          load_description?: string | null
           location?: string | null
           nao_conforme_items?: number
+          operation_description?: string | null
           operator_id?: string
           operator_name?: string
           signature?: string

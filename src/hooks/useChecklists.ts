@@ -76,6 +76,8 @@ export const useChecklists = () => {
     signature: string;
     photos?: Record<string, string[]>;
     checklistType?: string;
+    operationDescription?: string;
+    loadDescription?: string;
   }) => {
     try {
       // Calculate stats
@@ -97,7 +99,9 @@ export const useChecklists = () => {
         naoConformeItems: naoConformeItems,
         signature: checklistData.signature,
         hasCriticalIssues: hasCriticalIssues,
-        checklistType: checklistData.checklistType || 'empilhadeira'
+        checklistType: checklistData.checklistType || 'empilhadeira',
+        operationDescription: checklistData.operationDescription,
+        loadDescription: checklistData.loadDescription
       });
 
       const { data: record, error: recordError } = await supabase
