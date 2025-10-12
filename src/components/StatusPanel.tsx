@@ -28,7 +28,7 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
   const [newStatus, setNewStatus] = useState<string>('');
   const [statusReason, setStatusReason] = useState<string>('');
 
-  const canEdit = userProfile === 'mecanico' || userProfile === 'gestor' || userProfile === 'admin';
+  const canEdit = userProfile === 'mecanico' || userProfile === 'admin';
 
   // Função para determinar o status baseado no banco de dados e nos checklists
   const getEquipmentStatus = (equipmentCode: string): { status: 'disponivel' | 'operando' | 'manutencao'; label: string; color: string; bgColor: string; icon: React.ReactNode } => {
