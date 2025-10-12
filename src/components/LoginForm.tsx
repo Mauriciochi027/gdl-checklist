@@ -9,39 +9,40 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import gdlLogo from '@/assets/gdl-logo.png';
 import forkliftIcon from '@/assets/forklift-icon.png';
-
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
     if (!username || !password) {
       setError('Por favor, preencha todos os campos');
       return;
     }
-
     setIsLoading(true);
-
     try {
       const email = `${username}@gdl.com`;
-      
+
       // Try to sign in
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      const {
+        data: signInData,
+        error: signInError
+      } = await supabase.auth.signInWithPassword({
         email,
         password: password
       });
-
       if (signInError) {
         // If user doesn't exist and it's a demo user, create it
         const demoUser = demoUsers.find(u => u.username === username);
-        
         if (demoUser && password === '123456') {
-          const { error: signUpError } = await supabase.auth.signUp({
+          const {
+            error: signUpError
+          } = await supabase.auth.signUp({
             email,
             password: password,
             options: {
@@ -52,7 +53,6 @@ export const LoginForm = () => {
               }
             }
           });
-
           if (signUpError) {
             setError('Erro ao criar usuário de demonstração');
             toast({
@@ -62,11 +62,12 @@ export const LoginForm = () => {
             });
           } else {
             // Try to sign in again
-            const { error: retryError } = await supabase.auth.signInWithPassword({
+            const {
+              error: retryError
+            } = await supabase.auth.signInWithPassword({
               email,
               password: password
             });
-
             if (retryError) {
               setError('Usuário criado. Tente fazer login novamente.');
             } else {
@@ -116,11 +117,7 @@ export const LoginForm = () => {
         <div className="text-center space-y-4">
           <div>
             <div className="flex items-center justify-center gap-2 mb-1">
-              <img 
-                src={forkliftIcon} 
-                alt="Empilhadeira" 
-                className="w-8 h-8 object-contain"
-              />
+              <img src={forkliftIcon} alt="Empilhadeira" className="w-8 h-8 object-contain" />
               <h1 className="text-2xl font-bold text-foreground">GDL CheckList</h1>
             </div>
             <p className="text-muted-foreground">Sistema de Checklist Digital</p>
@@ -132,12 +129,8 @@ export const LoginForm = () => {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-center gap-3 mb-2">
-              <img 
-                src={gdlLogo} 
-                alt="GDL - Solução em movimento" 
-                className="w-8 h-8 object-contain opacity-80"
-              />
-              <CardTitle className="text-center">Login do Sistema</CardTitle>
+              <img src={gdlLogo} alt="GDL - Solução em movimento" className="w-40 h-10 object-contain opacity-100 " />
+              <CardTitle className="-bottom-0.5 ">Login do Sistema</CardTitle>
             </div>
             <CardDescription className="text-center">
               Entre com suas credenciais para acessar o sistema
@@ -177,30 +170,7 @@ export const LoginForm = () => {
         </Card>
 
         {/* Demo Users */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Usuários de Demonstração</CardTitle>
-            <CardDescription className="text-xs">
-              Senha para todos: 123456
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {demoUsers.map(user => <div key={user.username} className="flex justify-between items-center text-sm p-2 bg-muted rounded">
-                  <div>
-                    <span className="font-medium">{user.username}</span>
-                    <span className="text-muted-foreground ml-2">({user.profile})</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => {
-                setUsername(user.username);
-                setPassword('123456');
-              }} disabled={isLoading}>
-                    Usar
-                  </Button>
-                </div>)}
-            </div>
-          </CardContent>
-        </Card>
+        
       </div>
     </div>;
 };
