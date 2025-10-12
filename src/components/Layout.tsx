@@ -93,7 +93,7 @@ const Layout = ({
       }];
     }
 
-    // Mecânico tem acesso à criação de contas
+    // Mecânico não tem acesso à criação de contas
     return [...baseItems, {
       id: 'status',
       label: 'Status',
@@ -110,10 +110,6 @@ const Layout = ({
       id: 'approvals',
       label: 'Aprovações',
       icon: ClipboardCheck
-    }, {
-      id: 'accounts',
-      label: 'Contas',
-      icon: Users
     }, {
       id: 'history',
       label: 'Histórico',
