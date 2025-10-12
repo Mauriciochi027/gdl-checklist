@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Forklift, Package } from "lucide-react";
+import { ArrowLeft, Truck, PackageCheck, Link2, Anchor, DollarSign } from "lucide-react";
 import { ChecklistType, checklistTypeLabels, checklistTypeIcons } from "@/lib/liftingAccessoryChecklists";
 
 interface ChecklistTypeSelectionProps {
@@ -35,8 +35,8 @@ export const ChecklistTypeSelection = ({ onSelectType, onBack }: ChecklistTypeSe
             onClick={() => onSelectType('empilhadeira')}
           >
             <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Forklift className="h-8 w-8 text-primary" />
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-safety-orange to-safety-orange-light flex items-center justify-center shadow-lg animate-pulse hover:animate-none transition-all hover:scale-110">
+                <Truck className="h-10 w-10 text-white" strokeWidth={2.5} />
               </div>
               <h2 className="text-xl font-bold text-industrial-900">
                 {checklistTypeLabels.empilhadeira}
@@ -56,8 +56,8 @@ export const ChecklistTypeSelection = ({ onSelectType, onBack }: ChecklistTypeSe
             }}
           >
             <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center">
-                <Package className="h-8 w-8 text-secondary" />
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-industrial-600 to-industrial-800 flex items-center justify-center shadow-lg animate-pulse hover:animate-none transition-all hover:scale-110">
+                <PackageCheck className="h-10 w-10 text-safety-yellow" strokeWidth={2.5} />
               </div>
               <h2 className="text-xl font-bold text-industrial-900">
                 Acessórios de Içamento de Carga
@@ -101,8 +101,11 @@ export const LiftingAccessorySelection = ({ onSelectType, onBack }: ChecklistTyp
               onClick={() => onSelectType(type)}
             >
               <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
-                <div className="text-5xl">
-                  {checklistTypeIcons[type]}
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-safety-blue to-industrial-600 flex items-center justify-center shadow-lg hover:scale-110 transition-all">
+                  {type === 'cinta_icamento' && <PackageCheck className="h-10 w-10 text-white" strokeWidth={2.5} />}
+                  {type === 'manilha' && <Anchor className="h-10 w-10 text-white" strokeWidth={2.5} />}
+                  {type === 'gancho' && <DollarSign className="h-10 w-10 text-white" strokeWidth={2.5} />}
+                  {type === 'corrente_icamento' && <Link2 className="h-10 w-10 text-white" strokeWidth={2.5} />}
                 </div>
                 <h2 className="text-lg font-bold text-industrial-900">
                   {checklistTypeLabels[type]}
