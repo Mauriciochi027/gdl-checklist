@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Eye, EyeOff, Shield, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/hooks/useSupabaseAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +24,18 @@ interface UserProfile {
   name: string;
   profile: 'operador' | 'mecanico' | 'admin';
   matricula?: string;
+  permissions?: string[];
 }
+
+const AVAILABLE_PERMISSIONS = [
+  { id: 'checklist', label: 'Acesso ao Checklist' },
+  { id: 'history', label: 'Acesso ao Histórico' },
+  { id: 'dashboard', label: 'Acesso ao Painel' },
+  { id: 'status', label: 'Acesso ao Status' },
+  { id: 'approvals', label: 'Acesso às Aprovações' },
+  { id: 'equipments', label: 'Acesso aos Equipamentos' },
+  { id: 'accounts', label: 'Gerenciar Contas' },
+];
 
 const UserManagement = ({
   currentUser
@@ -37,12 +49,15 @@ const UserManagement = ({
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     password: '',
     name: '',
     profile: 'operador' as 'operador' | 'mecanico' | 'admin',
-    matricula: ''
+    matricula: '',
+    permissions: [] as string[]
   });
 
   // Fetch users from Supabase
@@ -52,14 +67,29 @@ const UserManagement = ({
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (profilesError) throw profilesError;
 
-      setUsers(data as UserProfile[]);
+      // Fetch permissions for each user
+      const usersWithPermissions = await Promise.all(
+        (profilesData || []).map(async (profile) => {
+          const { data: perms } = await supabase
+            .from('user_permissions')
+            .select('permission')
+            .eq('user_id', profile.id);
+          
+          return {
+            ...profile,
+            permissions: perms?.map(p => p.permission) || []
+          } as UserProfile;
+        })
+      );
+
+      setUsers(usersWithPermissions);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -114,6 +144,20 @@ const UserManagement = ({
 
         if (roleError) throw roleError;
 
+        // Add permissions
+        if (formData.permissions.length > 0) {
+          const permissionsToInsert = formData.permissions.map(permission => ({
+            user_id: authData.user.id,
+            permission
+          }));
+
+          const { error: permError } = await supabase
+            .from('user_permissions')
+            .insert(permissionsToInsert);
+
+          if (permError) throw permError;
+        }
+
         toast({
           title: 'Sucesso',
           description: 'Usuário criado com sucesso!',
@@ -158,19 +202,31 @@ const UserManagement = ({
 
       if (profileError) throw profileError;
 
-      // Note: Password updates require admin privileges via auth.admin API
-      // This is intentionally limited for security
-      if (formData.password) {
-        toast({
-          title: 'Aviso',
-          description: 'Perfil atualizado. Alteração de senha requer privilégios administrativos do sistema.',
-        });
-      } else {
-        toast({
-          title: 'Sucesso',
-          description: 'Usuário atualizado com sucesso!',
-        });
+      // Update permissions - remove all existing and add new ones
+      const { error: deletePermsError } = await supabase
+        .from('user_permissions')
+        .delete()
+        .eq('user_id', selectedUser.id);
+
+      if (deletePermsError) throw deletePermsError;
+
+      if (formData.permissions.length > 0) {
+        const permissionsToInsert = formData.permissions.map(permission => ({
+          user_id: selectedUser.id,
+          permission
+        }));
+
+        const { error: permError } = await supabase
+          .from('user_permissions')
+          .insert(permissionsToInsert);
+
+        if (permError) throw permError;
       }
+
+      toast({
+        title: 'Sucesso',
+        description: 'Usuário atualizado com sucesso!',
+      });
 
       resetForm();
       setIsEditDialogOpen(false);
@@ -228,7 +284,8 @@ const UserManagement = ({
       password: '',
       name: user.name,
       profile: user.profile,
-      matricula: user.matricula || ''
+      matricula: user.matricula || '',
+      permissions: user.permissions || []
     });
     setIsEditDialogOpen(true);
   };
@@ -244,9 +301,67 @@ const UserManagement = ({
       password: '',
       name: '',
       profile: 'operador',
-      matricula: ''
+      matricula: '',
+      permissions: []
     });
     setShowPassword(false);
+    setNewPassword('');
+  };
+
+  const handleChangePassword = async () => {
+    if (!selectedUser || !newPassword) {
+      toast({
+        title: 'Erro',
+        description: 'Por favor, informe a nova senha.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Erro',
+        description: 'A senha deve ter no mínimo 6 caracteres.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('update-user-password', {
+        body: {
+          userId: selectedUser.id,
+          newPassword: newPassword
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Senha alterada com sucesso!',
+      });
+
+      setIsPasswordDialogOpen(false);
+      setSelectedUser(null);
+      setNewPassword('');
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível alterar a senha.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openPasswordDialog = (user: UserProfile) => {
+    setSelectedUser(user);
+    setNewPassword('');
+    setIsPasswordDialogOpen(true);
   };
 
   const getProfileBadge = (profile: string) => {
@@ -273,12 +388,18 @@ const UserManagement = ({
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Usuários</h1>
-          <p className="text-muted-foreground mt-1">Gerencie usuários e seus perfis de acesso</p>
+          <h1 className="text-3xl font-bold text-foreground">
+            {currentUser?.profile === 'mecanico' ? 'Gerenciamento de Contas' : 'Gerenciamento de Usuários'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {currentUser?.profile === 'mecanico' 
+              ? 'Crie e gerencie contas de usuários com permissões personalizadas' 
+              : 'Gerencie usuários e seus perfis de acesso'}
+          </p>
         </div>
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Novo Usuário
+          {currentUser?.profile === 'mecanico' ? 'Nova Conta' : 'Novo Usuário'}
         </Button>
       </div>
 
@@ -300,12 +421,13 @@ const UserManagement = ({
                 <TableHead>Username</TableHead>
                 <TableHead>Perfil</TableHead>
                 <TableHead>Matrícula</TableHead>
+                <TableHead>Permissões</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredUsers.length === 0 ? <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     Nenhum usuário encontrado
                   </TableCell>
                 </TableRow> : filteredUsers.map(user => {
@@ -317,8 +439,37 @@ const UserManagement = ({
                         <Badge variant={badge.variant}>{badge.label}</Badge>
                       </TableCell>
                       <TableCell>{user.matricula || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {user.permissions && user.permissions.length > 0 ? (
+                            user.permissions.slice(0, 2).map(perm => {
+                              const permLabel = AVAILABLE_PERMISSIONS.find(p => p.id === perm)?.label || perm;
+                              return (
+                                <Badge key={perm} variant="outline" className="text-xs">
+                                  {permLabel}
+                                </Badge>
+                              );
+                            })
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Nenhuma</span>
+                          )}
+                          {user.permissions && user.permissions.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{user.permissions.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openPasswordDialog(user)}
+                            title="Alterar senha"
+                          >
+                            <Key className="w-4 h-4" />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => openEditDialog(user)}>
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -388,6 +539,44 @@ const UserManagement = ({
               matricula: e.target.value
             })} placeholder="OP001" />
             </div>
+            <div>
+              <Label className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Permissões de Acesso
+              </Label>
+              <div className="mt-3 space-y-3 border rounded-md p-4 bg-muted/50">
+                {AVAILABLE_PERMISSIONS.map((permission) => (
+                  <div key={permission.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`perm-add-${permission.id}`}
+                      checked={formData.permissions.includes(permission.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({
+                            ...formData,
+                            permissions: [...formData.permissions, permission.id]
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            permissions: formData.permissions.filter(p => p !== permission.id)
+                          });
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`perm-add-${permission.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {permission.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Selecione as funcionalidades que este usuário poderá acessar
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
@@ -415,31 +604,6 @@ const UserManagement = ({
               <Input id="edit-username" value={formData.username} disabled className="bg-muted" />
             </div>
             <div>
-              <Label htmlFor="edit-password">Nova Senha</Label>
-              <div className="relative">
-                <Input 
-                  id="edit-password" 
-                  type={showPassword ? "text" : "password"} 
-                  value={formData.password} 
-                  onChange={e => setFormData({
-                    ...formData,
-                    password: e.target.value
-                  })} 
-                  placeholder="••••••"
-                  className="pr-10"
-                />
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
-                </Button>
-              </div>
-            </div>
-            <div>
               <Label htmlFor="edit-name">Nome Completo *</Label>
               <Input id="edit-name" value={formData.name} onChange={e => setFormData({
               ...formData,
@@ -459,6 +623,44 @@ const UserManagement = ({
               ...formData,
               matricula: e.target.value
             })} placeholder="OP001" />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Permissões de Acesso
+              </Label>
+              <div className="mt-3 space-y-3 border rounded-md p-4 bg-muted/50">
+                {AVAILABLE_PERMISSIONS.map((permission) => (
+                  <div key={permission.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`perm-edit-${permission.id}`}
+                      checked={formData.permissions.includes(permission.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({
+                            ...formData,
+                            permissions: [...formData.permissions, permission.id]
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            permissions: formData.permissions.filter(p => p !== permission.id)
+                          });
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`perm-edit-${permission.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {permission.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Selecione as funcionalidades que este usuário poderá acessar
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -490,6 +692,57 @@ const UserManagement = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog Alterar Senha */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Senha</DialogTitle>
+            <DialogDescription>
+              Defina uma nova senha para {selectedUser?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-password">Nova Senha *</Label>
+              <div className="relative">
+                <Input 
+                  id="new-password" 
+                  type={showPassword ? "text" : "password"} 
+                  value={newPassword} 
+                  onChange={e => setNewPassword(e.target.value)} 
+                  placeholder="••••••"
+                  className="pr-10"
+                />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                A senha deve ter no mínimo 6 caracteres
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsPasswordDialogOpen(false);
+              setNewPassword('');
+              setShowPassword(false);
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleChangePassword} disabled={isLoading}>
+              {isLoading ? 'Alterando...' : 'Alterar Senha'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 
