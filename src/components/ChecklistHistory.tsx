@@ -58,6 +58,9 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
   const { toast } = useToast();
   const { user } = useAuth();
   
+  console.log('[ChecklistHistory] Total records:', records.length);
+  console.log('[ChecklistHistory] Record types:', records.map(r => r.checklistType || 'undefined'));
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [typeFilter, setTypeFilter] = useState("todos");
@@ -105,12 +108,12 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
 
   // Apply all filters
   const filteredRecords = userFilteredRecords.filter(record => {
-    const matchesSearch = record.equipmentCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.equipmentModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.operatorName.toLowerCase().includes(searchTerm.toLowerCase());
+    const checklistType = record.checklistType || 'empilhadeira';
+    const searchableText = `${record.equipmentCode} ${record.equipmentModel} ${record.operatorName} ${checklistTypeLabels[checklistType as ChecklistType] || ''}`.toLowerCase();
+    const matchesSearch = searchableText.includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "todos" || record.status === statusFilter;
-    const matchesType = typeFilter === "todos" || (record as any).checklistType === typeFilter;
+    const matchesType = typeFilter === "todos" || checklistType === typeFilter;
     
     const recordDate = new Date(record.timestamp);
     const recordYear = recordDate.getFullYear().toString();
@@ -121,6 +124,8 @@ const ChecklistHistory = ({ records, isLoading, userProfile, currentUser }: Chec
     
     return matchesSearch && matchesStatus && matchesType && matchesYear && matchesMonth;
   }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  
+  console.log('[ChecklistHistory] After filters:', filteredRecords.length);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

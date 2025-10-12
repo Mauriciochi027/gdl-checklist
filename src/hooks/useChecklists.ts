@@ -48,6 +48,7 @@ export const useChecklists = () => {
       }) || [];
 
       console.log('[useChecklists] Carregados:', transformedRecords.length);
+      console.log('[useChecklists] Tipos de checklist:', transformedRecords.map(r => r.checklistType).filter((v, i, a) => a.indexOf(v) === i));
       setChecklistRecords(transformedRecords);
     } catch (error) {
       console.error('[useChecklists] Erro:', error);
@@ -147,8 +148,12 @@ export const useChecklists = () => {
         }
       }
 
-      // Auto-approve if all items are conforme
-      if (status === 'conforme') {
+      // Para checklists de içamento, não fazer auto-aprovação
+      // Todos devem passar por aprovação manual do mecânico
+      const isLiftingAccessory = checklistData.checklistType !== 'empilhadeira';
+      
+      // Auto-approve only for empilhadeira checklists if all items are conforme
+      if (status === 'conforme' && !isLiftingAccessory) {
         const approvalData = keysToSnakeCase({
           checklistRecordId: record.id,
           mechanicName: 'Sistema',
@@ -159,14 +164,21 @@ export const useChecklists = () => {
           .from('checklist_approvals')
           .insert([approvalData]);
 
-        if (approvalError) throw approvalError;
+        if (approvalError) {
+          console.error('Error auto-approving:', approvalError);
+          // Don't throw - checklist was saved successfully, just approval failed
+        }
       }
 
+      const isLiftingAccessoryChecklist = checklistData.checklistType !== 'empilhadeira';
+      
       toast({
         title: "Checklist registrado",
-        description: status === 'conforme' 
-          ? "Checklist aprovado automaticamente!" 
-          : "Checklist enviado para aprovação do mecânico."
+        description: isLiftingAccessoryChecklist
+          ? "Checklist de acessório de içamento registrado com sucesso!"
+          : status === 'conforme' 
+            ? "Checklist aprovado automaticamente!" 
+            : "Checklist enviado para aprovação do mecânico."
       });
 
       await fetchChecklists();
