@@ -38,6 +38,10 @@ const Layout = ({
         label: 'Equipamentos',
         icon: Truck
       }, {
+        id: 'equipment-management',
+        label: 'Gestão de Equipamentos',
+        icon: Truck
+      }, {
         id: 'checklist',
         label: 'Checklist',
         icon: ClipboardCheck
@@ -79,6 +83,10 @@ const Layout = ({
         label: 'Equipamentos',
         icon: Truck
       }, {
+        id: 'equipment-management',
+        label: 'Gestão de Equipamentos',
+        icon: Truck
+      }, {
         id: 'checklist',
         label: 'Checklist',
         icon: ClipboardCheck
@@ -101,6 +109,10 @@ const Layout = ({
     }, {
       id: 'equipments',
       label: 'Equipamentos',
+      icon: Truck
+    }, {
+      id: 'equipment-management',
+      label: 'Gestão de Equipamentos',
       icon: Truck
     }, {
       id: 'checklist',

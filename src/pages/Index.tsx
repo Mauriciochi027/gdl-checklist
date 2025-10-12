@@ -13,6 +13,7 @@ import ChecklistHistory from '@/components/ChecklistHistory';
 import ApprovalsPage from '@/components/ApprovalsPage';
 import StatusPanel from '@/components/StatusPanel';
 import UserManagement from '@/components/UserManagement';
+import EquipmentManagement from '@/components/EquipmentManagement';
 import { OperationControl } from '@/components/OperationControl';
 import { getChecklistItemById } from '@/lib/checklistItems';
 
@@ -169,6 +170,8 @@ const Index = () => {
         />;
       case 'equipments':
         return <EquipmentList equipments={equipments} isLoading={isLoadingEquipments} onAddEquipment={handleAddEquipment} onUpdateEquipment={handleUpdateEquipment} />;
+      case 'equipment-management':
+        return <EquipmentManagement equipments={equipments} />;
       case 'history':
         return <ChecklistHistory 
           records={checklistRecords}
