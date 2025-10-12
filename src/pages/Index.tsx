@@ -16,6 +16,7 @@ import UserManagement from '@/components/UserManagement';
 import EquipmentManagement from '@/components/EquipmentManagement';
 import { OperationControl } from '@/components/OperationControl';
 import { getChecklistItemById } from '@/lib/checklistItems';
+import { Equipment } from '@/types/equipment';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
@@ -95,10 +96,11 @@ const Index = () => {
     await rejectChecklist(recordId, mechanicName, reason);
   };
 
-  const handleUpdateEquipmentStatus = (equipmentId: string, status: string, reason?: string) => {
-    // Esta função seria implementada para atualizar o status do equipamento
-    // Por enquanto, apenas log para demonstração
-    console.log(`Atualizando status do equipamento ${equipmentId} para ${status}`, reason);
+  const handleUpdateEquipmentStatus = async (equipmentId: string, status: string, reason?: string) => {
+    await updateEquipment(equipmentId, {
+      status: status as Equipment['status'],
+      observations: reason || undefined
+    });
   };
 
   const renderPage = () => {
