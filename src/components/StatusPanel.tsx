@@ -454,6 +454,16 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
                 </div>
               </div>
 
+              {/* Observações do Mecânico */}
+              {viewingEquipment.observations && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Observações / Motivo da Alteração de Status</Label>
+                  <div className="mt-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingEquipment.observations}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Recent Checklists */}
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Histórico Recente</Label>
