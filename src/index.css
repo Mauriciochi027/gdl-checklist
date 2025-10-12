@@ -139,3 +139,53 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print Styles for PDF Generation */
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Hide elements that shouldn't be printed */
+  button,
+  .no-print,
+  [role="dialog"] > div:first-child {
+    display: none !important;
+  }
+
+  /* Ensure dialog content is visible */
+  [role="dialog"] {
+    position: static !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Better page breaks */
+  .space-y-4 > * {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure colors are printed */
+  .bg-safety-green,
+  .text-safety-green,
+  .bg-safety-red,
+  .text-safety-red,
+  .bg-safety-orange,
+  .text-safety-orange {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Optimize images for print */
+  img {
+    max-width: 100%;
+    page-break-inside: avoid;
+  }
+}

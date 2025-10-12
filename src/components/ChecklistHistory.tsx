@@ -23,7 +23,8 @@ import {
   Truck,
   Camera,
   PenTool,
-  Trash2
+  Trash2,
+  Printer
 } from "lucide-react";
 
 import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
@@ -66,8 +67,9 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [checklistToDelete, setChecklistToDelete] = useState<ChecklistRecord | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMechanic, setIsMechanic] = useState(false);
 
-  // Check if user is admin
+  // Check if user is admin or mechanic
   useEffect(() => {
     if (user) {
       supabase
@@ -77,6 +79,16 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
         .eq('role', 'admin')
         .single()
         .then(({ data }) => setIsAdmin(!!data));
+      
+      // Check profile for mechanic
+      supabase
+        .from('profiles')
+        .select('profile')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          setIsMechanic(data?.profile === 'mecanico' || data?.profile === 'admin');
+        });
     }
   }, [user]);
 
@@ -185,6 +197,18 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleDownloadPDF = () => {
+    if (!selectedRecord) return;
+
+    // Trigger browser print dialog which can save as PDF
+    window.print();
+    
+    toast({
+      title: "Imprimindo checklist",
+      description: "Use 'Salvar como PDF' na janela de impressão.",
+    });
   };
 
 
@@ -411,9 +435,21 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
         <DialogContent className="max-w-5xl h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0 pb-4">
-            <div className="flex items-center gap-2">
-              <Truck className="w-5 h-5" />
-              <DialogTitle>Detalhes do Checklist</DialogTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Truck className="w-5 h-5" />
+                <DialogTitle>Detalhes do Checklist</DialogTitle>
+              </div>
+              {isMechanic && (
+                <Button
+                  onClick={handleDownloadPDF}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Imprimir/PDF
+                </Button>
+              )}
             </div>
             <DialogDescription>
               {selectedRecord && `${selectedRecord.equipmentCode} - ${selectedRecord.equipmentModel}`}
