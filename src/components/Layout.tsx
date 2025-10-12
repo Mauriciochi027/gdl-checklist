@@ -41,7 +41,7 @@ const Layout = ({
         icon: Truck
       }, {
         id: 'equipment-management',
-        label: 'DashBoard',
+        label: 'Painel',
         icon: Truck
       }, {
         id: 'checklist',
@@ -86,7 +86,7 @@ const Layout = ({
         icon: Truck
       }, {
         id: 'equipment-management',
-        label: 'DashBoard',
+        label: 'Painel',
         icon: Truck
       }, {
         id: 'checklist',
@@ -114,7 +114,7 @@ const Layout = ({
       icon: Truck
     }, {
       id: 'equipment-management',
-      label: 'DashBoard',
+      label: 'Painel',
       icon: Truck
     }, {
       id: 'checklist',
