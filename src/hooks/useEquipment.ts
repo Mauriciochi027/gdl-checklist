@@ -7,40 +7,25 @@ import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 export const useEquipment = () => {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
   // Fetch all equipment
   const fetchEquipments = async () => {
-    if (isFetching) {
-      console.log('[useEquipment] Já existe um fetch em andamento, ignorando...');
-      return;
-    }
-
     try {
-      setIsFetching(true);
-      console.log('[useEquipment] Iniciando carregamento de equipamentos...');
+      console.log('[useEquipment] Iniciando carregamento...');
       
       const { data, error } = await supabase
         .from('equipment')
         .select('*')
         .order('code', { ascending: true });
 
-      console.log('[useEquipment] Resposta do Supabase recebida', { data, error });
+      if (error) throw error;
 
-      if (error) {
-        console.error('[useEquipment] Erro na query:', error);
-        throw error;
-      }
-
-      // Transform database format to Equipment interface format
       const transformedData = keysToCamelCase<Equipment[]>(data || []);
-      
-      console.log('[useEquipment] Equipamentos carregados:', transformedData.length);
+      console.log('[useEquipment] Carregados:', transformedData.length);
       setEquipments(transformedData);
     } catch (error) {
-      console.error('[useEquipment] Error fetching equipment:', error);
+      console.error('[useEquipment] Erro:', error);
       toast({
         title: "Erro ao carregar equipamentos",
         description: "Não foi possível carregar a lista de equipamentos.",
@@ -48,43 +33,12 @@ export const useEquipment = () => {
       });
       setEquipments([]);
     } finally {
-      console.log('[useEquipment] Finalizando carregamento');
-      setIsFetching(false);
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const initFetch = async () => {
-      // Wait for auth session to be ready
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        console.log('[useEquipment] Sessão autenticada, iniciando fetch...');
-        await fetchEquipments();
-      } else {
-        console.log('[useEquipment] Sem sessão, aguardando autenticação...');
-        setIsLoading(false);
-      }
-      
-      setIsInitialized(true);
-    };
-
-    initFetch();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        console.log('[useEquipment] Usuário autenticado, buscando dados...');
-        await fetchEquipments();
-      } else if (event === 'SIGNED_OUT') {
-        console.log('[useEquipment] Usuário deslogado, limpando dados...');
-        setEquipments([]);
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    fetchEquipments();
   }, []);
 
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {

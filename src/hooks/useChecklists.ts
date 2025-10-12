@@ -7,20 +7,12 @@ import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 export const useChecklists = () => {
   const [checklistRecords, setChecklistRecords] = useState<ChecklistRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
   const { toast } = useToast();
 
   // Fetch all checklist records with related data
   const fetchChecklists = async () => {
-    if (isFetching) {
-      console.log('[useChecklists] Já existe um fetch em andamento, ignorando...');
-      return;
-    }
-
     try {
-      setIsFetching(true);
-      console.log('[useChecklists] Iniciando carregamento de checklists...');
+      console.log('[useChecklists] Iniciando carregamento...');
       
       const { data: records, error } = await supabase
         .from('checklist_records')
@@ -33,18 +25,11 @@ export const useChecklists = () => {
         `)
         .order('timestamp', { ascending: false });
 
-      console.log('[useChecklists] Resposta do Supabase recebida', { records, error });
+      if (error) throw error;
 
-      if (error) {
-        console.error('[useChecklists] Erro na query:', error);
-        throw error;
-      }
-
-      // Transform data to match expected format with automatic camelCase conversion
       const transformedRecords = records?.map(record => {
         const camelRecord = keysToCamelCase(record);
         
-        // Handle nested photos structure
         const photos: Record<string, string[]> = {};
         if (camelRecord.checklistPhotos) {
           camelRecord.checklistPhotos.forEach((photo: any) => {
@@ -62,10 +47,10 @@ export const useChecklists = () => {
         };
       }) || [];
 
-      console.log('[useChecklists] Checklists carregados:', transformedRecords.length);
+      console.log('[useChecklists] Carregados:', transformedRecords.length);
       setChecklistRecords(transformedRecords);
     } catch (error) {
-      console.error('[useChecklists] Error fetching checklists:', error);
+      console.error('[useChecklists] Erro:', error);
       toast({
         title: "Erro ao carregar checklists",
         description: "Não foi possível carregar os registros de checklist.",
@@ -73,43 +58,12 @@ export const useChecklists = () => {
       });
       setChecklistRecords([]);
     } finally {
-      console.log('[useChecklists] Finalizando carregamento');
-      setIsFetching(false);
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const initFetch = async () => {
-      // Wait for auth session to be ready
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        console.log('[useChecklists] Sessão autenticada, iniciando fetch...');
-        await fetchChecklists();
-      } else {
-        console.log('[useChecklists] Sem sessão, aguardando autenticação...');
-        setIsLoading(false);
-      }
-      
-      setIsInitialized(true);
-    };
-
-    initFetch();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        console.log('[useChecklists] Usuário autenticado, buscando dados...');
-        await fetchChecklists();
-      } else if (event === 'SIGNED_OUT') {
-        console.log('[useChecklists] Usuário deslogado, limpando dados...');
-        setChecklistRecords([]);
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    fetchChecklists();
   }, []);
 
   const addChecklist = async (checklistData: {
