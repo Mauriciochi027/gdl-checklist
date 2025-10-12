@@ -322,14 +322,14 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
               </div>
 
               {/* Answers */}
-              {selectedRecord.answers && (
+              {selectedRecord.checklistAnswers && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <FileText className="w-5 h-5" />
                     Respostas do Checklist:
                   </h4>
                   <div className="space-y-4">
-                    {transformAnswersForDisplay(selectedRecord.answers, selectedRecord.photos).map((answer, index) => (
+                    {transformAnswersForDisplay(selectedRecord.checklistAnswers, selectedRecord.photos).map((answer, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-white">
                         <div className="space-y-3">
                           {/* Question */}
