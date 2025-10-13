@@ -77,7 +77,8 @@ export const useChecklists = () => {
           table: 'checklist_records'
         },
         (payload) => {
-          console.log('[useChecklists] Realtime update:', payload);
+          console.log('[useChecklists] Realtime update on checklist_records:', payload);
+          // Refetch all data when main records change
           fetchChecklists();
         }
       )
@@ -88,7 +89,8 @@ export const useChecklists = () => {
           schema: 'public',
           table: 'checklist_answers'
         },
-        () => {
+        (payload) => {
+          console.log('[useChecklists] Realtime update on checklist_answers:', payload);
           fetchChecklists();
         }
       )
@@ -99,7 +101,8 @@ export const useChecklists = () => {
           schema: 'public',
           table: 'checklist_photos'
         },
-        () => {
+        (payload) => {
+          console.log('[useChecklists] Realtime update on checklist_photos:', payload);
           fetchChecklists();
         }
       )
@@ -110,7 +113,8 @@ export const useChecklists = () => {
           schema: 'public',
           table: 'checklist_approvals'
         },
-        () => {
+        (payload) => {
+          console.log('[useChecklists] Realtime update on checklist_approvals:', payload);
           fetchChecklists();
         }
       )
@@ -121,13 +125,17 @@ export const useChecklists = () => {
           schema: 'public',
           table: 'checklist_rejections'
         },
-        () => {
+        (payload) => {
+          console.log('[useChecklists] Realtime update on checklist_rejections:', payload);
           fetchChecklists();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[useChecklists] Subscription status:', status);
+      });
 
     return () => {
+      console.log('[useChecklists] Cleaning up subscription');
       supabase.removeChannel(channel);
     };
   }, []);

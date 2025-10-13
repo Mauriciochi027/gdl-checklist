@@ -59,13 +59,25 @@ export const useEquipment = () => {
           table: 'equipment'
         },
         (payload) => {
-          console.log('[useEquipment] Realtime update:', payload);
-          fetchEquipments();
+          console.log('[useEquipment] Realtime update received:', payload);
+          // Atualizar imediatamente sem fazer nova query
+          if (payload.eventType === 'INSERT') {
+            const newEquipment = keysToCamelCase<Equipment>(payload.new);
+            setEquipments(prev => [...prev, newEquipment]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedEquipment = keysToCamelCase<Equipment>(payload.new);
+            setEquipments(prev => prev.map(eq => eq.id === updatedEquipment.id ? updatedEquipment : eq));
+          } else if (payload.eventType === 'DELETE') {
+            setEquipments(prev => prev.filter(eq => eq.id !== payload.old.id));
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[useEquipment] Subscription status:', status);
+      });
 
     return () => {
+      console.log('[useEquipment] Cleaning up subscription');
       supabase.removeChannel(channel);
     };
   }, []);
