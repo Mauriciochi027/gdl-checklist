@@ -65,6 +65,71 @@ export const useChecklists = () => {
 
   useEffect(() => {
     fetchChecklists();
+
+    // Realtime subscription para atualizações automáticas
+    const channel = supabase
+      .channel('checklists-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'checklist_records'
+        },
+        (payload) => {
+          console.log('[useChecklists] Realtime update:', payload);
+          fetchChecklists();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'checklist_answers'
+        },
+        () => {
+          fetchChecklists();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'checklist_photos'
+        },
+        () => {
+          fetchChecklists();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'checklist_approvals'
+        },
+        () => {
+          fetchChecklists();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'checklist_rejections'
+        },
+        () => {
+          fetchChecklists();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const addChecklist = async (checklistData: {

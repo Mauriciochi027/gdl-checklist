@@ -47,6 +47,27 @@ export const useEquipment = () => {
 
   useEffect(() => {
     fetchEquipments();
+
+    // Realtime subscription para atualizações automáticas
+    const channel = supabase
+      .channel('equipment-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'equipment'
+        },
+        (payload) => {
+          console.log('[useEquipment] Realtime update:', payload);
+          fetchEquipments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {
