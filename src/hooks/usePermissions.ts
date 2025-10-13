@@ -64,9 +64,12 @@ export const usePermissions = (user: User | null): UserPermissions => {
           // Fallback para permissões básicas baseadas no perfil
           setPermissions(getDefaultPermissionsByProfile(user.profile));
         } else {
-          // Dashboard sempre disponível
-          const userPerms = ['dashboard', ...(data?.map(p => p.permission) || [])] as Permission[];
-          setPermissions(userPerms);
+          // Usar permissões configuradas ou padrão do perfil se não houver nenhuma
+          const configuredPerms = data?.map(p => p.permission) || [];
+          const userPerms = configuredPerms.length > 0 
+            ? configuredPerms 
+            : getDefaultPermissionsByProfile(user.profile);
+          setPermissions(userPerms as Permission[]);
         }
       } catch (error) {
         console.error('Error in loadPermissions:', error);
@@ -103,9 +106,6 @@ export const usePermissions = (user: User | null): UserPermissions => {
   const canAccess = (permission: Permission): boolean => {
     // Admin pode tudo
     if (user?.profile === 'admin') return true;
-    
-    // Dashboard sempre acessível
-    if (permission === 'dashboard') return true;
     
     // Verificar permissão específica
     return permissions.includes(permission);
