@@ -63,13 +63,10 @@ export const usePermissions = (user: User | null): UserPermissions => {
           console.error('Error loading permissions:', error);
           // Fallback para permissões básicas baseadas no perfil
           setPermissions(getDefaultPermissionsByProfile(user.profile));
-        } else if (data && data.length > 0) {
-          // Se há permissões específicas cadastradas, usar elas
-          const userPerms = ['dashboard', ...(data.map(p => p.permission))] as Permission[];
-          setPermissions(userPerms);
         } else {
-          // Se não há permissões cadastradas, usar as padrões do perfil
-          setPermissions(getDefaultPermissionsByProfile(user.profile));
+          // Dashboard sempre disponível
+          const userPerms = ['dashboard', ...(data?.map(p => p.permission) || [])] as Permission[];
+          setPermissions(userPerms);
         }
       } catch (error) {
         console.error('Error in loadPermissions:', error);
