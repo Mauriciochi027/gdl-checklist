@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Truck, FileText, XCircle, ThumbsUp, ThumbsDown, Bell, BarChart3, Timer } from "lucide-react";
 
 interface ChecklistRecord {
@@ -73,13 +74,13 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
             {isOperator ? 'Meu Painel' : isMechanic ? 'Painel do Mecânico' : 'Painel de Gestão'}
           </h2>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             {isOperator 
               ? `Seus checklists e atividades - ${currentUser?.name}` 
               : isMechanic
@@ -88,29 +89,29 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
           </p>
         </div>
         {isMechanic && data.pendingApprovals > 0 && (
-          <div className="flex items-center gap-2 bg-safety-orange-light px-3 py-2 rounded-lg">
-            <Bell className="w-4 h-4 text-safety-orange" />
-            <span className="text-sm font-medium text-safety-orange">
-              {data.pendingApprovals} aprovações pendentes
+          <div className="flex items-center gap-2 bg-safety-orange-light px-3 py-2 rounded-lg whitespace-nowrap">
+            <Bell className="w-4 h-4 text-safety-orange flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-safety-orange">
+              {data.pendingApprovals} pendentes
             </span>
           </div>
         )}
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Card key={index} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">{stat.title}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</p>
                   </div>
-                  <div className={`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-                    <Icon className={`w-6 h-6 ${stat.color}`} />
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${stat.bgColor} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
                   </div>
                 </div>
               </CardContent>
@@ -119,7 +120,7 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Performance Metrics */}
         <Card>
           <CardHeader>
@@ -262,47 +263,52 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                 };
 
                 return (
-                  <div key={checklist.id} className={`p-4 border rounded-lg ${criticalityColor}`}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-medium text-gray-900">{checklist.equipmentCode} - {checklist.equipmentModel}</h4>
+                  <div key={checklist.id} className={`p-3 sm:p-4 border rounded-lg ${criticalityColor}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <h4 className="font-medium text-sm sm:text-base text-gray-900 truncate">
+                            {checklist.equipmentCode} - {checklist.equipmentModel}
+                          </h4>
                           <Badge 
                             variant={criticality === 'crítico' ? 'destructive' : criticality === 'atenção' ? 'secondary' : 'outline'}
-                            className={criticality === 'atenção' ? 'bg-safety-orange text-white' : ''}
+                            className={cn(
+                              "text-xs",
+                              criticality === 'atenção' ? 'bg-safety-orange text-white' : ''
+                            )}
                           >
                             {criticality === 'crítico' ? 'Crítico' : criticality === 'atenção' ? 'Atenção' : 'Normal'}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-1">Operador: {checklist.operatorName}</p>
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Operador: {checklist.operatorName}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2">
                           {new Date(checklist.timestamp).toLocaleDateString('pt-BR')} às {' '}
                           {new Date(checklist.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
-                        <div className="text-sm text-gray-700">
+                        <div className="text-xs sm:text-sm text-gray-700 flex flex-wrap gap-2">
                           <span className="text-safety-green font-medium">{checklist.conformeItems} conformes</span>
                           {checklist.naoConformeItems > 0 && (
-                            <span className="text-safety-red font-medium ml-2">{checklist.naoConformeItems} não conformes</span>
+                            <span className="text-safety-red font-medium">{checklist.naoConformeItems} não conformes</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex gap-2 sm:flex-col lg:flex-row w-full sm:w-auto">
                         <Button 
                           size="sm" 
                           onClick={handleQuickApprove}
-                          className="bg-safety-green hover:bg-safety-green-dark text-white"
+                          className="bg-safety-green hover:bg-safety-green-dark text-white flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
                         >
-                          <ThumbsUp className="w-4 h-4 mr-1" />
-                          Aprovar
+                          <ThumbsUp className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                          <span className="hidden sm:inline">Aprovar</span>
                         </Button>
                         <Button 
                           size="sm" 
                           variant="outline" 
                           onClick={handleQuickReject}
-                          className="border-safety-red text-safety-red hover:bg-safety-red hover:text-white"
+                          className="border-safety-red text-safety-red hover:bg-safety-red hover:text-white flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
                         >
-                          <ThumbsDown className="w-4 h-4 mr-1" />
-                          Negar
+                          <ThumbsDown className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                          <span className="hidden sm:inline">Negar</span>
                         </Button>
                       </div>
                     </div>
