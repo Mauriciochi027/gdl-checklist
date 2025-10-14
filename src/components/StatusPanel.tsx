@@ -181,79 +181,75 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Painel de Status</h1>
-          <p className="text-muted-foreground">
-            {canEdit ? 'Visualize e gerencie o status dos equipamentos' : 'Visualize o status atual dos equipamentos'}
-          </p>
-        </div>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Otimizado para Mobile */}
+      <div>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Painel de Status</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          {canEdit ? 'Visualize e gerencie o status' : 'Visualize o status dos equipamentos'}
+        </p>
       </div>
 
-      {/* Status Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Status Summary Cards - Otimizado para Mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Disponível</p>
-                <p className="text-2xl font-bold text-safety-green">{getStatusCount('disponivel')}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Disponível</p>
+                <p className="text-xl sm:text-2xl font-bold text-safety-green">{getStatusCount('disponivel')}</p>
               </div>
-              <div className="w-12 h-12 bg-safety-green rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-safety-green rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Operando</p>
-                <p className="text-2xl font-bold text-industrial-blue">{getStatusCount('operando')}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Operando</p>
+                <p className="text-xl sm:text-2xl font-bold text-industrial-blue">{getStatusCount('operando')}</p>
               </div>
-              <div className="w-12 h-12 bg-industrial-blue rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-industrial-blue rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Em Manutenção</p>
-                <p className="text-2xl font-bold text-safety-red">{getStatusCount('manutencao')}</p>
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">Manutenção</p>
+                <p className="text-xl sm:text-2xl font-bold text-safety-red">{getStatusCount('manutencao')}</p>
               </div>
-              <div className="w-12 h-12 bg-safety-red rounded-lg flex items-center justify-center">
-                <Wrench className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-safety-red rounded-lg flex items-center justify-center">
+                <Wrench className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Filters - Otimizado para Mobile */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Buscar por código, modelo ou marca..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Buscar equipamento..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 text-sm"
+              />
             </div>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px] text-sm">
                 <SelectValue placeholder="Filtrar por status" />
               </SelectTrigger>
               <SelectContent>
@@ -267,8 +263,8 @@ const StatusPanel = ({ equipments, checklistRecords, userProfile, onUpdateEquipm
         </CardContent>
       </Card>
 
-      {/* Equipment List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Equipment List - Otimizado para Mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {filteredEquipments.map((equipment) => {
           const status = getEquipmentStatus(equipment.code);
           return (

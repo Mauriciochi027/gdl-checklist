@@ -17,6 +17,7 @@ const Layout = ({
 }: LayoutProps) => {
   const { user, logout } = useAuth();
   const { canAccess } = usePermissions(user);
+  // Sidebar sempre começa fechado em mobile, aberto em desktop
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Define todos os itens de menu possíveis
@@ -99,48 +100,58 @@ const Layout = ({
   };
   const profileBadge = getProfileBadge(user?.profile || '');
   return <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header - Otimizado para Mobile */}
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-        <div className="px-3 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
+        <div className="px-3 py-2 sm:px-6 sm:py-3">
+          <div className="flex items-center justify-between gap-2">
             {/* Mobile Menu Button */}
             <Button 
               variant="ghost" 
               size="sm" 
-              className="lg:hidden"
+              className="lg:hidden p-2 h-9 w-9"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               <Menu className="w-5 h-5" />
             </Button>
 
-            {/* Logo and Title */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            {/* Logo and Title - Compacto para mobile */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <img 
                 src={gdlLogo} 
                 alt="GDL Logo" 
-                className="w-8 h-6 sm:w-12 sm:h-8 object-contain"
+                className="w-8 h-6 sm:w-10 sm:h-7 object-contain flex-shrink-0"
               />
-              <div className="hidden sm:block">
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900">GDL CheckList</h1>
-                <p className="text-xs sm:text-sm text-gray-500">Sistema de Checklist Digital</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 truncate">GDL CheckList</h1>
+                <p className="text-xs text-gray-500 hidden sm:block truncate">Sistema de Checklist Digital</p>
               </div>
-              <h1 className="text-base font-bold text-gray-900 sm:hidden">GDL</h1>
             </div>
 
-            {/* User Info and Logout */}
-            <div className="flex items-center gap-2 sm:gap-4">
-              <div className="text-right hidden md:block">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">{user?.name}</span>
-                  <span className={`text-xs px-2 py-1 rounded-full text-white ${profileBadge.color}`}>
-                    {profileBadge.label}
+            {/* User Info and Logout - Otimizado */}
+            <div className="flex items-center gap-2">
+              {/* User badge - só visível em telas maiores */}
+              <div className="hidden md:flex items-center gap-2">
+                <div className="text-right">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground truncate max-w-[150px]">{user?.name}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full text-white ${profileBadge.color} whitespace-nowrap`}>
+                      {profileBadge.label}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {user?.matricula && `Mat: ${user.matricula}`}
                   </span>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {user?.matricula && `Matrícula: ${user.matricula}`}
-                </span>
               </div>
-              <Button variant="outline" size="sm" onClick={logout} className="h-8 w-8 sm:h-9 sm:w-auto px-2 sm:px-3">
+              
+              {/* Logout button compacto */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={logout} 
+                className="h-8 w-8 p-0 sm:w-auto sm:px-3"
+                title="Sair"
+              >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline ml-2">Sair</span>
               </Button>
@@ -158,65 +169,83 @@ const Layout = ({
           />
         )}
 
-        {/* Sidebar */}
+        {/* Sidebar - Otimizado para Mobile */}
         <aside className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+          "fixed lg:static inset-y-0 left-0 z-50 w-72 sm:w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           {/* Close button for mobile */}
-          <div className="lg:hidden flex justify-end p-4">
+          <div className="lg:hidden flex justify-between items-center p-3 border-b">
+            <span className="text-sm font-semibold text-gray-900">Menu</span>
             <Button 
               variant="ghost" 
               size="sm"
+              className="h-8 w-8 p-0"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
 
-          {/* Company Logo Section */}
-          <div className="p-4 sm:p-6 border-b border-gray-200">
+          {/* User info em mobile - visível apenas quando sidebar aberto */}
+          <div className="lg:hidden p-3 border-b bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
+                <p className="text-xs text-gray-500">{user?.matricula && `Matrícula: ${user.matricula}`}</p>
+              </div>
+              <span className={`text-xs px-2 py-1 rounded-full text-white ${profileBadge.color} whitespace-nowrap`}>
+                {profileBadge.label}
+              </span>
+            </div>
+          </div>
+
+          {/* Company Logo Section - Compacto */}
+          <div className="p-4 border-b border-gray-200">
             <div className="flex flex-col items-center text-center">
               <img 
                 src={gdlLogo} 
                 alt="GDL - Solução em movimento" 
-                className="w-24 h-18 sm:w-32 sm:h-24 object-contain mb-2 sm:mb-3"
+                className="w-20 h-15 sm:w-24 sm:h-18 object-contain mb-2"
               />
-              <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1">GDL</h2>
+              <h2 className="text-base font-bold text-gray-900">GDL</h2>
               <p className="text-xs text-gray-500">Solução em movimento</p>
             </div>
           </div>
           
-          <nav className="p-3 sm:p-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-            <ul className="space-y-1 sm:space-y-2">
-              {menuItems.map(item => {
+          {/* Navigation - Otimizado */}
+          <nav className="p-3 space-y-1">
+            {menuItems.map(item => {
               const Icon = item.icon;
-              return <li key={item.id}>
-                    <Button 
-                      variant={currentPage === item.id ? "default" : "ghost"} 
-                      className={cn(
-                        "w-full justify-start gap-2 sm:gap-3 text-sm sm:text-base h-10 sm:h-11", 
-                        currentPage === item.id 
-                          ? "bg-industrial-blue text-white hover:bg-industrial-blue-dark" 
-                          : "text-gray-700 hover:bg-gray-100"
-                      )} 
-                      onClick={() => {
-                        onPageChange(item.id);
-                        setSidebarOpen(false);
-                      }}
-                    >
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </Button>
-                  </li>;
+              const isActive = currentPage === item.id;
+              return (
+                <Button 
+                  key={item.id}
+                  variant={isActive ? "default" : "ghost"} 
+                  className={cn(
+                    "w-full justify-start gap-3 text-sm h-11 px-3", 
+                    isActive 
+                      ? "bg-industrial-blue text-white hover:bg-industrial-blue-dark" 
+                      : "text-gray-700 hover:bg-gray-100"
+                  )} 
+                  onClick={() => {
+                    onPageChange(item.id);
+                    setSidebarOpen(false); // Fecha sidebar após clicar
+                  }}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </Button>
+              );
             })}
-            </ul>
           </nav>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-3 sm:p-4 lg:p-6 min-h-[calc(100vh-64px)] overflow-x-hidden">
-          {children}
+        {/* Main Content - Otimizado para Mobile */}
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 min-h-[calc(100vh-60px)] sm:min-h-[calc(100vh-64px)] overflow-x-hidden w-full">
+          <div className="max-w-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>;

@@ -74,44 +74,44 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-            {isOperator ? 'Meu Painel' : isMechanic ? 'Painel do Mecânico' : 'Painel de Gestão'}
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600">
-            {isOperator 
-              ? `Seus checklists e atividades - ${currentUser?.name}` 
-              : isMechanic
-              ? `Aprovações e análises - ${currentUser?.name}`
-              : 'Visão geral das operações de hoje'}
-          </p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
+          {isOperator ? 'Meu Painel' : isMechanic ? 'Painel do Mecânico' : 'Painel de Gestão'}
+        </h2>
+        <p className="text-xs sm:text-sm text-gray-600">
+          {isOperator 
+            ? `Suas atividades` 
+            : isMechanic
+            ? `Aprovações e análises`
+            : 'Visão geral das operações'}
+        </p>
         {isMechanic && data.pendingApprovals > 0 && (
-          <div className="flex items-center gap-2 bg-safety-orange-light px-3 py-2 rounded-lg whitespace-nowrap">
-            <Bell className="w-4 h-4 text-safety-orange flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium text-safety-orange">
+          <div className="flex items-center gap-2 bg-safety-orange-light px-2 py-1.5 rounded-lg w-fit">
+            <Bell className="w-3.5 h-3.5 text-safety-orange flex-shrink-0" />
+            <span className="text-xs font-medium text-safety-orange">
               {data.pendingApprovals} pendentes
             </span>
           </div>
         )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      {/* Stats Cards - Otimizado para Mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Card key={index} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">{stat.title}</p>
-                    <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</p>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${stat.bgColor} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.color}`} />
+                    </div>
                   </div>
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${stat.bgColor} flex items-center justify-center flex-shrink-0`}>
-                    <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 line-clamp-2 mb-1">{stat.title}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stat.value}</p>
                   </div>
                 </div>
               </CardContent>
@@ -120,11 +120,11 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         {/* Performance Metrics */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               {isMechanic ? (
                 <>
                   <BarChart3 className="w-5 h-5 text-safety-orange" />
@@ -138,7 +138,7 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 p-4 sm:p-6">
             {isMechanic ? (
               <>
                 <div>
@@ -193,24 +193,24 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
 
         {/* Top Issues */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <AlertTriangle className="w-5 h-5 text-safety-orange" />
               Equipamentos com Mais Ocorrências
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-2">
               {data.topIssues.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-safety-orange-light rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-safety-orange">{index + 1}</span>
+                <div key={index} className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-safety-orange-light rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs sm:text-sm font-bold text-safety-orange">{index + 1}</span>
                     </div>
-                    <span className="font-medium">{item.equipment}</span>
+                    <span className="font-medium text-sm sm:text-base truncate">{item.equipment}</span>
                   </div>
-                  <Badge variant="secondary" className="bg-safety-orange-light text-safety-orange">
-                    {item.issues} ocorrências
+                  <Badge variant="secondary" className="bg-safety-orange-light text-safety-orange text-xs whitespace-nowrap ml-2">
+                    {item.issues}
                   </Badge>
                 </div>
               ))}
@@ -222,8 +222,8 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
       {/* Mechanic Pending Approvals Section */}
       {isMechanic && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Clock className="w-5 h-5 text-safety-orange" />
               Aprovações Pendentes
               {data.pendingApprovals > 0 && (
@@ -233,8 +233,8 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-2 sm:space-y-3">
               {data.recentChecklists?.filter(c => c.status === 'pendente').slice(0, 5).map((checklist) => {
                 const criticality = checklist.naoConformeItems > 2 ? 'crítico' : checklist.naoConformeItems > 0 ? 'atenção' : 'normal';
                 const criticalityColor = criticality === 'crítico' ? 'border-safety-red bg-safety-red-light' : 
@@ -263,12 +263,12 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                 };
 
                 return (
-                  <div key={checklist.id} className={`p-3 sm:p-4 border rounded-lg ${criticalityColor}`}>
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                  <div key={checklist.id} className={`p-2.5 sm:p-3 border rounded-lg ${criticalityColor}`}>
+                    <div className="flex flex-col gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <h4 className="font-medium text-sm sm:text-base text-gray-900 truncate">
-                            {checklist.equipmentCode} - {checklist.equipmentModel}
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                          <h4 className="font-medium text-xs sm:text-sm text-gray-900">
+                            {checklist.equipmentCode}
                           </h4>
                           <Badge 
                             variant={criticality === 'crítico' ? 'destructive' : criticality === 'atenção' ? 'secondary' : 'outline'}
@@ -280,35 +280,35 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                             {criticality === 'crítico' ? 'Crítico' : criticality === 'atenção' ? 'Atenção' : 'Normal'}
                           </Badge>
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Operador: {checklist.operatorName}</p>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-2">
-                          {new Date(checklist.timestamp).toLocaleDateString('pt-BR')} às {' '}
+                        <p className="text-xs text-gray-600 mb-1">Op: {checklist.operatorName}</p>
+                        <p className="text-xs text-gray-600 mb-1.5">
+                          {new Date(checklist.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} {' '}
                           {new Date(checklist.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
-                        <div className="text-xs sm:text-sm text-gray-700 flex flex-wrap gap-2">
-                          <span className="text-safety-green font-medium">{checklist.conformeItems} conformes</span>
+                        <div className="text-xs text-gray-700 flex flex-wrap gap-1.5">
+                          <span className="text-safety-green font-medium">{checklist.conformeItems} ✓</span>
                           {checklist.naoConformeItems > 0 && (
-                            <span className="text-safety-red font-medium">{checklist.naoConformeItems} não conformes</span>
+                            <span className="text-safety-red font-medium">{checklist.naoConformeItems} ✗</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2 sm:flex-col lg:flex-row w-full sm:w-auto">
+                      <div className="flex gap-2 w-full">
                         <Button 
                           size="sm" 
                           onClick={handleQuickApprove}
-                          className="bg-safety-green hover:bg-safety-green-dark text-white flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
+                          className="bg-safety-green hover:bg-safety-green-dark text-white flex-1 text-xs h-8"
                         >
-                          <ThumbsUp className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
-                          <span className="hidden sm:inline">Aprovar</span>
+                          <ThumbsUp className="w-3 h-3 mr-1" />
+                          Aprovar
                         </Button>
                         <Button 
                           size="sm" 
                           variant="outline" 
                           onClick={handleQuickReject}
-                          className="border-safety-red text-safety-red hover:bg-safety-red hover:text-white flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
+                          className="border-safety-red text-safety-red hover:bg-safety-red hover:text-white flex-1 text-xs h-8"
                         >
-                          <ThumbsDown className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
-                          <span className="hidden sm:inline">Negar</span>
+                          <ThumbsDown className="w-3 h-3 mr-1" />
+                          Negar
                         </Button>
                       </div>
                     </div>
@@ -329,8 +329,8 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
       {/* Recent Checklists for Operators / Recent Alerts for Others */}
       {!isMechanic && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               {isOperator ? (
                 <>
                   <FileText className="w-5 h-5 text-industrial-blue" />
@@ -344,9 +344,9 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             {isOperator && data.recentChecklists ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {data.recentChecklists.slice(0, 3).map((checklist) => {
                   const getStatusIcon = (status: string) => {
                     switch (status) {
@@ -380,11 +380,13 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                   };
 
                   return (
-                    <div key={checklist.id} className="flex items-center gap-4 p-3 border rounded-lg">
-                      {getStatusIcon(checklist.status)}
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{checklist.equipmentCode} - {checklist.equipmentModel}</p>
-                        <p className="text-sm text-gray-600">{formatDate(checklist.timestamp)}</p>
+                    <div key={checklist.id} className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 border rounded-lg">
+                      <div className="flex-shrink-0">
+                        {getStatusIcon(checklist.status)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs sm:text-sm text-gray-900 truncate">{checklist.equipmentCode}</p>
+                        <p className="text-xs text-gray-600">{formatDate(checklist.timestamp)}</p>
                         {checklist.status === 'negado' && checklist.rejections && checklist.rejections.length > 0 && (
                           <p className="text-sm text-safety-red mt-1">
                             Motivo: {checklist.rejections[checklist.rejections.length - 1].reason}

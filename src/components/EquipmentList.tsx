@@ -210,23 +210,24 @@ const EquipmentList = ({
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
-  return <div className="space-y-6">
-      <div className="flex items-center justify-between">
+  return <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestão de Equipamentos</h2>
-          <p className="text-gray-600">Cadastro e controle de empilhadeiras</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestão de Equipamentos</h2>
+          <p className="text-xs sm:text-sm text-gray-600">Cadastro e controle</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-industrial-blue hover:bg-industrial-blue-dark" 
+              className="bg-industrial-blue hover:bg-industrial-blue-dark text-sm h-9 sm:h-10" 
               onClick={resetForm}
               disabled={!canManageEquipment}
               title={!canManageEquipment ? "Você não tem permissão para adicionar equipamentos" : undefined}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Equipamento
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Novo Equipamento</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           </DialogTrigger>
           
@@ -425,9 +426,9 @@ const EquipmentList = ({
         </Dialog>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4">
-        <div className="relative flex-1 max-w-md">
+      {/* Filters - Otimizado para Mobile */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input placeholder="Buscar por código, modelo ou marca..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
         </div>
