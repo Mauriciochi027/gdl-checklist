@@ -15,29 +15,9 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pwa-icon-512.png', 'pwa-icon-192.png'],
-      manifest: {
-        name: 'GDL CheckList',
-        short_name: 'GDL Check',
-        description: 'Sistema de checklist para equipamentos',
-        start_url: '/',
-        display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#1976d2',
-        icons: [
-          {
-            src: 'pwa-icon-192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-icon-512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
@@ -59,14 +39,37 @@ export default defineConfig(({ mode }) => ({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api-cache',
+              networkTimeoutSeconds: 5,
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
+                maxEntries: 30,
+                maxAgeSeconds: 30 // 30 seconds - cache muito curto para dados sempre atualizados
               },
               cacheableResponse: {
                 statuses: [0, 200]
               }
             }
+          }
+        ]
+      },
+      includeAssets: ['pwa-icon-512.png', 'pwa-icon-192.png'],
+      manifest: {
+        name: 'GDL CheckList',
+        short_name: 'GDL Check',
+        description: 'Sistema de checklist para equipamentos',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#1976d2',
+        icons: [
+          {
+            src: 'pwa-icon-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png'
           }
         ]
       }

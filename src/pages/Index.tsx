@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useChecklists } from '@/hooks/useChecklists';
+import { useAppSync } from '@/hooks/useAppSync';
 import { LoginForm } from '@/components/LoginForm';
 import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
@@ -23,10 +24,19 @@ const Index = () => {
   const { user, isLoading } = useAuth();
   const { canAccess } = usePermissions(user);
   const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment, refreshEquipments } = useEquipment();
-  const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
+  const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist, refreshChecklists } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedChecklistType, setSelectedChecklistType] = useState<ChecklistType | null>(null);
   const [showLiftingAccessorySelection, setShowLiftingAccessorySelection] = useState(false);
+
+  // Sincronizar dados quando o app volta ao foco (importante para PWA)
+  const syncData = useCallback(() => {
+    console.log('[Index] Sincronizando dados...');
+    refreshEquipments();
+    refreshChecklists();
+  }, [refreshEquipments, refreshChecklists]);
+
+  useAppSync(syncData);
 
   // Redirecionar para dashboard se usuário não tiver permissão para a página atual
   useEffect(() => {

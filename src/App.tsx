@@ -13,7 +13,8 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
       staleTime: 0,
-      gcTime: 1000 * 60 * 5, // 5 minutos
+      gcTime: 1000 * 60 * 2, // 2 minutos - reduzido para PWA
+      retry: 1,
     },
   },
 });
