@@ -53,18 +53,17 @@ export const useSupabaseAuthState = () => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         setSession(currentSession);
         
         if (currentSession?.user) {
-          // Fetch profile immediately without setTimeout
-          fetchUserProfile(currentSession.user.id).then(profile => {
+          // Defer profile fetching to avoid blocking
+          setTimeout(async () => {
+            const profile = await fetchUserProfile(currentSession.user.id);
             setUser(profile);
-            if (isLoading) setIsLoading(false);
-          });
+          }, 0);
         } else {
           setUser(null);
-          if (isLoading) setIsLoading(false);
         }
       }
     );
