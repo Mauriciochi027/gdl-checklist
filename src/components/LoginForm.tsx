@@ -37,6 +37,14 @@ export const LoginForm = () => {
         password: password
       });
       if (signInError) {
+        // Always show the error message for invalid credentials
+        setError('Usuário ou senha incorretos');
+        toast({
+          title: "Erro no login",
+          description: "Usuário ou senha incorretos",
+          variant: "destructive"
+        });
+        
         // If user doesn't exist and it's a demo user, create it
         const demoUser = demoUsers.find(u => u.username === username);
         if (demoUser && password === '123456') {
@@ -50,40 +58,26 @@ export const LoginForm = () => {
                 username: demoUser.username,
                 name: demoUser.name,
                 profile: demoUser.profile
-              }
+              },
+              emailRedirectTo: `${window.location.origin}/`
             }
           });
-          if (signUpError) {
-            setError('Erro ao criar usuário de demonstração');
-            toast({
-              title: "Erro",
-              description: "Não foi possível criar o usuário.",
-              variant: "destructive"
-            });
-          } else {
-            // Try to sign in again
+          if (!signUpError) {
+            // Try to sign in again after creating demo user
             const {
               error: retryError
             } = await supabase.auth.signInWithPassword({
               email,
               password: password
             });
-            if (retryError) {
-              setError('Usuário criado. Tente fazer login novamente.');
-            } else {
+            if (!retryError) {
+              setError(''); // Clear error on success
               toast({
                 title: "Login realizado",
                 description: "Bem-vindo ao sistema!"
               });
             }
           }
-        } else {
-          setError('Usuário ou senha incorretos');
-          toast({
-            title: "Erro no login",
-            description: "Verifique suas credenciais e tente novamente.",
-            variant: "destructive"
-          });
         }
       } else {
         toast({
