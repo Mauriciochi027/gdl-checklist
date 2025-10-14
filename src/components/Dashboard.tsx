@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Truck, FileText, XCircle, ThumbsUp, ThumbsDown, Bell, BarChart3, Timer } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Truck, FileText, XCircle, ThumbsUp, ThumbsDown, Bell, BarChart3, Timer, Download } from "lucide-react";
+import { PWAInstallPrompt } from "./PWAInstallPrompt";
 
 interface ChecklistRecord {
   id: string;
@@ -74,6 +75,8 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
 
   return (
     <div className="space-y-6">
+      {isMechanic && <PWAInstallPrompt />}
+      
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
