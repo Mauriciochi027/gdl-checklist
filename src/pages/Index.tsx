@@ -55,21 +55,55 @@ const Index = () => {
       ? checklistRecords.filter(r => r.operatorName === user?.name)
       : checklistRecords;
     
+    // Calcular checklists de hoje
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayChecklists = userChecklistRecords.filter(r => {
+      const checklistDate = new Date(r.timestamp);
+      checklistDate.setHours(0, 0, 0, 0);
+      return checklistDate.getTime() === today.getTime();
+    }).length;
+    
+    // Calcular itens não conformes totais
+    const nonConformItems = userChecklistRecords.reduce((sum, r) => sum + r.naoConformeItems, 0);
+    
+    // Calcular tempo médio de resposta (aprovação) em minutos
+    const approvedChecklists = userChecklistRecords.filter(r => r.status === 'conforme' && r.approvals && r.approvals.length > 0);
+    const avgResponseTime = approvedChecklists.length > 0
+      ? Math.round(
+          approvedChecklists.reduce((sum, r) => {
+            const created = new Date(r.timestamp).getTime();
+            const approved = r.approvals && r.approvals[0] 
+              ? new Date(r.approvals[0].timestamp).getTime() 
+              : created;
+            return sum + (approved - created) / (1000 * 60); // Converter para minutos
+          }, 0) / approvedChecklists.length
+        )
+      : 0;
+    
+    // Calcular top issues (equipamentos com mais problemas)
+    const equipmentIssues = new Map<string, number>();
+    userChecklistRecords.forEach(r => {
+      if (r.naoConformeItems > 0) {
+        const current = equipmentIssues.get(r.equipmentCode) || 0;
+        equipmentIssues.set(r.equipmentCode, current + r.naoConformeItems);
+      }
+    });
+    
+    const topIssues = isOperator 
+      ? [] // Operators don't see top issues comparison
+      : Array.from(equipmentIssues.entries())
+          .map(([equipment, issues]) => ({ equipment, issues }))
+          .sort((a, b) => b.issues - a.issues)
+          .slice(0, 3);
+    
     return {
-      totalEquipments: isOperator ? 1 : equipments.length, // Operators see only equipment they use
-      todayChecklists: isOperator ? userChecklistRecords.length : 12,
+      totalEquipments: isOperator ? 1 : equipments.length,
+      todayChecklists,
       pendingApprovals: userChecklistRecords.filter(r => r.status === 'pendente').length,
-      nonConformItems: isOperator 
-        ? userChecklistRecords.reduce((sum, r) => sum + r.naoConformeItems, 0)
-        : 3,
-      avgResponseTime: 15,
-      topIssues: isOperator 
-        ? [] // Operators don't see top issues comparison
-        : [
-            { equipment: "EMP-045", issues: 5 },
-            { equipment: "EMP-023", issues: 3 },
-            { equipment: "EMP-067", issues: 2 }
-          ],
+      nonConformItems,
+      avgResponseTime,
+      topIssues,
       recentChecklists: isOperator ? userChecklistRecords.slice(0, 5) : undefined
     };
   };

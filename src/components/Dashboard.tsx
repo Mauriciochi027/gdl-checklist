@@ -76,10 +76,10 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
           {isOperator ? 'Meu Painel' : isMechanic ? 'Painel do Mecânico' : 'Painel de Gestão'}
         </h2>
-        <p className="text-xs sm:text-sm text-gray-600">
+        <p className="text-xs sm:text-sm text-muted-foreground">
           {isOperator 
             ? `Suas atividades` 
             : isMechanic
@@ -110,8 +110,8 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-600 line-clamp-2 mb-1">{stat.title}</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-xs font-medium text-muted-foreground line-clamp-2 mb-1">{stat.title}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{stat.value}</p>
                   </div>
                 </div>
               </CardContent>
@@ -151,14 +151,14 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium">Tempo Médio de Análise</span>
-                    <span className="text-sm text-gray-600">12 min</span>
+                    <span className="text-sm text-muted-foreground">12 min</span>
                   </div>
                   <Progress value={65} className="h-2" />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium">Aprovações Hoje</span>
-                    <span className="text-sm text-gray-600">15</span>
+                    <span className="text-sm text-muted-foreground">15</span>
                   </div>
                   <Progress value={88} className="h-2" />
                 </div>
@@ -175,14 +175,14 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium">Tempo Médio de Resposta</span>
-                    <span className="text-sm text-gray-600">{data.avgResponseTime} min</span>
+                    <span className="text-sm text-muted-foreground">{data.avgResponseTime} min</span>
                   </div>
                   <Progress value={75} className="h-2" />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium">Checklists Realizados</span>
-                    <span className="text-sm text-gray-600">92%</span>
+                    <span className="text-sm text-muted-foreground">92%</span>
                   </div>
                   <Progress value={92} className="h-2" />
                 </div>
@@ -267,7 +267,7 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                     <div className="flex flex-col gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-                          <h4 className="font-medium text-xs sm:text-sm text-gray-900">
+                          <h4 className="font-medium text-xs sm:text-sm text-foreground">
                             {checklist.equipmentCode}
                           </h4>
                           <Badge 
@@ -280,12 +280,12 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                             {criticality === 'crítico' ? 'Crítico' : criticality === 'atenção' ? 'Atenção' : 'Normal'}
                           </Badge>
                         </div>
-                        <p className="text-xs text-gray-600 mb-1">Op: {checklist.operatorName}</p>
-                        <p className="text-xs text-gray-600 mb-1.5">
+                        <p className="text-xs text-muted-foreground mb-1">Op: {checklist.operatorName}</p>
+                        <p className="text-xs text-muted-foreground mb-1.5">
                           {new Date(checklist.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} {' '}
                           {new Date(checklist.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
-                        <div className="text-xs text-gray-700 flex flex-wrap gap-1.5">
+                        <div className="text-xs text-foreground flex flex-wrap gap-1.5">
                           <span className="text-safety-green font-medium">{checklist.conformeItems} ✓</span>
                           {checklist.naoConformeItems > 0 && (
                             <span className="text-safety-red font-medium">{checklist.naoConformeItems} ✗</span>
@@ -316,8 +316,8 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                 );
               }) || []}
               {(!data.recentChecklists || data.recentChecklists.filter(c => c.status === 'pendente').length === 0) && (
-                <div className="text-center py-8 text-gray-500">
-                  <Clock className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                   <p>Nenhum checklist pendente de aprovação</p>
                 </div>
               )}
@@ -357,7 +357,7 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                       case 'negado':
                         return <XCircle className="w-5 h-5 text-safety-red" />;
                       default:
-                        return <Clock className="w-5 h-5 text-gray-400" />;
+                        return <Clock className="w-5 h-5 text-muted-foreground" />;
                     }
                   };
 
@@ -385,8 +385,8 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                         {getStatusIcon(checklist.status)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-xs sm:text-sm text-gray-900 truncate">{checklist.equipmentCode}</p>
-                        <p className="text-xs text-gray-600">{formatDate(checklist.timestamp)}</p>
+                        <p className="font-medium text-xs sm:text-sm text-foreground truncate">{checklist.equipmentCode}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(checklist.timestamp)}</p>
                         {checklist.status === 'negado' && checklist.rejections && checklist.rejections.length > 0 && (
                           <p className="text-sm text-safety-red mt-1">
                             Motivo: {checklist.rejections[checklist.rejections.length - 1].reason}
@@ -398,7 +398,7 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                   );
                 })}
                 {data.recentChecklists.length === 0 && (
-                  <p className="text-center text-gray-500 py-4">Nenhum checklist realizado ainda</p>
+                  <p className="text-center text-muted-foreground py-4">Nenhum checklist realizado ainda</p>
                 )}
               </div>
             ) : (
@@ -406,16 +406,16 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                 <div className="flex items-center gap-4 p-3 border border-safety-red-light bg-safety-red-light rounded-lg">
                   <AlertTriangle className="w-5 h-5 text-safety-red" />
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">EMP-045: Problema nos freios</p>
-                    <p className="text-sm text-gray-600">Aguardando aprovação do mecânico • 15 min atrás</p>
+                    <p className="font-medium text-foreground">EMP-045: Problema nos freios</p>
+                    <p className="text-sm text-muted-foreground">Aguardando aprovação do mecânico • 15 min atrás</p>
                   </div>
                   <Badge variant="destructive">Crítico</Badge>
                 </div>
                 <div className="flex items-center gap-4 p-3 border border-safety-orange-light bg-safety-orange-light rounded-lg">
                   <Clock className="w-5 h-5 text-safety-orange" />
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">EMP-023: Luzes de sinalização</p>
-                    <p className="text-sm text-gray-600">Aguardando aprovação do mecânico • 1h atrás</p>
+                    <p className="font-medium text-foreground">EMP-023: Luzes de sinalização</p>
+                    <p className="text-sm text-muted-foreground">Aguardando aprovação do mecânico • 1h atrás</p>
                   </div>
                   <Badge className="bg-safety-orange text-white">Atenção</Badge>
                 </div>
