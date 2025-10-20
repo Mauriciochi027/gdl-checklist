@@ -4,94 +4,48 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Truck, User, Lock, AlertCircle, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { User, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useSupabaseAuth';
 import { useToast } from '@/hooks/use-toast';
 import gdlLogo from '@/assets/gdl-logo.png';
-import forkliftIcon from '@/assets/forklift-icon.png';
+
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const { login } = useAuth();
+  const { toast } = useToast();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
     if (!username || !password) {
       setError('Por favor, preencha todos os campos');
       return;
     }
+    
     setIsLoading(true);
+    
     try {
-      const email = `${username}@gdl.com`;
-
-      // Try to sign in
-      const {
-        data: signInData,
-        error: signInError
-      } = await supabase.auth.signInWithPassword({
-        email,
-        password: password
-      });
-      if (signInError) {
-        // If user doesn't exist and it's a demo user, create it
-        const demoUser = demoUsers.find(u => u.username === username);
-        if (demoUser && password === '123456') {
-          const {
-            error: signUpError
-          } = await supabase.auth.signUp({
-            email,
-            password: password,
-            options: {
-              data: {
-                username: demoUser.username,
-                name: demoUser.name,
-                profile: demoUser.profile
-              }
-            }
-          });
-          if (signUpError) {
-            setError('Erro ao criar usuário de demonstração');
-            toast({
-              title: "Erro",
-              description: "Não foi possível criar o usuário.",
-              variant: "destructive"
-            });
-          } else {
-            // Try to sign in again
-            const {
-              error: retryError
-            } = await supabase.auth.signInWithPassword({
-              email,
-              password: password
-            });
-            if (retryError) {
-              setError('Usuário criado. Tente fazer login novamente.');
-            } else {
-              toast({
-                title: "Login realizado",
-                description: "Bem-vindo ao sistema!"
-              });
-            }
-          }
-        } else {
-          setError('Usuário ou senha incorretos');
-          toast({
-            title: "Erro no login",
-            description: "Verifique suas credenciais e tente novamente.",
-            variant: "destructive"
-          });
-        }
-      } else {
+      const success = await login(username, password);
+      
+      if (success) {
         toast({
           title: "Login realizado",
           description: "Bem-vindo ao sistema!"
         });
+      } else {
+        setError('Usuário ou senha incorretos');
+        toast({
+          title: "Erro no login",
+          description: "Verifique suas credenciais e tente novamente.",
+          variant: "destructive"
+        });
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Erro ao fazer login. Tente novamente.');
       toast({
         title: "Erro",
@@ -102,15 +56,6 @@ export const LoginForm = () => {
       setIsLoading(false);
     }
   };
-  const demoUsers = [{
-    username: 'operador1',
-    profile: 'operador',
-    name: 'João Silva'
-  }, {
-    username: 'mecanico1',
-    profile: 'mecanico',
-    name: 'Carlos Oliveira'
-  }];
   return <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
