@@ -29,6 +29,7 @@ interface DashboardProps {
     nonConformItems: number;
     avgResponseTime: number;
     topIssues: Array<{ equipment: string; issues: number }>;
+    recentAlerts?: Array<{ id: string; type: string; title: string; message: string; time: Date }>;
     recentChecklists?: ChecklistRecord[]; // Add recent checklists for operators
   };
   userProfile?: string;
@@ -403,22 +404,37 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center gap-4 p-3 border border-safety-red-light bg-safety-red-light rounded-lg">
-                  <AlertTriangle className="w-5 h-5 text-safety-red" />
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">EMP-045: Problema nos freios</p>
-                    <p className="text-sm text-muted-foreground">Aguardando aprovação do mecânico • 15 min atrás</p>
+                {data.recentAlerts && data.recentAlerts.length > 0 ? (
+                  data.recentAlerts.map((alert) => {
+                    const Icon = alert.type === 'error' ? XCircle : Clock;
+                    const bgColor = alert.type === 'error' ? 'border-safety-red-light bg-safety-red-light' : 'border-safety-orange-light bg-safety-orange-light';
+                    const iconColor = alert.type === 'error' ? 'text-safety-red' : 'text-safety-orange';
+                    const badgeClass = alert.type === 'error' ? 'bg-safety-red text-white' : 'bg-safety-orange text-white';
+
+                    return (
+                      <div key={alert.id} className={`flex items-center gap-4 p-3 border rounded-lg ${bgColor}`}>
+                        <Icon className={`w-5 h-5 ${iconColor} flex-shrink-0`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground text-sm">{alert.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {alert.message} • {new Date(alert.time).toLocaleString('pt-BR', { 
+                              day: '2-digit', 
+                              month: '2-digit', 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </p>
+                        </div>
+                        <Badge className={badgeClass}>{alert.type === 'error' ? 'Crítico' : 'Atenção'}</Badge>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm">Nenhum alerta recente</p>
                   </div>
-                  <Badge variant="destructive">Crítico</Badge>
-                </div>
-                <div className="flex items-center gap-4 p-3 border border-safety-orange-light bg-safety-orange-light rounded-lg">
-                  <Clock className="w-5 h-5 text-safety-orange" />
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">EMP-023: Luzes de sinalização</p>
-                    <p className="text-sm text-muted-foreground">Aguardando aprovação do mecânico • 1h atrás</p>
-                  </div>
-                  <Badge className="bg-safety-orange text-white">Atenção</Badge>
-                </div>
+                )}
               </div>
             )}
           </CardContent>

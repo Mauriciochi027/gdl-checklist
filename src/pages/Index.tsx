@@ -97,6 +97,19 @@ const Index = () => {
           .sort((a, b) => b.issues - a.issues)
           .slice(0, 3);
     
+    // Calcular alertas recentes (checklists com status negado ou pendente)
+    const recentAlerts = userChecklistRecords
+      .filter(r => r.status === 'negado' || r.status === 'pendente')
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 5)
+      .map(r => ({
+        id: r.id,
+        type: r.status === 'negado' ? 'error' : 'warning',
+        title: r.status === 'negado' ? 'Não Conformidade' : 'Aguardando Aprovação',
+        message: `${r.equipmentCode} - ${r.operatorName}`,
+        time: new Date(r.timestamp)
+      }));
+    
     return {
       totalEquipments: isOperator ? 1 : equipments.length,
       todayChecklists,
@@ -104,6 +117,7 @@ const Index = () => {
       nonConformItems,
       avgResponseTime,
       topIssues,
+      recentAlerts,
       recentChecklists: isOperator ? userChecklistRecords.slice(0, 5) : undefined
     };
   };
