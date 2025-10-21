@@ -66,7 +66,16 @@ export const useChecklists = () => {
   useEffect(() => {
     fetchChecklists();
 
-    // Realtime subscription para atualizações automáticas
+    // Debounce para realtime updates - evita múltiplas queries simultâneas
+    let debounceTimer: NodeJS.Timeout;
+    const debouncedRefetch = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchChecklists();
+      }, 500);
+    };
+
+    // Realtime subscription otimizada
     const channel = supabase
       .channel('checklists-changes')
       .on(
@@ -78,32 +87,7 @@ export const useChecklists = () => {
         },
         (payload) => {
           console.log('[useChecklists] Realtime update on checklist_records:', payload);
-          // Refetch all data when main records change
-          fetchChecklists();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'checklist_answers'
-        },
-        (payload) => {
-          console.log('[useChecklists] Realtime update on checklist_answers:', payload);
-          fetchChecklists();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'checklist_photos'
-        },
-        (payload) => {
-          console.log('[useChecklists] Realtime update on checklist_photos:', payload);
-          fetchChecklists();
+          debouncedRefetch();
         }
       )
       .on(
@@ -115,7 +99,7 @@ export const useChecklists = () => {
         },
         (payload) => {
           console.log('[useChecklists] Realtime update on checklist_approvals:', payload);
-          fetchChecklists();
+          debouncedRefetch();
         }
       )
       .on(
@@ -127,7 +111,7 @@ export const useChecklists = () => {
         },
         (payload) => {
           console.log('[useChecklists] Realtime update on checklist_rejections:', payload);
-          fetchChecklists();
+          debouncedRefetch();
         }
       )
       .subscribe((status) => {
@@ -136,6 +120,7 @@ export const useChecklists = () => {
 
     return () => {
       console.log('[useChecklists] Cleaning up subscription');
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -154,6 +139,7 @@ export const useChecklists = () => {
     loadDescription?: string;
   }) => {
     try {
+      console.log('[useChecklists] Iniciando inserção de checklist...');
       // Calculate stats
       const conformeItems = checklistData.answers.filter(a => a.value === 'sim').length;
       const naoConformeItems = checklistData.answers.filter(a => a.value === 'nao').length;
@@ -194,7 +180,12 @@ export const useChecklists = () => {
         .select()
         .single();
 
-      if (recordError) throw recordError;
+      if (recordError) {
+        console.error('[useChecklists] Erro ao inserir checklist_record:', recordError);
+        throw recordError;
+      }
+      
+      console.log('[useChecklists] Checklist record inserido:', record.id);
 
       // Insert answers
       const answersToInsert = checklistData.answers.map(answer => 
@@ -210,7 +201,12 @@ export const useChecklists = () => {
         .from('checklist_answers')
         .insert(answersToInsert);
 
-      if (answersError) throw answersError;
+      if (answersError) {
+        console.error('[useChecklists] Erro ao inserir respostas:', answersError);
+        throw answersError;
+      }
+      
+      console.log('[useChecklists] Respostas inseridas:', answersToInsert.length);
 
       // Insert photos if any
       if (checklistData.photos) {
@@ -227,7 +223,12 @@ export const useChecklists = () => {
             .from('checklist_photos')
             .insert(photosToInsert);
 
-          if (photosError) throw photosError;
+          if (photosError) {
+            console.error('[useChecklists] Erro ao inserir fotos:', photosError);
+            throw photosError;
+          }
+          
+          console.log('[useChecklists] Fotos inseridas:', photosToInsert.length);
         }
       }
 
@@ -246,7 +247,10 @@ export const useChecklists = () => {
           .insert([approvalData]);
 
         if (approvalError) {
-          console.error('Error auto-approving:', approvalError);
+          console.error('[useChecklists] Erro ao auto-aprovar:', approvalError);
+          // Não lançar erro aqui - a inserção principal foi bem-sucedida
+        } else {
+          console.log('[useChecklists] Checklist auto-aprovado');
         }
       }
       
@@ -273,7 +277,8 @@ export const useChecklists = () => {
         variant: status === 'negado' ? 'destructive' : 'default'
       });
 
-      await fetchChecklists();
+      console.log('[useChecklists] Checklist completo registrado com sucesso');
+      // Não precisa refetch - realtime vai atualizar
       return record;
     } catch (error: any) {
       console.error('Error adding checklist:', error);
@@ -288,13 +293,18 @@ export const useChecklists = () => {
 
   const approveChecklist = async (recordId: string, mechanicName: string, comment: string) => {
     try {
+      console.log('[useChecklists] Aprovando checklist:', recordId);
+      
       // Update record status
       const { error: updateError } = await supabase
         .from('checklist_records')
         .update({ status: 'conforme' })
         .eq('id', recordId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('[useChecklists] Erro ao atualizar status:', updateError);
+        throw updateError;
+      }
 
       // Add approval
       const approvalData = keysToSnakeCase({
@@ -307,14 +317,18 @@ export const useChecklists = () => {
         .from('checklist_approvals')
         .insert([approvalData]);
 
-      if (approvalError) throw approvalError;
+      if (approvalError) {
+        console.error('[useChecklists] Erro ao inserir aprovação:', approvalError);
+        throw approvalError;
+      }
 
       toast({
         title: "Checklist aprovado",
         description: "O checklist foi aprovado com sucesso."
       });
 
-      await fetchChecklists();
+      console.log('[useChecklists] Checklist aprovado com sucesso');
+      // Não precisa refetch - realtime vai atualizar
       return true;
     } catch (error: any) {
       console.error('Error approving checklist:', error);
@@ -329,13 +343,18 @@ export const useChecklists = () => {
 
   const rejectChecklist = async (recordId: string, mechanicName: string, reason: string) => {
     try {
+      console.log('[useChecklists] Rejeitando checklist:', recordId);
+      
       // Update record status
       const { error: updateError } = await supabase
         .from('checklist_records')
         .update({ status: 'negado' })
         .eq('id', recordId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('[useChecklists] Erro ao atualizar status:', updateError);
+        throw updateError;
+      }
 
       // Add rejection
       const rejectionData = keysToSnakeCase({
@@ -348,14 +367,18 @@ export const useChecklists = () => {
         .from('checklist_rejections')
         .insert([rejectionData]);
 
-      if (rejectionError) throw rejectionError;
+      if (rejectionError) {
+        console.error('[useChecklists] Erro ao inserir rejeição:', rejectionError);
+        throw rejectionError;
+      }
 
       toast({
         title: "Checklist negado",
         description: "O checklist foi negado e o operador será notificado."
       });
 
-      await fetchChecklists();
+      console.log('[useChecklists] Checklist rejeitado com sucesso');
+      // Não precisa refetch - realtime vai atualizar
       return true;
     } catch (error: any) {
       console.error('Error rejecting checklist:', error);

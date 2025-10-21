@@ -34,55 +34,93 @@ export const useSupabaseAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user profile from database
-  const fetchUserProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+  // Cache para evitar múltiplas consultas ao perfil
+  const profileCache = useState<Record<string, User>>({});
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+  // Fetch user profile from database com cache
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
+    try {
+      // Verificar cache primeiro
+      if (profileCache[0][userId]) {
+        return profileCache[0][userId];
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      if (data) {
+        // Armazenar no cache
+        profileCache[1]({ ...profileCache[0], [userId]: data as User });
+        return data as User;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Unexpected error fetching profile:', error);
       return null;
     }
-
-    return data as User;
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
+        if (!mounted) return;
+
         setSession(currentSession);
         
         if (currentSession?.user) {
-          // Defer profile fetching to avoid blocking
-          setTimeout(async () => {
-            const profile = await fetchUserProfile(currentSession.user.id);
-            setUser(profile);
-          }, 0);
+          // Buscar perfil de forma otimizada (sem setTimeout desnecessário)
+          fetchUserProfile(currentSession.user.id).then(profile => {
+            if (mounted) {
+              setUser(profile);
+              setIsLoading(false);
+            }
+          });
         } else {
           setUser(null);
+          setIsLoading(false);
         }
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!mounted) return;
+      
       setSession(currentSession);
       
       if (currentSession?.user) {
         fetchUserProfile(currentSession.user.id).then(profile => {
-          setUser(profile);
-          setIsLoading(false);
+          if (mounted) {
+            setUser(profile);
+            setIsLoading(false);
+          }
         });
       } else {
         setIsLoading(false);
       }
+    }).catch(error => {
+      console.error('Error getting session:', error);
+      if (mounted) {
+        setIsLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signup = async (
@@ -113,7 +151,6 @@ export const useSupabaseAuthState = () => {
 
       if (error) {
         console.error('Signup error:', error);
-        setIsLoading(false);
         return false;
       }
 
@@ -123,12 +160,12 @@ export const useSupabaseAuthState = () => {
         setUser(userProfile);
       }
 
-      setIsLoading(false);
       return true;
     } catch (error) {
       console.error('Unexpected signup error:', error);
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -146,7 +183,6 @@ export const useSupabaseAuthState = () => {
 
       if (error) {
         console.error('Login error:', error);
-        setIsLoading(false);
         return false;
       }
 
@@ -155,12 +191,12 @@ export const useSupabaseAuthState = () => {
         setUser(profile);
       }
 
-      setIsLoading(false);
       return true;
     } catch (error) {
       console.error('Unexpected login error:', error);
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 

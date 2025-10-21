@@ -84,6 +84,8 @@ export const useEquipment = () => {
 
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {
     try {
+      console.log('[useEquipment] Inserindo equipamento:', equipment.code);
+      
       // Transform camelCase to snake_case for database
       const dbEquipment = keysToSnakeCase(equipment);
 
@@ -93,20 +95,24 @@ export const useEquipment = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useEquipment] Erro ao inserir:', error);
+        throw error;
+      }
 
       const transformed = keysToCamelCase<Equipment>(data);
 
-      setEquipments(prev => [...prev, transformed]);
+      // Não precisa atualizar state - realtime vai fazer isso
       
       toast({
         title: "Equipamento cadastrado",
         description: `${equipment.code} foi adicionado com sucesso.`
       });
 
+      console.log('[useEquipment] Equipamento inserido com sucesso:', transformed.id);
       return transformed;
     } catch (error: any) {
-      console.error('Error adding equipment:', error);
+      console.error('[useEquipment] Erro ao adicionar equipamento:', error);
       toast({
         title: "Erro ao cadastrar equipamento",
         description: error.message || "Não foi possível cadastrar o equipamento.",
@@ -118,6 +124,8 @@ export const useEquipment = () => {
 
   const updateEquipment = async (id: string, updates: Partial<Equipment>) => {
     try {
+      console.log('[useEquipment] Atualizando equipamento:', id);
+      
       // Transform camelCase to snake_case for database
       const dbUpdates = keysToSnakeCase(updates);
 
@@ -128,20 +136,24 @@ export const useEquipment = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useEquipment] Erro ao atualizar:', error);
+        throw error;
+      }
 
       const transformed = keysToCamelCase<Equipment>(data);
 
-      setEquipments(prev => prev.map(eq => eq.id === id ? transformed : eq));
+      // Não precisa atualizar state - realtime vai fazer isso
       
       toast({
         title: "Equipamento atualizado",
         description: "As informações foram atualizadas com sucesso."
       });
 
+      console.log('[useEquipment] Equipamento atualizado com sucesso');
       return transformed;
     } catch (error: any) {
-      console.error('Error updating equipment:', error);
+      console.error('[useEquipment] Erro ao atualizar equipamento:', error);
       toast({
         title: "Erro ao atualizar equipamento",
         description: error.message || "Não foi possível atualizar o equipamento.",
@@ -153,23 +165,29 @@ export const useEquipment = () => {
 
   const deleteEquipment = async (id: string) => {
     try {
+      console.log('[useEquipment] Deletando equipamento:', id);
+      
       const { error } = await supabase
         .from('equipment')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useEquipment] Erro ao deletar:', error);
+        throw error;
+      }
 
-      setEquipments(prev => prev.filter(eq => eq.id !== id));
+      // Não precisa atualizar state - realtime vai fazer isso
       
       toast({
         title: "Equipamento removido",
         description: "O equipamento foi removido com sucesso."
       });
 
+      console.log('[useEquipment] Equipamento deletado com sucesso');
       return true;
     } catch (error: any) {
-      console.error('Error deleting equipment:', error);
+      console.error('[useEquipment] Erro ao deletar equipamento:', error);
       toast({
         title: "Erro ao remover equipamento",
         description: error.message || "Não foi possível remover o equipamento.",
