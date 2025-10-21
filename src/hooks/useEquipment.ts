@@ -13,7 +13,6 @@ export const useEquipment = () => {
   const fetchEquipments = async () => {
     try {
       console.log('[useEquipment] ==> Iniciando carregamento de equipamentos...');
-      const startTime = Date.now();
       
       // Verificar se o usuário está autenticado
       const { data: { session } } = await supabase.auth.getSession();
@@ -25,21 +24,13 @@ export const useEquipment = () => {
         .select('*')
         .order('code', { ascending: true });
 
-      const elapsedTime = Date.now() - startTime;
-      console.log('[useEquipment] Query completada em', elapsedTime, 'ms');
-      console.log('[useEquipment] Resposta da query:', { 
-        hasData: !!data, 
-        count: data?.length || 0,
-        hasError: !!error 
-      });
+      console.log('[useEquipment] Resposta da query:', { data, error });
 
-      if (error) {
-        console.error('[useEquipment] Erro na query:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       const transformedData = keysToCamelCase<Equipment[]>(data || []);
       console.log('[useEquipment] Equipamentos transformados:', transformedData.length);
+      console.log('[useEquipment] Dados:', transformedData);
       setEquipments(transformedData);
     } catch (error) {
       console.error('[useEquipment] ERRO CRÍTICO:', error);
@@ -50,7 +41,6 @@ export const useEquipment = () => {
       });
       setEquipments([]);
     } finally {
-      console.log('[useEquipment] Finalizando loading state');
       setIsLoading(false);
     }
   };
