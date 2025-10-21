@@ -34,17 +34,11 @@ export const useSupabaseAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cache para evitar múltiplas consultas ao perfil
-  const profileCache = useState<Record<string, User>>({});
-
-  // Fetch user profile from database com cache
+  // Fetch user profile from database
   const fetchUserProfile = async (userId: string): Promise<User | null> => {
     try {
-      // Verificar cache primeiro
-      if (profileCache[0][userId]) {
-        return profileCache[0][userId];
-      }
-
+      console.log('[useAuth] Buscando perfil do usuário:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -52,72 +46,82 @@ export const useSupabaseAuthState = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('[useAuth] Erro ao buscar perfil:', error);
         return null;
       }
 
       if (data) {
-        // Armazenar no cache
-        profileCache[1]({ ...profileCache[0], [userId]: data as User });
+        console.log('[useAuth] Perfil encontrado:', data);
         return data as User;
       }
 
+      console.log('[useAuth] Nenhum perfil encontrado');
       return null;
     } catch (error) {
-      console.error('Unexpected error fetching profile:', error);
+      console.error('[useAuth] Erro inesperado ao buscar perfil:', error);
       return null;
     }
   };
 
   useEffect(() => {
     let mounted = true;
+    console.log('[useAuth] Inicializando hook de autenticação');
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+    // Check for existing session FIRST
+    const initAuth = async () => {
+      try {
+        console.log('[useAuth] Verificando sessão existente...');
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('[useAuth] Erro ao obter sessão:', error);
+          if (mounted) setIsLoading(false);
+          return;
+        }
+
         if (!mounted) return;
-
+        
+        console.log('[useAuth] Sessão encontrada:', !!currentSession);
         setSession(currentSession);
         
         if (currentSession?.user) {
-          // Buscar perfil de forma otimizada (sem setTimeout desnecessário)
-          fetchUserProfile(currentSession.user.id).then(profile => {
-            if (mounted) {
-              setUser(profile);
-              setIsLoading(false);
-            }
-          });
-        } else {
-          setUser(null);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      if (!mounted) return;
-      
-      setSession(currentSession);
-      
-      if (currentSession?.user) {
-        fetchUserProfile(currentSession.user.id).then(profile => {
+          const profile = await fetchUserProfile(currentSession.user.id);
           if (mounted) {
             setUser(profile);
             setIsLoading(false);
           }
-        });
-      } else {
-        setIsLoading(false);
+        } else {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('[useAuth] Erro inesperado ao inicializar:', error);
+        if (mounted) setIsLoading(false);
       }
-    }).catch(error => {
-      console.error('Error getting session:', error);
-      if (mounted) {
-        setIsLoading(false);
+    };
+
+    initAuth();
+
+    // Set up auth state listener AFTER initial check
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        if (!mounted) return;
+        
+        console.log('[useAuth] Auth state changed:', event);
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          const profile = await fetchUserProfile(currentSession.user.id);
+          if (mounted) {
+            setUser(profile);
+          }
+        } else {
+          setUser(null);
+        }
       }
-    });
+    );
 
     return () => {
+      console.log('[useAuth] Cleanup');
       mounted = false;
       subscription.unsubscribe();
     };

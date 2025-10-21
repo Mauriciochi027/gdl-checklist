@@ -13,6 +13,7 @@ export const useChecklists = () => {
   const fetchChecklists = async () => {
     try {
       console.log('[useChecklists] Iniciando carregamento...');
+      const startTime = Date.now();
       
       const { data: records, error } = await supabase
         .from('checklist_records')
@@ -25,7 +26,14 @@ export const useChecklists = () => {
         `)
         .order('timestamp', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useChecklists] Erro na query:', error);
+        throw error;
+      }
+
+      const elapsedTime = Date.now() - startTime;
+      console.log('[useChecklists] Query completada em', elapsedTime, 'ms');
+      console.log('[useChecklists] Registros retornados:', records?.length || 0);
 
       const transformedRecords = records?.map(record => {
         const camelRecord = keysToCamelCase(record);
@@ -47,8 +55,7 @@ export const useChecklists = () => {
         };
       }) || [];
 
-      console.log('[useChecklists] Carregados:', transformedRecords.length);
-      console.log('[useChecklists] Tipos de checklist:', transformedRecords.map(r => r.checklistType).filter((v, i, a) => a.indexOf(v) === i));
+      console.log('[useChecklists] Transformação completa. Total:', transformedRecords.length);
       setChecklistRecords(transformedRecords);
     } catch (error) {
       console.error('[useChecklists] Erro:', error);
@@ -59,6 +66,7 @@ export const useChecklists = () => {
       });
       setChecklistRecords([]);
     } finally {
+      console.log('[useChecklists] Finalizando loading state');
       setIsLoading(false);
     }
   };
