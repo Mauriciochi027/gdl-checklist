@@ -12,41 +12,37 @@ export const useEquipment = () => {
   // Fetch all equipment
   const fetchEquipments = async () => {
     try {
-      console.log('[useEquipment] Iniciando carregamento...');
+      console.log('[useEquipment] ==> Iniciando carregamento de equipamentos...');
       const startTime = Date.now();
       
-      setIsLoading(true);
-
+      // Verificar se o usuário está autenticado
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('[useEquipment] Sem sessão autenticada');
-        setEquipments([]);
-        setIsLoading(false);
-        return;
-      }
+      console.log('[useEquipment] Sessão autenticada:', !!session);
+      console.log('[useEquipment] User ID:', session?.user?.id);
       
       const { data, error } = await supabase
         .from('equipment')
         .select('*')
         .order('code', { ascending: true });
 
-      console.log('[useEquipment] Query completada em', Date.now() - startTime, 'ms');
-      console.log('[useEquipment] Equipamentos retornados:', data?.length || 0);
+      const elapsedTime = Date.now() - startTime;
+      console.log('[useEquipment] Query completada em', elapsedTime, 'ms');
+      console.log('[useEquipment] Resposta da query:', { 
+        hasData: !!data, 
+        count: data?.length || 0,
+        hasError: !!error 
+      });
 
       if (error) {
         console.error('[useEquipment] Erro na query:', error);
-        toast({
-          title: "Erro ao carregar equipamentos",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
+        throw error;
       }
 
       const transformedData = keysToCamelCase<Equipment[]>(data || []);
+      console.log('[useEquipment] Equipamentos transformados:', transformedData.length);
       setEquipments(transformedData);
     } catch (error) {
-      console.error('[useEquipment] Erro inesperado:', error);
+      console.error('[useEquipment] ERRO CRÍTICO:', error);
       toast({
         title: "Erro ao carregar equipamentos",
         description: "Não foi possível carregar a lista de equipamentos.",
@@ -54,6 +50,7 @@ export const useEquipment = () => {
       });
       setEquipments([]);
     } finally {
+      console.log('[useEquipment] Finalizando loading state');
       setIsLoading(false);
     }
   };
