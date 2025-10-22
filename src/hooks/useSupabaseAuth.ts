@@ -67,11 +67,46 @@ export const useSupabaseAuthState = () => {
     let mounted = true;
     console.log('[useAuth] Inicializando hook de autenticação');
 
-    // Check for existing session FIRST
+    // Set up auth state listener FIRST (to catch all events)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        if (!mounted) return;
+        
+        console.log('[useAuth] Auth state changed:', event, !!currentSession);
+        setSession(currentSession);
+        
+        // Defer profile fetch to avoid blocking auth state callback
+        if (currentSession?.user) {
+          setTimeout(() => {
+            if (!mounted) return;
+            fetchUserProfile(currentSession.user.id)
+              .then(profile => {
+                if (mounted) setUser(profile);
+              })
+              .catch(err => {
+                console.error('[useAuth] Erro ao buscar perfil (async):', err);
+                if (mounted) setUser(null);
+              });
+          }, 0);
+        } else {
+          setUser(null);
+        }
+      }
+    );
+
+    // THEN check for existing session
     const initAuth = async () => {
       try {
         console.log('[useAuth] Verificando sessão existente...');
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session timeout')), 10000)
+        );
+        
+        const sessionPromise = supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (error) {
           console.error('[useAuth] Erro ao obter sessão:', error);
@@ -94,31 +129,12 @@ export const useSupabaseAuthState = () => {
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('[useAuth] Erro inesperado ao inicializar:', error);
+        console.error('[useAuth] Erro/timeout ao inicializar:', error);
         if (mounted) setIsLoading(false);
       }
     };
 
     initAuth();
-
-    // Set up auth state listener AFTER initial check
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        if (!mounted) return;
-        
-        console.log('[useAuth] Auth state changed:', event);
-        setSession(currentSession);
-        
-        if (currentSession?.user) {
-          const profile = await fetchUserProfile(currentSession.user.id);
-          if (mounted) {
-            setUser(profile);
-          }
-        } else {
-          setUser(null);
-        }
-      }
-    );
 
     return () => {
       console.log('[useAuth] Cleanup');

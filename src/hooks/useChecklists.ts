@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
@@ -7,14 +7,25 @@ import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 export const useChecklists = () => {
   const [checklistRecords, setChecklistRecords] = useState<ChecklistRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const { toast } = useToast();
 
-  // Fetch all checklist records with related data
-  const fetchChecklists = async () => {
+  // Optimized fetch with limit
+  const fetchChecklists = useCallback(async (limit: number = 100) => {
     try {
-      console.log('[useChecklists] Iniciando carregamento...');
       const startTime = Date.now();
+      console.log('[useChecklists] Iniciando carregamento com limit:', limit);
       
+      setIsLoading(true);
+
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session) {
+        console.log('[useChecklists] Sem sessão autenticada');
+        setChecklistRecords([]);
+        setIsLoading(false);
+        return;
+      }
+
       const { data: records, error } = await supabase
         .from('checklist_records')
         .select(`
@@ -24,16 +35,21 @@ export const useChecklists = () => {
           checklist_approvals (*),
           checklist_rejections (*)
         `)
-        .order('timestamp', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      console.log('[useChecklists] Query completada em', Date.now() - startTime, 'ms');
+      console.log('[useChecklists] Registros retornados:', records?.length || 0);
 
       if (error) {
         console.error('[useChecklists] Erro na query:', error);
-        throw error;
+        toast({
+          title: "Erro ao carregar checklists",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
       }
-
-      const elapsedTime = Date.now() - startTime;
-      console.log('[useChecklists] Query completada em', elapsedTime, 'ms');
-      console.log('[useChecklists] Registros retornados:', records?.length || 0);
 
       const transformedRecords = records?.map(record => {
         const camelRecord = keysToCamelCase(record);
@@ -57,82 +73,98 @@ export const useChecklists = () => {
 
       console.log('[useChecklists] Transformação completa. Total:', transformedRecords.length);
       setChecklistRecords(transformedRecords);
+      setHasInitialLoad(true);
     } catch (error) {
-      console.error('[useChecklists] Erro:', error);
+      console.error('[useChecklists] Erro inesperado:', error);
       toast({
         title: "Erro ao carregar checklists",
-        description: "Não foi possível carregar os registros de checklist.",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive"
       });
-      setChecklistRecords([]);
     } finally {
       console.log('[useChecklists] Finalizando loading state');
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchChecklists();
 
-    // Debounce para realtime updates - evita múltiplas queries simultâneas
+    // Debounced realtime refetch (1000ms)
     let debounceTimer: NodeJS.Timeout;
     const debouncedRefetch = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
+        console.log('[useChecklists] Realtime: refetch debounced');
         fetchChecklists();
-      }, 500);
+      }, 1000);
     };
 
-    // Realtime subscription otimizada
     const channel = supabase
       .channel('checklists-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'checklist_records'
-        },
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_records' },
         (payload) => {
-          console.log('[useChecklists] Realtime update on checklist_records:', payload);
+          console.log('[useChecklists] Realtime: checklist_records changed', payload.eventType);
           debouncedRefetch();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'checklist_approvals'
-        },
+        })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_approvals' },
         (payload) => {
-          console.log('[useChecklists] Realtime update on checklist_approvals:', payload);
+          console.log('[useChecklists] Realtime: checklist_approvals changed', payload.eventType);
           debouncedRefetch();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'checklist_rejections'
-        },
+        })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_rejections' },
         (payload) => {
-          console.log('[useChecklists] Realtime update on checklist_rejections:', payload);
+          console.log('[useChecklists] Realtime: checklist_rejections changed', payload.eventType);
           debouncedRefetch();
-        }
-      )
+        })
       .subscribe((status) => {
         console.log('[useChecklists] Subscription status:', status);
       });
 
     return () => {
-      console.log('[useChecklists] Cleaning up subscription');
       clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchChecklists]);
 
+  // Upload photo to storage bucket
+  const uploadPhotoToStorage = async (photoBase64: string, checklistId: string, itemId: string): Promise<string | null> => {
+    try {
+      const base64Data = photoBase64.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+      const fileName = `${checklistId}/${itemId}/${Date.now()}.jpg`;
+      
+      const { data, error } = await supabase.storage
+        .from('checklist-photos')
+        .upload(fileName, blob, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('[useChecklists] Erro ao fazer upload:', error);
+        return null;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('checklist-photos')
+        .getPublicUrl(data.path);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('[useChecklists] Erro ao processar foto:', error);
+      return null;
+    }
+  };
+
+  // Add checklist with retry logic
   const addChecklist = async (checklistData: {
     equipmentId: string | null;
     equipmentCode: string;
@@ -146,82 +178,103 @@ export const useChecklists = () => {
     operationDescription?: string;
     loadDescription?: string;
   }) => {
-    try {
-      console.log('[useChecklists] Iniciando inserção de checklist...');
-      // Calculate stats
-      const conformeItems = checklistData.answers.filter(a => a.value === 'sim').length;
-      const naoConformeItems = checklistData.answers.filter(a => a.value === 'nao').length;
-      const hasCriticalIssues = naoConformeItems > 0;
-      
-      // Para checklists de içamento com não conformes: status = negado (não passa por aprovação)
-      // Para empilhadeiras com não conformes: status = pendente (passa por aprovação)
-      const isLiftingAccessory = checklistData.checklistType && checklistData.checklistType !== 'empilhadeira';
-      let status: 'conforme' | 'pendente' | 'negado';
-      
-      if (hasCriticalIssues) {
-        status = isLiftingAccessory ? 'negado' : 'pendente';
-      } else {
-        status = 'conforme';
-      }
+    const maxRetries = 3;
+    let attempt = 0;
 
-      // Insert checklist record
-      const recordData = keysToSnakeCase({
-        equipmentId: checklistData.equipmentId,
-        equipmentCode: checklistData.equipmentCode,
-        equipmentModel: checklistData.equipmentModel,
-        operatorName: checklistData.operatorName,
-        operatorId: checklistData.operatorId,
-        status,
-        totalItems: checklistData.answers.length,
-        conformeItems: conformeItems,
-        naoConformeItems: naoConformeItems,
-        signature: checklistData.signature,
-        hasCriticalIssues: hasCriticalIssues,
-        checklistType: checklistData.checklistType || 'empilhadeira',
-        operationDescription: checklistData.operationDescription,
-        loadDescription: checklistData.loadDescription
-      });
+    while (attempt < maxRetries) {
+      try {
+        attempt++;
+        console.log(`[useChecklists] ADD_CHECKLIST tentativa ${attempt}/${maxRetries}`);
+        const startTime = Date.now();
+        
+        toast({
+          title: attempt > 1 ? `Tentando novamente (${attempt}/${maxRetries})...` : "Salvando checklist...",
+          description: "Por favor aguarde."
+        });
 
-      const { data: record, error: recordError } = await supabase
-        .from('checklist_records')
-        .insert([recordData])
-        .select()
-        .single();
+        // Upload photos to storage FIRST
+        const uploadedPhotos: Record<string, string[]> = {};
+        const tempChecklistId = 'temp-' + Date.now();
+        
+        if (checklistData.photos) {
+          for (const [itemId, photoUrls] of Object.entries(checklistData.photos)) {
+            uploadedPhotos[itemId] = [];
+            for (const photoUrl of photoUrls) {
+              if (photoUrl.startsWith('data:')) {
+                const storageUrl = await uploadPhotoToStorage(photoUrl, tempChecklistId, itemId);
+                if (storageUrl) {
+                  uploadedPhotos[itemId].push(storageUrl);
+                }
+              } else {
+                uploadedPhotos[itemId].push(photoUrl);
+              }
+            }
+          }
+        }
 
-      if (recordError) {
-        console.error('[useChecklists] Erro ao inserir checklist_record:', recordError);
-        throw recordError;
-      }
-      
-      console.log('[useChecklists] Checklist record inserido:', record.id);
+        // Calculate stats
+        const conformeItems = checklistData.answers.filter(a => a.value === 'sim').length;
+        const naoConformeItems = checklistData.answers.filter(a => a.value === 'nao').length;
+        const hasCriticalIssues = naoConformeItems > 0;
+        
+        const isLiftingAccessory = checklistData.checklistType && checklistData.checklistType !== 'empilhadeira';
+        let status: 'conforme' | 'pendente' | 'negado';
+        
+        if (hasCriticalIssues) {
+          status = isLiftingAccessory ? 'negado' : 'pendente';
+        } else {
+          status = 'conforme';
+        }
 
-      // Insert answers
-      const answersToInsert = checklistData.answers.map(answer => 
-        keysToSnakeCase({
-          checklistRecordId: record.id,
-          itemId: answer.itemId,
-          value: answer.value,
-          observation: answer.observation
-        })
-      );
+        // Insert record
+        const recordData = keysToSnakeCase({
+          equipmentId: checklistData.equipmentId,
+          equipmentCode: checklistData.equipmentCode,
+          equipmentModel: checklistData.equipmentModel,
+          operatorName: checklistData.operatorName,
+          operatorId: checklistData.operatorId,
+          status,
+          totalItems: checklistData.answers.length,
+          conformeItems,
+          naoConformeItems,
+          signature: checklistData.signature,
+          hasCriticalIssues,
+          checklistType: checklistData.checklistType || 'empilhadeira',
+          operationDescription: checklistData.operationDescription,
+          loadDescription: checklistData.loadDescription
+        });
 
-      const { error: answersError } = await supabase
-        .from('checklist_answers')
-        .insert(answersToInsert);
+        const { data: record, error: recordError } = await supabase
+          .from('checklist_records')
+          .insert([recordData])
+          .select()
+          .single();
 
-      if (answersError) {
-        console.error('[useChecklists] Erro ao inserir respostas:', answersError);
-        throw answersError;
-      }
-      
-      console.log('[useChecklists] Respostas inseridas:', answersToInsert.length);
+        if (recordError) throw recordError;
+        console.log('[useChecklists] Checklist record inserido:', record.id);
 
-      // Insert photos if any
-      if (checklistData.photos) {
-        const photosToInsert = Object.entries(checklistData.photos).flatMap(([itemId, urls]) =>
+        // Batch insert answers
+        const answersToInsert = checklistData.answers.map(answer => 
+          keysToSnakeCase({
+            checklistRecordId: record.id,
+            itemId: answer.itemId,
+            value: answer.value,
+            observation: answer.observation
+          })
+        );
+
+        const { error: answersError } = await supabase
+          .from('checklist_answers')
+          .insert(answersToInsert);
+
+        if (answersError) throw answersError;
+        console.log('[useChecklists] Respostas inseridas:', answersToInsert.length);
+
+        // Batch insert photos (from storage URLs)
+        const photosToInsert = Object.entries(uploadedPhotos).flatMap(([itemId, urls]) =>
           urls.map(url => keysToSnakeCase({
             checklistRecordId: record.id,
-            itemId: itemId,
+            itemId,
             photoUrl: url
           }))
         );
@@ -231,118 +284,96 @@ export const useChecklists = () => {
             .from('checklist_photos')
             .insert(photosToInsert);
 
-          if (photosError) {
-            console.error('[useChecklists] Erro ao inserir fotos:', photosError);
-            throw photosError;
-          }
-          
+          if (photosError) throw photosError;
           console.log('[useChecklists] Fotos inseridas:', photosToInsert.length);
         }
-      }
 
-      // Auto-approve only for empilhadeira checklists if all items are conforme
-      // Checklists de içamento nunca são auto-aprovados
-      
-      if (status === 'conforme' && !isLiftingAccessory) {
-        const approvalData = keysToSnakeCase({
-          checklistRecordId: record.id,
-          mechanicName: 'Sistema',
-          comment: 'Checklist aprovado automaticamente - todos os itens conformes'
+        // Auto-approve if conforme
+        if (status === 'conforme' && !isLiftingAccessory) {
+          await supabase.from('checklist_approvals').insert([keysToSnakeCase({
+            checklistRecordId: record.id,
+            mechanicName: 'Sistema',
+            comment: 'Aprovação automática - todos os itens conformes'
+          })]);
+        }
+
+        console.log('[useChecklists] ADD_CHECKLIST Success em', Date.now() - startTime, 'ms');
+        
+        let toastDescription = '';
+        if (isLiftingAccessory) {
+          toastDescription = status === 'negado' 
+            ? "Equipamento bloqueado devido a itens não conformes."
+            : "Checklist de acessório de içamento registrado!";
+        } else {
+          toastDescription = status === 'conforme'
+            ? "Checklist aprovado automaticamente!"
+            : "Checklist enviado para aprovação do mecânico.";
+        }
+        
+        toast({
+          title: "Checklist salvo com sucesso!",
+          description: toastDescription,
+          variant: status === 'negado' ? 'destructive' : 'default'
         });
 
-        const { error: approvalError } = await supabase
-          .from('checklist_approvals')
-          .insert([approvalData]);
+        return record;
 
-        if (approvalError) {
-          console.error('[useChecklists] Erro ao auto-aprovar:', approvalError);
-          // Não lançar erro aqui - a inserção principal foi bem-sucedida
-        } else {
-          console.log('[useChecklists] Checklist auto-aprovado');
+      } catch (error: any) {
+        console.error(`[useChecklists] ADD_CHECKLIST Erro (tentativa ${attempt}):`, error);
+        
+        const isNetworkError = error.message?.includes('fetch') || 
+                                error.message?.includes('network') ||
+                                error.message?.includes('timeout');
+        
+        if (!isNetworkError || attempt >= maxRetries) {
+          toast({
+            title: "Erro ao salvar checklist",
+            description: error.message || "Tente novamente mais tarde.",
+            variant: "destructive"
+          });
+          return null;
         }
-      }
-      
-      // Toast messages based on checklist type and status
-      let toastDescription = '';
-      
-      if (isLiftingAccessory) {
-        if (status === 'negado') {
-          toastDescription = "Checklist registrado. Equipamento bloqueado devido a itens não conformes.";
-        } else {
-          toastDescription = "Checklist de acessório de içamento registrado com sucesso!";
-        }
-      } else {
-        if (status === 'conforme') {
-          toastDescription = "Checklist aprovado automaticamente!";
-        } else {
-          toastDescription = "Checklist enviado para aprovação do mecânico.";
-        }
-      }
-      
-      toast({
-        title: "Checklist registrado",
-        description: toastDescription,
-        variant: status === 'negado' ? 'destructive' : 'default'
-      });
 
-      console.log('[useChecklists] Checklist completo registrado com sucesso');
-      // Não precisa refetch - realtime vai atualizar
-      return record;
-    } catch (error: any) {
-      console.error('Error adding checklist:', error);
-      toast({
-        title: "Erro ao registrar checklist",
-        description: error.message || "Não foi possível registrar o checklist.",
-        variant: "destructive"
-      });
-      return null;
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+      }
     }
+
+    return null;
   };
 
   const approveChecklist = async (recordId: string, mechanicName: string, comment: string) => {
     try {
       console.log('[useChecklists] Aprovando checklist:', recordId);
       
-      // Update record status
       const { error: updateError } = await supabase
         .from('checklist_records')
         .update({ status: 'conforme' })
         .eq('id', recordId);
 
-      if (updateError) {
-        console.error('[useChecklists] Erro ao atualizar status:', updateError);
-        throw updateError;
-      }
-
-      // Add approval
-      const approvalData = keysToSnakeCase({
-        checklistRecordId: recordId,
-        mechanicName: mechanicName,
-        comment
-      });
+      if (updateError) throw updateError;
 
       const { error: approvalError } = await supabase
         .from('checklist_approvals')
-        .insert([approvalData]);
+        .insert([keysToSnakeCase({
+          checklistRecordId: recordId,
+          mechanicName,
+          comment
+        })]);
 
-      if (approvalError) {
-        console.error('[useChecklists] Erro ao inserir aprovação:', approvalError);
-        throw approvalError;
-      }
+      if (approvalError) throw approvalError;
 
       toast({
         title: "Checklist aprovado",
         description: "O checklist foi aprovado com sucesso."
       });
 
-      console.log('[useChecklists] Checklist aprovado com sucesso');
-      // Não precisa refetch - realtime vai atualizar
       return true;
     } catch (error: any) {
-      console.error('Error approving checklist:', error);
+      console.error('[useChecklists] Erro ao aprovar:', error);
       toast({
         title: "Erro ao aprovar checklist",
-        description: error.message || "Não foi possível aprovar o checklist.",
+        description: error.message,
         variant: "destructive"
       });
       return false;
@@ -353,46 +384,34 @@ export const useChecklists = () => {
     try {
       console.log('[useChecklists] Rejeitando checklist:', recordId);
       
-      // Update record status
       const { error: updateError } = await supabase
         .from('checklist_records')
         .update({ status: 'negado' })
         .eq('id', recordId);
 
-      if (updateError) {
-        console.error('[useChecklists] Erro ao atualizar status:', updateError);
-        throw updateError;
-      }
-
-      // Add rejection
-      const rejectionData = keysToSnakeCase({
-        checklistRecordId: recordId,
-        mechanicName: mechanicName,
-        reason
-      });
+      if (updateError) throw updateError;
 
       const { error: rejectionError } = await supabase
         .from('checklist_rejections')
-        .insert([rejectionData]);
+        .insert([keysToSnakeCase({
+          checklistRecordId: recordId,
+          mechanicName,
+          reason
+        })]);
 
-      if (rejectionError) {
-        console.error('[useChecklists] Erro ao inserir rejeição:', rejectionError);
-        throw rejectionError;
-      }
+      if (rejectionError) throw rejectionError;
 
       toast({
         title: "Checklist negado",
         description: "O checklist foi negado e o operador será notificado."
       });
 
-      console.log('[useChecklists] Checklist rejeitado com sucesso');
-      // Não precisa refetch - realtime vai atualizar
       return true;
     } catch (error: any) {
-      console.error('Error rejecting checklist:', error);
+      console.error('[useChecklists] Erro ao rejeitar:', error);
       toast({
         title: "Erro ao negar checklist",
-        description: error.message || "Não foi possível negar o checklist.",
+        description: error.message,
         variant: "destructive"
       });
       return false;
@@ -401,7 +420,7 @@ export const useChecklists = () => {
 
   return {
     checklistRecords,
-    isLoading,
+    isLoading: isLoading && !hasInitialLoad,
     addChecklist,
     approveChecklist,
     rejectChecklist,
