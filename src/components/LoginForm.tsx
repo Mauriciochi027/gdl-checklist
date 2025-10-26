@@ -8,29 +8,27 @@ import { User, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { useToast } from '@/hooks/use-toast';
 import gdlLogo from '@/assets/gdl-logo.png';
-
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
-  const { toast } = useToast();
-
+  const {
+    login
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
     if (!username || !password) {
       setError('Por favor, preencha todos os campos');
       return;
     }
-    
     setIsLoading(true);
-    
     try {
       const success = await login(username, password);
-      
       if (success) {
         toast({
           title: "Login realizado",
@@ -104,7 +102,7 @@ export const LoginForm = () => {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>}
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="w-full bg-slate-600 hover:bg-slate-500">
                 {isLoading ? <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Entrando...
