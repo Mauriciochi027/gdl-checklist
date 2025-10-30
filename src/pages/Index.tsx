@@ -39,14 +39,18 @@ const Index = () => {
   useAppSync(syncData);
 
   // Redirecionar para dashboard se usuário não tiver permissão para a página atual
+  // IMPORTANTE: Memoizar verificação para evitar loops
   useEffect(() => {
-    if (user && currentPage !== 'dashboard') {
+    if (!user) return;
+    
+    if (currentPage !== 'dashboard') {
       const pagePermission = currentPage as any;
       if (!canAccess(pagePermission)) {
+        console.log('[Index] Usuário sem permissão para', currentPage, '- redirecionando para dashboard');
         setCurrentPage('dashboard');
       }
     }
-  }, [user, currentPage, canAccess]);
+  }, [user?.id, currentPage, canAccess]); // Usar user.id em vez de user inteiro
 
   // Filter data for operators - only show their own checklists
   const getUserFilteredData = () => {

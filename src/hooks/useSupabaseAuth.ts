@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -34,8 +34,8 @@ export const useSupabaseAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user profile from database
-  const fetchUserProfile = async (userId: string): Promise<User | null> => {
+  // Fetch user profile from database - MEMOIZADO para evitar loops
+  const fetchUserProfile = useCallback(async (userId: string): Promise<User | null> => {
     try {
       console.log('[useAuth] Buscando perfil do usuário:', userId);
       
@@ -61,10 +61,11 @@ export const useSupabaseAuthState = () => {
       console.error('[useAuth] Erro inesperado ao buscar perfil:', error);
       return null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
+    let isInitializing = true;
     console.log('[useAuth] Inicializando hook de autenticação');
 
     // Check for existing session FIRST
@@ -75,46 +76,85 @@ export const useSupabaseAuthState = () => {
         
         if (error) {
           console.error('[useAuth] Erro ao obter sessão:', error);
-          if (mounted) setIsLoading(false);
+          if (mounted) {
+            setSession(null);
+            setUser(null);
+            setIsLoading(false);
+          }
           return;
         }
 
         if (!mounted) return;
         
         console.log('[useAuth] Sessão encontrada:', !!currentSession);
+        
+        // Validar se a sessão não está expirada
+        if (currentSession?.expires_at) {
+          const expiresAt = currentSession.expires_at * 1000;
+          const now = Date.now();
+          
+          if (expiresAt < now) {
+            console.log('[useAuth] Sessão expirada, fazendo logout...');
+            await supabase.auth.signOut();
+            if (mounted) {
+              setSession(null);
+              setUser(null);
+              setIsLoading(false);
+            }
+            return;
+          }
+        }
+        
         setSession(currentSession);
         
         if (currentSession?.user) {
-          const profile = await fetchUserProfile(currentSession.user.id);
-          if (mounted) {
-            setUser(profile);
-            setIsLoading(false);
-          }
+          // DEFER fetch profile para evitar deadlock
+          setTimeout(async () => {
+            const profile = await fetchUserProfile(currentSession.user.id);
+            if (mounted) {
+              setUser(profile);
+              setIsLoading(false);
+            }
+          }, 0);
         } else {
           setIsLoading(false);
         }
       } catch (error) {
         console.error('[useAuth] Erro inesperado ao inicializar:', error);
-        if (mounted) setIsLoading(false);
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+          setIsLoading(false);
+        }
+      } finally {
+        isInitializing = false;
       }
     };
 
     initAuth();
 
     // Set up auth state listener AFTER initial check
+    // CRÍTICO: Nunca chamar async functions ou Supabase diretamente aqui
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        if (!mounted) return;
+      (event, currentSession) => {
+        if (!mounted || isInitializing) return;
         
-        console.log('[useAuth] Auth state changed:', event);
+        console.log('[useAuth] Auth state changed:', event, 'Session:', !!currentSession);
+        
+        // IMPORTANTE: Apenas atualizações síncronas aqui
         setSession(currentSession);
         
         if (currentSession?.user) {
-          const profile = await fetchUserProfile(currentSession.user.id);
-          if (mounted) {
-            setUser(profile);
-          }
+          // DEFER fetch profile com setTimeout para evitar deadlock
+          setTimeout(async () => {
+            if (!mounted) return;
+            const profile = await fetchUserProfile(currentSession.user.id);
+            if (mounted) {
+              setUser(profile);
+            }
+          }, 0);
         } else {
+          // Logout ou sessão removida
           setUser(null);
         }
       }
@@ -125,7 +165,7 @@ export const useSupabaseAuthState = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserProfile]);
 
   const signup = async (
     username: string, 
@@ -205,9 +245,25 @@ export const useSupabaseAuthState = () => {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+    try {
+      console.log('[useAuth] Iniciando logout...');
+      
+      // Limpar estado imediatamente para evitar loops
+      setUser(null);
+      setSession(null);
+      
+      // Fazer signout no Supabase
+      await supabase.auth.signOut();
+      
+      // Limpar cache do localStorage (se houver dados adicionais)
+      // O Supabase já limpa automaticamente suas chaves de auth
+      console.log('[useAuth] Logout concluído com sucesso');
+    } catch (error) {
+      console.error('[useAuth] Erro ao fazer logout:', error);
+      // Mesmo com erro, garantir que o estado está limpo
+      setUser(null);
+      setSession(null);
+    }
   };
 
   return {
