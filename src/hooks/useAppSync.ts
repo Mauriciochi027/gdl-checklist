@@ -6,9 +6,11 @@ import { useEffect } from 'react';
  */
 export const useAppSync = (onSync: () => void) => {
   useEffect(() => {
+    let isInitialMount = true;
+    
     // Sincronizar quando o app fica visível
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && !isInitialMount) {
         console.log('[AppSync] App voltou ao foco, sincronizando dados...');
         onSync();
       }
@@ -16,16 +18,18 @@ export const useAppSync = (onSync: () => void) => {
 
     // Sincronizar quando a janela recebe foco
     const handleFocus = () => {
-      console.log('[AppSync] Janela recebeu foco, sincronizando dados...');
-      onSync();
+      if (!isInitialMount) {
+        console.log('[AppSync] Janela recebeu foco, sincronizando dados...');
+        onSync();
+      }
     };
 
     // Registrar listeners
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
 
-    // Sincronizar no mount
-    onSync();
+    // Marcar que já passou do mount inicial
+    isInitialMount = false;
 
     // Cleanup
     return () => {

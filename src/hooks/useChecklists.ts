@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +9,8 @@ export const useChecklists = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch all checklist records with related data
-  const fetchChecklists = async () => {
+  // Fetch all checklist records with related data - memoizado para evitar loops
+  const fetchChecklists = useCallback(async () => {
     try {
       console.log('[useChecklists] Iniciando carregamento...');
       const startTime = Date.now();
@@ -69,7 +69,7 @@ export const useChecklists = () => {
       console.log('[useChecklists] Finalizando loading state');
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchChecklists();
@@ -80,7 +80,7 @@ export const useChecklists = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         fetchChecklists();
-      }, 500);
+      }, 1000); // Aumentado para 1s para evitar excesso de requisições
     };
 
     // Realtime subscription otimizada
@@ -131,7 +131,7 @@ export const useChecklists = () => {
       clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchChecklists]);
 
   const addChecklist = async (checklistData: {
     equipmentId: string | null;

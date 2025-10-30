@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Equipment } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +9,8 @@ export const useEquipment = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch all equipment
-  const fetchEquipments = async () => {
+  // Fetch all equipment - memoizado para evitar loops
+  const fetchEquipments = useCallback(async () => {
     try {
       console.log('[useEquipment] ==> Iniciando carregamento de equipamentos...');
       const startTime = Date.now();
@@ -53,7 +53,7 @@ export const useEquipment = () => {
       console.log('[useEquipment] Finalizando loading state');
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchEquipments();
@@ -90,7 +90,7 @@ export const useEquipment = () => {
       console.log('[useEquipment] Cleaning up subscription');
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchEquipments]);
 
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {
     try {
