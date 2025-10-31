@@ -65,7 +65,6 @@ export const useSupabaseAuthState = () => {
 
   useEffect(() => {
     let mounted = true;
-    let isInitializing = true;
     console.log('[useAuth] Inicializando hook de autenticação');
 
     // Check for existing session FIRST
@@ -108,14 +107,11 @@ export const useSupabaseAuthState = () => {
         setSession(currentSession);
         
         if (currentSession?.user) {
-          // DEFER fetch profile para evitar deadlock
-          setTimeout(async () => {
-            const profile = await fetchUserProfile(currentSession.user.id);
-            if (mounted) {
-              setUser(profile);
-              setIsLoading(false);
-            }
-          }, 0);
+          const profile = await fetchUserProfile(currentSession.user.id);
+          if (mounted) {
+            setUser(profile);
+            setIsLoading(false);
+          }
         } else {
           setIsLoading(false);
         }
@@ -126,34 +122,28 @@ export const useSupabaseAuthState = () => {
           setUser(null);
           setIsLoading(false);
         }
-      } finally {
-        isInitializing = false;
       }
     };
 
     initAuth();
 
     // Set up auth state listener AFTER initial check
-    // CRÍTICO: Nunca chamar async functions ou Supabase diretamente aqui
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        if (!mounted || isInitializing) return;
+      async (event, currentSession) => {
+        if (!mounted) return;
         
-        console.log('[useAuth] Auth state changed:', event, 'Session:', !!currentSession);
+        console.log('[useAuth] Auth state changed:', event);
         
-        // IMPORTANTE: Apenas atualizações síncronas aqui
+        // Atualizar sessão imediatamente
         setSession(currentSession);
         
-        if (currentSession?.user) {
-          // DEFER fetch profile com setTimeout para evitar deadlock
-          setTimeout(async () => {
-            if (!mounted) return;
-            const profile = await fetchUserProfile(currentSession.user.id);
-            if (mounted) {
-              setUser(profile);
-            }
-          }, 0);
-        } else {
+        if (currentSession?.user && event !== 'TOKEN_REFRESHED') {
+          // Buscar perfil apenas em login/signup, não em refresh de token
+          const profile = await fetchUserProfile(currentSession.user.id);
+          if (mounted) {
+            setUser(profile);
+          }
+        } else if (!currentSession) {
           // Logout ou sessão removida
           setUser(null);
         }

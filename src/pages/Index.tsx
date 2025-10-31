@@ -29,14 +29,7 @@ const Index = () => {
   const [selectedChecklistType, setSelectedChecklistType] = useState<ChecklistType | null>(null);
   const [showLiftingAccessorySelection, setShowLiftingAccessorySelection] = useState(false);
 
-  // Sincronizar dados quando o app volta ao foco (importante para PWA)
-  const syncData = useCallback(() => {
-    console.log('[Index] Sincronizando dados...');
-    refreshEquipments();
-    refreshChecklists();
-  }, [refreshEquipments, refreshChecklists]);
-
-  useAppSync(syncData);
+  // Sincronização manual removida - os hooks já usam realtime subscriptions
 
   // Redirecionar para dashboard se usuário não tiver permissão para a página atual
   // IMPORTANTE: Memoizar verificação para evitar loops
