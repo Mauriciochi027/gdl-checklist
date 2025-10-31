@@ -12,15 +12,6 @@ export const useChecklists = () => {
   // Fetch all checklist records with related data - memoizado para evitar loops
   const fetchChecklists = useCallback(async () => {
     try {
-      // Verificar se há sessão autenticada antes de fazer a query
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.log('[useChecklists] Sem sessão ativa, aguardando autenticação...');
-        setIsLoading(false);
-        return;
-      }
-
       console.log('[useChecklists] Iniciando carregamento...');
       
       const { data: records, error } = await supabase

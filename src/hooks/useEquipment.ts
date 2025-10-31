@@ -12,15 +12,6 @@ export const useEquipment = () => {
   // Fetch all equipment - memoizado para evitar loops
   const fetchEquipments = useCallback(async () => {
     try {
-      // Verificar se há sessão autenticada antes de fazer a query
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.log('[useEquipment] Sem sessão ativa, aguardando autenticação...');
-        setIsLoading(false);
-        return;
-      }
-
       console.log('[useEquipment] ==> Iniciando carregamento de equipamentos...');
       
       const { data, error } = await supabase
