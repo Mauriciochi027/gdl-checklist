@@ -12,6 +12,15 @@ export const useChecklists = () => {
   // Fetch all checklist records with related data - memoizado para evitar loops
   const fetchChecklists = useCallback(async () => {
     try {
+      // Verificar se há sessão autenticada antes de fazer a query
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('[useChecklists] Sem sessão ativa, aguardando autenticação...');
+        setIsLoading(false);
+        return;
+      }
+
       console.log('[useChecklists] Iniciando carregamento...');
       
       const { data: records, error } = await supabase
@@ -66,7 +75,26 @@ export const useChecklists = () => {
   }, [toast]);
 
   useEffect(() => {
-    fetchChecklists();
+    // Configurar listener de autenticação e carregar dados quando autenticado
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log('[useChecklists] Usuário autenticado, carregando dados...');
+        fetchChecklists();
+      } else if (event === 'SIGNED_OUT') {
+        console.log('[useChecklists] Usuário deslogado, limpando dados...');
+        setChecklistRecords([]);
+        setIsLoading(false);
+      }
+    });
+
+    // Verificar se já está autenticado na montagem
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        fetchChecklists();
+      } else {
+        setIsLoading(false);
+      }
+    });
 
     // Debounce para realtime updates - evita múltiplas queries simultâneas
     let debounceTimer: NodeJS.Timeout;
@@ -74,7 +102,7 @@ export const useChecklists = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         fetchChecklists();
-      }, 1000); // Aumentado para 1s para evitar excesso de requisições
+      }, 1000);
     };
 
     // Realtime subscription otimizada
@@ -122,6 +150,7 @@ export const useChecklists = () => {
 
     return () => {
       console.log('[useChecklists] Cleaning up subscription');
+      subscription.unsubscribe();
       clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };

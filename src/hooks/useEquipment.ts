@@ -12,6 +12,15 @@ export const useEquipment = () => {
   // Fetch all equipment - memoizado para evitar loops
   const fetchEquipments = useCallback(async () => {
     try {
+      // Verificar se há sessão autenticada antes de fazer a query
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('[useEquipment] Sem sessão ativa, aguardando autenticação...');
+        setIsLoading(false);
+        return;
+      }
+
       console.log('[useEquipment] ==> Iniciando carregamento de equipamentos...');
       
       const { data, error } = await supabase
@@ -41,7 +50,26 @@ export const useEquipment = () => {
   }, [toast]);
 
   useEffect(() => {
-    fetchEquipments();
+    // Configurar listener de autenticação e carregar dados quando autenticado
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log('[useEquipment] Usuário autenticado, carregando dados...');
+        fetchEquipments();
+      } else if (event === 'SIGNED_OUT') {
+        console.log('[useEquipment] Usuário deslogado, limpando dados...');
+        setEquipments([]);
+        setIsLoading(false);
+      }
+    });
+
+    // Verificar se já está autenticado na montagem
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        fetchEquipments();
+      } else {
+        setIsLoading(false);
+      }
+    });
 
     // Realtime subscription para atualizações automáticas
     const channel = supabase
@@ -73,6 +101,7 @@ export const useEquipment = () => {
 
     return () => {
       console.log('[useEquipment] Cleaning up subscription');
+      subscription.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [fetchEquipments]);
