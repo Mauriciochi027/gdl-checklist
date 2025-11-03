@@ -42,6 +42,8 @@ export const useEquipment = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let authSubscription: any = null;
+    let realtimeChannel: any = null;
 
     const loadData = async () => {
       try {
@@ -61,6 +63,7 @@ export const useEquipment = () => {
           const transformedData = keysToCamelCase<Equipment[]>(data || []);
           console.log('[useEquipment] Equipamentos carregados:', transformedData.length);
           setEquipments(transformedData);
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('[useEquipment] ERRO:', error);
@@ -71,74 +74,82 @@ export const useEquipment = () => {
             variant: "destructive"
           });
           setEquipments([]);
-        }
-      } finally {
-        if (isMounted) {
           setIsLoading(false);
         }
       }
     };
 
-    // Configurar listener de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        console.log('[useEquipment] Usuário autenticado, carregando dados...');
-        loadData();
-      } else if (event === 'SIGNED_OUT') {
-        console.log('[useEquipment] Usuário deslogado, limpando dados...');
-        if (isMounted) {
-          setEquipments([]);
-          setIsLoading(false);
-        }
-      }
-    });
-
-    // Verificar se já está autenticado na montagem
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initializeData = async () => {
+      // Verificar se já está autenticado na montagem
+      const { data: { session } } = await supabase.auth.getSession();
       if (session && isMounted) {
-        loadData();
+        await loadData();
       } else if (isMounted) {
         setIsLoading(false);
       }
-    });
 
-    // Realtime subscription para atualizações automáticas
-    const channel = supabase
-      .channel('equipment-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'equipment'
-        },
-        (payload) => {
-          console.log('[useEquipment] Realtime update received:', payload);
-          if (!isMounted) return;
-          
-          // Atualizar imediatamente sem fazer nova query
-          if (payload.eventType === 'INSERT') {
-            const newEquipment = keysToCamelCase<Equipment>(payload.new);
-            setEquipments(prev => [...prev, newEquipment]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedEquipment = keysToCamelCase<Equipment>(payload.new);
-            setEquipments(prev => prev.map(eq => eq.id === updatedEquipment.id ? updatedEquipment : eq));
-          } else if (payload.eventType === 'DELETE') {
-            setEquipments(prev => prev.filter(eq => eq.id !== payload.old.id));
-          }
+      // Configurar listener de autenticação
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (!isMounted) return;
+        
+        if (event === 'SIGNED_IN' && session) {
+          console.log('[useEquipment] Usuário autenticado, carregando dados...');
+          loadData();
+        } else if (event === 'SIGNED_OUT') {
+          console.log('[useEquipment] Usuário deslogado, limpando dados...');
+          setEquipments([]);
+          setIsLoading(false);
         }
-      )
-      .subscribe((status) => {
-        console.log('[useEquipment] Subscription status:', status);
       });
+      
+      authSubscription = subscription;
+
+      // Realtime subscription para atualizações automáticas
+      const channel = supabase
+        .channel('equipment-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'equipment'
+          },
+          (payload) => {
+            console.log('[useEquipment] Realtime update received:', payload);
+            if (!isMounted) return;
+            
+            // Atualizar imediatamente sem fazer nova query
+            if (payload.eventType === 'INSERT') {
+              const newEquipment = keysToCamelCase<Equipment>(payload.new);
+              setEquipments(prev => [...prev, newEquipment]);
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedEquipment = keysToCamelCase<Equipment>(payload.new);
+              setEquipments(prev => prev.map(eq => eq.id === updatedEquipment.id ? updatedEquipment : eq));
+            } else if (payload.eventType === 'DELETE') {
+              setEquipments(prev => prev.filter(eq => eq.id !== payload.old.id));
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log('[useEquipment] Subscription status:', status);
+        });
+      
+      realtimeChannel = channel;
+    };
+
+    initializeData();
 
     return () => {
-      console.log('[useEquipment] Cleaning up subscription');
+      console.log('[useEquipment] Cleaning up subscriptions');
       isMounted = false;
-      subscription.unsubscribe();
-      supabase.removeChannel(channel);
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
-  }, [toast]);
+  }, []);
 
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {
     try {

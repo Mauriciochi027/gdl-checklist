@@ -68,6 +68,8 @@ export const useChecklists = () => {
   useEffect(() => {
     let isMounted = true;
     let debounceTimer: NodeJS.Timeout;
+    let authSubscription: any = null;
+    let realtimeChannel: any = null;
 
     const loadData = async () => {
       try {
@@ -113,6 +115,7 @@ export const useChecklists = () => {
 
         console.log('[useChecklists] Checklists carregados:', transformedRecords.length);
         setChecklistRecords(transformedRecords);
+        setIsLoading(false);
       } catch (error) {
         console.error('[useChecklists] Erro:', error);
         if (isMounted) {
@@ -122,9 +125,6 @@ export const useChecklists = () => {
             variant: "destructive"
           });
           setChecklistRecords([]);
-        }
-      } finally {
-        if (isMounted) {
           setIsLoading(false);
         }
       }
@@ -137,80 +137,91 @@ export const useChecklists = () => {
       }, 1000);
     };
 
-    // Configurar listener de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        console.log('[useChecklists] Usuário autenticado, carregando dados...');
-        loadData();
-      } else if (event === 'SIGNED_OUT') {
-        console.log('[useChecklists] Usuário deslogado, limpando dados...');
-        if (isMounted) {
-          setChecklistRecords([]);
-          setIsLoading(false);
-        }
-      }
-    });
-
-    // Verificar se já está autenticado na montagem
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initializeData = async () => {
+      // Verificar se já está autenticado na montagem
+      const { data: { session } } = await supabase.auth.getSession();
       if (session && isMounted) {
-        loadData();
+        await loadData();
       } else if (isMounted) {
         setIsLoading(false);
       }
-    });
 
-    // Realtime subscription otimizada
-    const channel = supabase
-      .channel('checklists-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'checklist_records'
-        },
-        (payload) => {
-          console.log('[useChecklists] Realtime update on checklist_records:', payload);
-          debouncedLoad();
+      // Configurar listener de autenticação
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (!isMounted) return;
+        
+        if (event === 'SIGNED_IN' && session) {
+          console.log('[useChecklists] Usuário autenticado, carregando dados...');
+          loadData();
+        } else if (event === 'SIGNED_OUT') {
+          console.log('[useChecklists] Usuário deslogado, limpando dados...');
+          setChecklistRecords([]);
+          setIsLoading(false);
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'checklist_approvals'
-        },
-        (payload) => {
-          console.log('[useChecklists] Realtime update on checklist_approvals:', payload);
-          debouncedLoad();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'checklist_rejections'
-        },
-        (payload) => {
-          console.log('[useChecklists] Realtime update on checklist_rejections:', payload);
-          debouncedLoad();
-        }
-      )
-      .subscribe((status) => {
-        console.log('[useChecklists] Subscription status:', status);
       });
+      
+      authSubscription = subscription;
+
+      // Realtime subscription otimizada
+      const channel = supabase
+        .channel('checklists-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'checklist_records'
+          },
+          (payload) => {
+            console.log('[useChecklists] Realtime update on checklist_records:', payload);
+            debouncedLoad();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'checklist_approvals'
+          },
+          (payload) => {
+            console.log('[useChecklists] Realtime update on checklist_approvals:', payload);
+            debouncedLoad();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'checklist_rejections'
+          },
+          (payload) => {
+            console.log('[useChecklists] Realtime update on checklist_rejections:', payload);
+            debouncedLoad();
+          }
+        )
+        .subscribe((status) => {
+          console.log('[useChecklists] Subscription status:', status);
+        });
+      
+      realtimeChannel = channel;
+    };
+
+    initializeData();
 
     return () => {
-      console.log('[useChecklists] Cleaning up subscription');
+      console.log('[useChecklists] Cleaning up subscriptions');
       isMounted = false;
       clearTimeout(debounceTimer);
-      subscription.unsubscribe();
-      supabase.removeChannel(channel);
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
-  }, [toast]);
+  }, []);
 
   const addChecklist = async (checklistData: {
     equipmentId: string | null;

@@ -129,20 +129,25 @@ export const useSupabaseAuthState = () => {
 
     // Set up auth state listener AFTER initial check
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         if (!mounted) return;
         
         console.log('[useAuth] Auth state changed:', event);
         
-        // Atualizar sessão imediatamente
+        // Atualizar sessão e user imediatamente de forma síncrona
         setSession(currentSession);
         
         if (currentSession?.user && event !== 'TOKEN_REFRESHED') {
-          // Buscar perfil apenas em login/signup, não em refresh de token
-          const profile = await fetchUserProfile(currentSession.user.id);
-          if (mounted) {
-            setUser(profile);
-          }
+          // Buscar perfil de forma assíncrona usando setTimeout para evitar deadlock
+          setTimeout(() => {
+            if (mounted) {
+              fetchUserProfile(currentSession.user.id).then(profile => {
+                if (mounted) {
+                  setUser(profile);
+                }
+              });
+            }
+          }, 0);
         } else if (!currentSession) {
           // Logout ou sessão removida
           setUser(null);
@@ -155,7 +160,7 @@ export const useSupabaseAuthState = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, []); // Removendo fetchUserProfile das dependências para evitar loops
 
   const signup = async (
     username: string, 
