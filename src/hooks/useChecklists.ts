@@ -66,35 +66,99 @@ export const useChecklists = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Configurar listener de autenticação e carregar dados quando autenticado
+    let isMounted = true;
+    let debounceTimer: NodeJS.Timeout;
+
+    const loadData = async () => {
+      try {
+        console.log('[useChecklists] Iniciando carregamento...');
+        
+        const { data: records, error } = await supabase
+          .from('checklist_records')
+          .select(`
+            *,
+            checklist_answers (*),
+            checklist_photos (*),
+            checklist_approvals (*),
+            checklist_rejections (*)
+          `)
+          .order('timestamp', { ascending: false });
+
+        if (error) {
+          console.error('[useChecklists] Erro na query:', error);
+          throw error;
+        }
+
+        if (!isMounted) return;
+
+        const transformedRecords = records?.map(record => {
+          const camelRecord = keysToCamelCase(record);
+          
+          const photos: Record<string, string[]> = {};
+          if (camelRecord.checklistPhotos) {
+            camelRecord.checklistPhotos.forEach((photo: any) => {
+              if (!photos[photo.itemId]) photos[photo.itemId] = [];
+              photos[photo.itemId].push(photo.photoUrl);
+            });
+          }
+          
+          return {
+            ...camelRecord,
+            photos,
+            checklistAnswers: camelRecord.checklistAnswers || [],
+            checklistApprovals: camelRecord.checklistApprovals || [],
+            checklistRejections: camelRecord.checklistRejections || []
+          };
+        }) || [];
+
+        console.log('[useChecklists] Checklists carregados:', transformedRecords.length);
+        setChecklistRecords(transformedRecords);
+      } catch (error) {
+        console.error('[useChecklists] Erro:', error);
+        if (isMounted) {
+          toast({
+            title: "Erro ao carregar checklists",
+            description: "Não foi possível carregar os registros de checklist.",
+            variant: "destructive"
+          });
+          setChecklistRecords([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    const debouncedLoad = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (isMounted) loadData();
+      }, 1000);
+    };
+
+    // Configurar listener de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         console.log('[useChecklists] Usuário autenticado, carregando dados...');
-        fetchChecklists();
+        loadData();
       } else if (event === 'SIGNED_OUT') {
         console.log('[useChecklists] Usuário deslogado, limpando dados...');
-        setChecklistRecords([]);
-        setIsLoading(false);
+        if (isMounted) {
+          setChecklistRecords([]);
+          setIsLoading(false);
+        }
       }
     });
 
     // Verificar se já está autenticado na montagem
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        fetchChecklists();
-      } else {
+      if (session && isMounted) {
+        loadData();
+      } else if (isMounted) {
         setIsLoading(false);
       }
     });
-
-    // Debounce para realtime updates - evita múltiplas queries simultâneas
-    let debounceTimer: NodeJS.Timeout;
-    const debouncedRefetch = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        fetchChecklists();
-      }, 1000);
-    };
 
     // Realtime subscription otimizada
     const channel = supabase
@@ -108,7 +172,7 @@ export const useChecklists = () => {
         },
         (payload) => {
           console.log('[useChecklists] Realtime update on checklist_records:', payload);
-          debouncedRefetch();
+          debouncedLoad();
         }
       )
       .on(
@@ -120,7 +184,7 @@ export const useChecklists = () => {
         },
         (payload) => {
           console.log('[useChecklists] Realtime update on checklist_approvals:', payload);
-          debouncedRefetch();
+          debouncedLoad();
         }
       )
       .on(
@@ -132,7 +196,7 @@ export const useChecklists = () => {
         },
         (payload) => {
           console.log('[useChecklists] Realtime update on checklist_rejections:', payload);
-          debouncedRefetch();
+          debouncedLoad();
         }
       )
       .subscribe((status) => {
@@ -141,11 +205,12 @@ export const useChecklists = () => {
 
     return () => {
       console.log('[useChecklists] Cleaning up subscription');
-      subscription.unsubscribe();
+      isMounted = false;
       clearTimeout(debounceTimer);
+      subscription.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [fetchChecklists]);
+  }, [toast]);
 
   const addChecklist = async (checklistData: {
     equipmentId: string | null;

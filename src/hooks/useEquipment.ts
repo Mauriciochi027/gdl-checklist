@@ -41,23 +41,63 @@ export const useEquipment = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Configurar listener de autenticação e carregar dados quando autenticado
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        console.log('[useEquipment] ==> Iniciando carregamento de equipamentos...');
+        
+        const { data, error } = await supabase
+          .from('equipment')
+          .select('*')
+          .order('code', { ascending: true });
+
+        if (error) {
+          console.error('[useEquipment] Erro na query:', error);
+          throw error;
+        }
+
+        if (isMounted) {
+          const transformedData = keysToCamelCase<Equipment[]>(data || []);
+          console.log('[useEquipment] Equipamentos carregados:', transformedData.length);
+          setEquipments(transformedData);
+        }
+      } catch (error) {
+        console.error('[useEquipment] ERRO:', error);
+        if (isMounted) {
+          toast({
+            title: "Erro ao carregar equipamentos",
+            description: "Não foi possível carregar a lista de equipamentos.",
+            variant: "destructive"
+          });
+          setEquipments([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Configurar listener de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         console.log('[useEquipment] Usuário autenticado, carregando dados...');
-        fetchEquipments();
+        loadData();
       } else if (event === 'SIGNED_OUT') {
         console.log('[useEquipment] Usuário deslogado, limpando dados...');
-        setEquipments([]);
-        setIsLoading(false);
+        if (isMounted) {
+          setEquipments([]);
+          setIsLoading(false);
+        }
       }
     });
 
     // Verificar se já está autenticado na montagem
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        fetchEquipments();
-      } else {
+      if (session && isMounted) {
+        loadData();
+      } else if (isMounted) {
         setIsLoading(false);
       }
     });
@@ -74,6 +114,8 @@ export const useEquipment = () => {
         },
         (payload) => {
           console.log('[useEquipment] Realtime update received:', payload);
+          if (!isMounted) return;
+          
           // Atualizar imediatamente sem fazer nova query
           if (payload.eventType === 'INSERT') {
             const newEquipment = keysToCamelCase<Equipment>(payload.new);
@@ -92,10 +134,11 @@ export const useEquipment = () => {
 
     return () => {
       console.log('[useEquipment] Cleaning up subscription');
+      isMounted = false;
       subscription.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [fetchEquipments]);
+  }, [toast]);
 
   const addEquipment = async (equipment: Omit<Equipment, 'id'>) => {
     try {
