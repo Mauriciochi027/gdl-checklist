@@ -47,14 +47,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Industrial Design System Colors
-        "industrial-blue": "hsl(var(--industrial-blue))",
-        "industrial-blue-dark": "hsl(var(--industrial-blue-dark))",
-        "industrial-blue-light": "hsl(var(--industrial-blue-light))",
+        // GDL Design System Colors
+        "gdl-orange": "hsl(var(--gdl-orange))",
+        "gdl-orange-light": "hsl(var(--gdl-orange-light))",
+        "gdl-blue": "hsl(var(--gdl-blue))",
+        "gdl-blue-dark": "hsl(var(--gdl-blue-dark))",
+        "gdl-blue-light": "hsl(var(--gdl-blue-light))",
         "safety-green": "hsl(var(--safety-green))",
         "safety-green-light": "hsl(var(--safety-green-light))",
-        "safety-orange": "hsl(var(--safety-orange))",
-        "safety-orange-light": "hsl(var(--safety-orange-light))",
         "safety-red": "hsl(var(--safety-red))",
         "safety-red-light": "hsl(var(--safety-red-light))",
         success: {

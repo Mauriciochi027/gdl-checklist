@@ -10,16 +10,16 @@
     --background: 220 13% 98%;
     --foreground: 215 25% 27%;
     
-    /* Industrial Brand Colors */
-    --industrial-blue: 210 100% 45%;
-    --industrial-blue-dark: 210 100% 35%;
-    --industrial-blue-light: 210 100% 95%;
+    /* GDL Brand Colors - baseadas no logo */
+    --gdl-orange: 16 85% 55%;
+    --gdl-orange-light: 16 85% 95%;
+    --gdl-blue: 200 18% 46%;
+    --gdl-blue-dark: 200 18% 36%;
+    --gdl-blue-light: 200 18% 95%;
     
     /* Safety Colors */
     --safety-green: 142 76% 36%;
     --safety-green-light: 142 76% 95%;
-    --safety-orange: 25 95% 53%;
-    --safety-orange-light: 25 95% 95%;
     --safety-red: 0 84% 60%;
     --safety-red-light: 0 84% 95%;
     
@@ -45,7 +45,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: var(--gray-900);
 
-    --primary: var(--industrial-blue);
+    --primary: var(--gdl-blue);
     --primary-foreground: 0 0% 100%;
 
     --secondary: var(--gray-100);
@@ -54,20 +54,20 @@
     --muted: var(--gray-100);
     --muted-foreground: var(--gray-500);
 
-    --accent: var(--industrial-blue-light);
-    --accent-foreground: var(--industrial-blue-dark);
+    --accent: var(--gdl-orange);
+    --accent-foreground: 0 0% 100%;
 
     --destructive: var(--safety-red);
     --destructive-foreground: 0 0% 100%;
 
     --border: var(--gray-200);
     --input: var(--gray-200);
-    --ring: var(--industrial-blue);
+    --ring: var(--gdl-blue);
     
     /* Status Colors */
     --success: var(--safety-green);
     --success-foreground: 0 0% 100%;
-    --warning: var(--safety-orange);
+    --warning: var(--gdl-orange);
     --warning-foreground: 0 0% 100%;
     --danger: var(--safety-red);
     --danger-foreground: 0 0% 100%;
