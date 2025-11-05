@@ -370,8 +370,7 @@ const ChecklistForm = ({
                 const equipment = equipments.find(eq => eq.id === parsedData.equipmentId);
                 if (equipment) {
                   setSelectedEquipment(equipment.id);
-                  setOperatorName(parsedData.nomeOperador || operatorName);
-                  setOperatorId(parsedData.matriculaId || operatorId);
+                  // Mantém operatorName e operatorId do usuário logado
                   setEquipmentModel(equipment.model.toLowerCase().includes('eletrica') ? 'eletrica' : 'combustao');
                   setLocation(parsedData.local || equipment.sector);
                   setUnit(parsedData.unidade === 'Principal' ? '01' : parsedData.unidade === 'Secundaria' ? '02' : '03');
