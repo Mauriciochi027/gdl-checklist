@@ -10,15 +10,15 @@
     --background: 210 20% 98%;
     --foreground: 207 25% 25%;
     
-    /* GDL Brand Colors - baseadas no logo */
-    --gdl-orange: 18 92% 58%;
-    --gdl-orange-light: 18 92% 96%;
-    --gdl-orange-dark: 18 92% 45%;
-    --gdl-blue: 205 25% 50%;
-    --gdl-blue-dark: 205 30% 35%;
-    --gdl-blue-light: 205 25% 92%;
-    --gdl-slate: 207 20% 55%;
-    --gdl-slate-dark: 207 25% 35%;
+    /* GDL Brand Colors - baseadas no logo - VIVID */
+    --gdl-orange: 18 98% 55%;
+    --gdl-orange-light: 18 100% 75%;
+    --gdl-orange-dark: 18 95% 42%;
+    --gdl-blue: 205 70% 45%;
+    --gdl-blue-dark: 205 75% 30%;
+    --gdl-blue-light: 205 70% 88%;
+    --gdl-slate: 207 25% 50%;
+    --gdl-slate-dark: 207 30% 30%;
     
     /* Safety Colors */
     --safety-green: 142 76% 36%;
@@ -45,11 +45,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: var(--gdl-slate-dark);
 
-    --primary: var(--gdl-blue);
+    --primary: var(--gdl-orange);
     --primary-foreground: 0 0% 100%;
 
-    --secondary: var(--gdl-blue-light);
-    --secondary-foreground: var(--gdl-blue-dark);
+    --secondary: var(--gdl-blue);
+    --secondary-foreground: 0 0% 100%;
 
     --muted: var(--gray-100);
     --muted-foreground: var(--gdl-slate);
