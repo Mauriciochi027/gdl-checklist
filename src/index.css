@@ -7,15 +7,18 @@
 @layer base {
   :root {
     /* Base Colors */
-    --background: 220 13% 98%;
-    --foreground: 215 25% 27%;
+    --background: 210 20% 98%;
+    --foreground: 207 25% 25%;
     
     /* GDL Brand Colors - baseadas no logo */
-    --gdl-orange: 16 85% 55%;
-    --gdl-orange-light: 16 85% 95%;
-    --gdl-blue: 200 18% 46%;
-    --gdl-blue-dark: 200 18% 36%;
-    --gdl-blue-light: 200 18% 95%;
+    --gdl-orange: 18 92% 58%;
+    --gdl-orange-light: 18 92% 96%;
+    --gdl-orange-dark: 18 92% 45%;
+    --gdl-blue: 205 25% 50%;
+    --gdl-blue-dark: 205 30% 35%;
+    --gdl-blue-light: 205 25% 92%;
+    --gdl-slate: 207 20% 55%;
+    --gdl-slate-dark: 207 25% 35%;
     
     /* Safety Colors */
     --safety-green: 142 76% 36%;
@@ -35,24 +38,21 @@
     --gray-800: 220 13% 18%;
     --gray-900: 220 13% 9%;
 
-    --background: var(--gray-50);
-    --foreground: var(--gray-900);
-
     /* Component Colors */
     --card: 0 0% 100%;
-    --card-foreground: var(--gray-900);
+    --card-foreground: var(--gdl-slate-dark);
 
     --popover: 0 0% 100%;
-    --popover-foreground: var(--gray-900);
+    --popover-foreground: var(--gdl-slate-dark);
 
     --primary: var(--gdl-blue);
     --primary-foreground: 0 0% 100%;
 
-    --secondary: var(--gray-100);
-    --secondary-foreground: var(--gray-900);
+    --secondary: var(--gdl-blue-light);
+    --secondary-foreground: var(--gdl-blue-dark);
 
     --muted: var(--gray-100);
-    --muted-foreground: var(--gray-500);
+    --muted-foreground: var(--gdl-slate);
 
     --accent: var(--gdl-orange);
     --accent-foreground: 0 0% 100%;
@@ -60,8 +60,8 @@
     --destructive: var(--safety-red);
     --destructive-foreground: 0 0% 100%;
 
-    --border: var(--gray-200);
-    --input: var(--gray-200);
+    --border: var(--gray-300);
+    --input: var(--gray-300);
     --ring: var(--gdl-blue);
     
     /* Status Colors */
