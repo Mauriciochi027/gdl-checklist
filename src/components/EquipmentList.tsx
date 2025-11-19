@@ -220,8 +220,7 @@ const EquipmentList = ({
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              variant="default"
-              className="border-4 border-primary shadow-lg hover:shadow-xl font-bold text-sm h-9 sm:h-10" 
+              className="bg-industrial-blue hover:bg-industrial-blue-dark text-sm h-9 sm:h-10" 
               onClick={resetForm}
               disabled={!canManageEquipment}
               title={!canManageEquipment ? "Você não tem permissão para adicionar equipamentos" : undefined}

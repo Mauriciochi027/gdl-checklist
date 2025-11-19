@@ -50,12 +50,9 @@ export default {
         // GDL Design System Colors
         "gdl-orange": "hsl(var(--gdl-orange))",
         "gdl-orange-light": "hsl(var(--gdl-orange-light))",
-        "gdl-orange-dark": "hsl(var(--gdl-orange-dark))",
         "gdl-blue": "hsl(var(--gdl-blue))",
         "gdl-blue-dark": "hsl(var(--gdl-blue-dark))",
         "gdl-blue-light": "hsl(var(--gdl-blue-light))",
-        "gdl-slate": "hsl(var(--gdl-slate))",
-        "gdl-slate-dark": "hsl(var(--gdl-slate-dark))",
         "safety-green": "hsl(var(--safety-green))",
         "safety-green-light": "hsl(var(--safety-green-light))",
         "safety-red": "hsl(var(--safety-red))",
