@@ -1,30 +1,38 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useEquipment } from '@/hooks/useEquipment';
+import { useEquipmentOptimized } from '@/hooks/useEquipment.optimized';
 import { useChecklists } from '@/hooks/useChecklists';
-import { useAppSync } from '@/hooks/useAppSync';
 import { LoginForm } from '@/components/LoginForm';
 import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
 import EquipmentList from '@/components/EquipmentList';
-import ChecklistForm from '@/components/ChecklistForm';
 import { ChecklistTypeSelection, LiftingAccessorySelection } from '@/components/ChecklistTypeSelection';
 import { ChecklistType } from '@/lib/liftingAccessoryChecklists';
-import ChecklistHistory from '@/components/ChecklistHistory';
-import ApprovalsPage from '@/components/ApprovalsPage';
 import StatusPanel from '@/components/StatusPanel';
-import UserManagement from '@/components/UserManagement';
-import EquipmentManagement from '@/components/EquipmentManagement';
-import { OperationControl } from '@/components/OperationControl';
-import { getChecklistItemById } from '@/lib/checklistItems';
 import { Equipment } from '@/types/equipment';
+import { 
+  LazyChecklistForm, 
+  LazyChecklistHistory, 
+  LazyApprovalsPage, 
+  LazyUserManagement, 
+  LazyEquipmentManagement 
+} from '@/lib/lazyComponents';
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center space-y-4">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+      <p className="text-muted-foreground">Carregando...</p>
+    </div>
+  </div>
+);
 
 const Index = () => {
   const { user, isLoading } = useAuth();
   const { canAccess } = usePermissions(user);
-  const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment, refreshEquipments } = useEquipment();
-  const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist, refreshChecklists } = useChecklists();
+  const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment, refreshEquipments } = useEquipmentOptimized();
+  const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedChecklistType, setSelectedChecklistType] = useState<ChecklistType | null>(null);
   const [showLiftingAccessorySelection, setShowLiftingAccessorySelection] = useState(false);
@@ -221,14 +229,18 @@ const Index = () => {
       
       // Step 3: Actual checklist form
       if (selectedChecklistType) {
-        return <ChecklistForm 
-          equipments={equipments} 
-          onSubmitChecklist={handleSubmitChecklist}
-          checklistType={selectedChecklistType}
-          onBack={() => {
-            setSelectedChecklistType(null);
-          }}
-        />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LazyChecklistForm 
+              equipments={equipments} 
+              onSubmitChecklist={handleSubmitChecklist}
+              checklistType={selectedChecklistType}
+              onBack={() => {
+                setSelectedChecklistType(null);
+              }}
+            />
+          </Suspense>
+        );
       }
     }
     
@@ -242,7 +254,11 @@ const Index = () => {
           onRejectRecord={(recordId: string, reason: string) => handleRejectRecord(recordId, user?.name || 'Mecânico', reason)}
         />;
       case 'users':
-        return <UserManagement currentUser={user} />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LazyUserManagement currentUser={user} />
+          </Suspense>
+        );
       case 'status':
         return <StatusPanel
           equipments={equipments}
@@ -251,24 +267,36 @@ const Index = () => {
           onUpdateEquipmentStatus={handleUpdateEquipmentStatus}
         />;
       case 'approvals':
-        return <ApprovalsPage 
-          records={checklistRecords}
-          isLoading={isLoadingChecklists}
-          onApproveRecord={(recordId: string, mechanicName: string, comment: string) => handleApproveRecord(recordId, mechanicName, comment)}
-          onRejectRecord={(recordId: string, mechanicName: string, reason: string) => handleRejectRecord(recordId, mechanicName, reason)}
-          currentUser={user}
-        />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LazyApprovalsPage 
+              records={checklistRecords}
+              isLoading={isLoadingChecklists}
+              onApproveRecord={(recordId: string, mechanicName: string, comment: string) => handleApproveRecord(recordId, mechanicName, comment)}
+              onRejectRecord={(recordId: string, mechanicName: string, reason: string) => handleRejectRecord(recordId, mechanicName, reason)}
+              currentUser={user}
+            />
+          </Suspense>
+        );
       case 'equipments':
         return <EquipmentList equipments={equipments} isLoading={isLoadingEquipments} onAddEquipment={handleAddEquipment} onUpdateEquipment={handleUpdateEquipment} />;
       case 'equipment-management':
-        return <EquipmentManagement equipments={equipments} />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LazyEquipmentManagement equipments={equipments} />
+          </Suspense>
+        );
       case 'history':
-        return <ChecklistHistory 
-          records={checklistRecords}
-          isLoading={isLoadingChecklists}
-          userProfile={user?.profile}
-          currentUser={user}
-        />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LazyChecklistHistory 
+              records={checklistRecords}
+              isLoading={isLoadingChecklists}
+              userProfile={user?.profile}
+              currentUser={user}
+            />
+          </Suspense>
+        );
       default:
         return <Dashboard 
           data={dashboardData} 
