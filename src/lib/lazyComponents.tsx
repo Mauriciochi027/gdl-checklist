@@ -39,7 +39,7 @@ export const LazyChecklistForm = lazy(() =>
 /**
  * Fallback padrão para lazy components
  */
-const LoadingFallback = () => (
+export const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-[400px]">
     <div className="text-center space-y-4">
       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
