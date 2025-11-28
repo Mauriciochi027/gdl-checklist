@@ -484,36 +484,26 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
                     <span className="text-sm font-medium text-gray-600">Modelo:</span>
                     <p className="text-gray-900 font-semibold">{selectedRecord.equipmentModel}</p>
                   </div>
-                  {(selectedRecord.hourMeter !== null && selectedRecord.hourMeter !== undefined) && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Horímetro:</span>
-                      <p className="text-gray-900">{selectedRecord.hourMeter} horas</p>
-                    </div>
-                  )}
-                  {selectedRecord.location && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Local:</span>
-                      <p className="text-gray-900">{selectedRecord.location}</p>
-                    </div>
-                  )}
-                  {selectedRecord.unit && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Unidade:</span>
-                      <p className="text-gray-900">{selectedRecord.unit}</p>
-                    </div>
-                  )}
-                  {selectedRecord.equipmentSeries && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Série:</span>
-                      <p className="text-gray-900">{selectedRecord.equipmentSeries}</p>
-                    </div>
-                  )}
-                  {selectedRecord.equipmentNumber && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Número:</span>
-                      <p className="text-gray-900">{selectedRecord.equipmentNumber}</p>
-                    </div>
-                  )}
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Horímetro:</span>
+                    <p className="text-gray-900">{selectedRecord.hourMeter ?? 'Não informado'} {selectedRecord.hourMeter ? 'horas' : ''}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Local:</span>
+                    <p className="text-gray-900">{selectedRecord.location || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Unidade:</span>
+                    <p className="text-gray-900">{selectedRecord.unit || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Série:</span>
+                    <p className="text-gray-900">{selectedRecord.equipmentSeries || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Número:</span>
+                    <p className="text-gray-900">{selectedRecord.equipmentNumber || 'Não informado'}</p>
+                  </div>
                   {selectedRecord.equipmentModel_type && (
                     <div>
                       <span className="text-sm font-medium text-gray-600">Tipo:</span>

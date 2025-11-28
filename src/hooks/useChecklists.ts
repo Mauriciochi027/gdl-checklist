@@ -235,6 +235,11 @@ export const useChecklists = () => {
     checklistType?: string;
     operationDescription?: string;
     loadDescription?: string;
+    location?: string | null;
+    unit?: string | null;
+    equipmentSeries?: string | null;
+    equipmentNumber?: string | null;
+    hourMeter?: number | null;
   }) => {
     try {
       console.log('[useChecklists] Iniciando inserção de checklist...');
@@ -269,7 +274,12 @@ export const useChecklists = () => {
         hasCriticalIssues: hasCriticalIssues,
         checklistType: checklistData.checklistType || 'empilhadeira',
         operationDescription: checklistData.operationDescription,
-        loadDescription: checklistData.loadDescription
+        loadDescription: checklistData.loadDescription,
+        location: checklistData.location,
+        unit: checklistData.unit,
+        equipmentSeries: checklistData.equipmentSeries,
+        equipmentNumber: checklistData.equipmentNumber,
+        hourMeter: checklistData.hourMeter
       });
 
       const { data: record, error: recordError } = await supabase
