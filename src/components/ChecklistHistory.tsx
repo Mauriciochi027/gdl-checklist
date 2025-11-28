@@ -469,11 +469,69 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
                 </p>
               </div>
 
-              {/* Equipment Info Header */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mb-4 print:bg-gray-100 mt-4">
+              {/* Equipment Details Section */}
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border-l-4 border-industrial-blue print:bg-gray-100 mt-4">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <Truck className="w-5 h-5" />
+                  Dados do Equipamento
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Código:</span>
+                    <p className="text-gray-900 font-semibold">{selectedRecord.equipmentCode}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">Modelo:</span>
+                    <p className="text-gray-900 font-semibold">{selectedRecord.equipmentModel}</p>
+                  </div>
+                  {selectedRecord.hourMeter && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Horímetro:</span>
+                      <p className="text-gray-900">{selectedRecord.hourMeter} horas</p>
+                    </div>
+                  )}
+                  {selectedRecord.location && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Local:</span>
+                      <p className="text-gray-900">{selectedRecord.location}</p>
+                    </div>
+                  )}
+                  {selectedRecord.unit && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Unidade:</span>
+                      <p className="text-gray-900">{selectedRecord.unit}</p>
+                    </div>
+                  )}
+                  {selectedRecord.equipmentSeries && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Série:</span>
+                      <p className="text-gray-900">{selectedRecord.equipmentSeries}</p>
+                    </div>
+                  )}
+                  {selectedRecord.equipmentNumber && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Número:</span>
+                      <p className="text-gray-900">{selectedRecord.equipmentNumber}</p>
+                    </div>
+                  )}
+                  {selectedRecord.equipmentModel_type && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Tipo:</span>
+                      <p className="text-gray-900">{selectedRecord.equipmentModel_type}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Operator Info Header */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg mb-4 print:bg-blue-100">
                 <div>
                   <span className="text-sm font-medium text-gray-600">Operador:</span>
                   <p className="text-gray-900 font-semibold">{selectedRecord.operatorName}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-600">ID Operador:</span>
+                  <p className="text-gray-900">{selectedRecord.operatorId}</p>
                 </div>
                 <div>
                   <span className="text-sm font-medium text-gray-600">Data/Hora:</span>
