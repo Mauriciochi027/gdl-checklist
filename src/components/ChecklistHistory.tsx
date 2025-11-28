@@ -484,7 +484,7 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
                     <span className="text-sm font-medium text-gray-600">Modelo:</span>
                     <p className="text-gray-900 font-semibold">{selectedRecord.equipmentModel}</p>
                   </div>
-                  {selectedRecord.hourMeter && (
+                  {(selectedRecord.hourMeter !== null && selectedRecord.hourMeter !== undefined) && (
                     <div>
                       <span className="text-sm font-medium text-gray-600">Horímetro:</span>
                       <p className="text-gray-900">{selectedRecord.hourMeter} horas</p>
