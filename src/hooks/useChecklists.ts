@@ -73,6 +73,14 @@ export const useChecklists = () => {
 
     const loadData = async () => {
       try {
+        // Verificar sessão antes de fazer query
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.log('[useChecklists] No active session, skipping load');
+          setIsLoading(false);
+          return;
+        }
+
         console.log('[useChecklists] Iniciando carregamento...');
         
         const { data: records, error } = await supabase
@@ -138,11 +146,16 @@ export const useChecklists = () => {
     };
 
     const initializeData = async () => {
+      // Aguardar um momento para garantir que auth está inicializado
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Verificar se já está autenticado na montagem
       const { data: { session } } = await supabase.auth.getSession();
       if (session && isMounted) {
+        console.log('[useChecklists] Session found, loading data...');
         await loadData();
       } else if (isMounted) {
+        console.log('[useChecklists] No session found');
         setIsLoading(false);
       }
 
