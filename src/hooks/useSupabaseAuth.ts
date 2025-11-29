@@ -17,6 +17,7 @@ interface AuthContextType {
   signup: (username: string, password: string, name: string, profile: 'operador' | 'mecanico' | 'gestor' | 'admin', matricula?: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  isAuthReady: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,6 +34,7 @@ export const useSupabaseAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   // Fetch user profile from database - MEMOIZADO para evitar loops
   const fetchUserProfile = useCallback(async (userId: string): Promise<User | null> => {
@@ -111,9 +113,13 @@ export const useSupabaseAuthState = () => {
           if (mounted) {
             setUser(profile);
             setIsLoading(false);
+            setIsAuthReady(true);
           }
         } else {
-          setIsLoading(false);
+          if (mounted) {
+            setIsLoading(false);
+            setIsAuthReady(true);
+          }
         }
       } catch (error) {
         console.error('[useAuth] Erro inesperado ao inicializar:', error);
@@ -267,6 +273,7 @@ export const useSupabaseAuthState = () => {
     login,
     signup,
     logout,
-    isLoading
+    isLoading,
+    isAuthReady
   };
 };

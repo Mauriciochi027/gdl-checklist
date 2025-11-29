@@ -1,9 +1,10 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Equipment } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
 import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 import { useOptimizedQuery } from './useOptimizedQuery';
+import { useAuth } from './useSupabaseAuth';
 
 /**
  * Hook otimizado para gerenciamento de equipamentos
@@ -13,8 +14,21 @@ import { useOptimizedQuery } from './useOptimizedQuery';
  */
 export const useEquipmentOptimized = () => {
   const { toast } = useToast();
+  const { isAuthReady, session } = useAuth();
+  const [shouldFetch, setShouldFetch] = useState(false);
 
-  // Query otimizada com cache
+  // Aguardar autenticação antes de fazer fetch
+  useEffect(() => {
+    if (isAuthReady && session) {
+      console.log('[useEquipment] Auth ready, enabling fetch');
+      setShouldFetch(true);
+    } else if (isAuthReady && !session) {
+      console.log('[useEquipment] No session, disabling fetch');
+      setShouldFetch(false);
+    }
+  }, [isAuthReady, session]);
+
+  // Query otimizada com cache - só executa quando auth está pronto
   const {
     data: equipments,
     isLoading,
@@ -22,6 +36,13 @@ export const useEquipmentOptimized = () => {
     invalidateCache,
   } = useOptimizedQuery<Equipment[]>({
     queryFn: async () => {
+      // Verificação adicional de sessão antes de fazer query
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) {
+        console.log('[useEquipment] No active session, skipping fetch');
+        return [];
+      }
+
       console.log('[useEquipment] Fetching equipments...');
       
       const { data, error } = await supabase
@@ -35,6 +56,7 @@ export const useEquipmentOptimized = () => {
     },
     cacheKey: 'equipments',
     cacheTime: 3 * 60 * 1000, // 3 minutos
+    enableCache: shouldFetch, // Só habilita quando auth está pronto
     onError: (error) => {
       console.error('[useEquipment] Error:', error);
       toast({
