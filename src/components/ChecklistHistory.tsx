@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useSupabaseAuth";
+import { useChecklistDetails } from "@/hooks/useChecklistDetails";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoGrid } from "@/components/ui/photo-viewer";
 import { 
@@ -56,6 +57,7 @@ interface ChecklistHistoryProps {
 const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { loadChecklistDetails, loading: detailsLoading } = useChecklistDetails();
   const printRef = useRef<HTMLDivElement>(null);
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,6 +71,19 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
   const [checklistToDelete, setChecklistToDelete] = useState<ChecklistRecord | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMechanic, setIsMechanic] = useState(false);
+
+  // Carregar detalhes quando o dialog for aberto
+  useEffect(() => {
+    const loadDetails = async () => {
+      if (isDetailDialogOpen && selectedRecord && !selectedRecord.checklistAnswers?.length) {
+        const details = await loadChecklistDetails(selectedRecord.id);
+        if (details) {
+          setSelectedRecord(prev => prev ? { ...prev, ...details } : null);
+        }
+      }
+    };
+    loadDetails();
+  }, [isDetailDialogOpen, selectedRecord?.id]);
 
   // Check if user is admin or mechanic
   useEffect(() => {

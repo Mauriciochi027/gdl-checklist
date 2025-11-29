@@ -48,7 +48,8 @@ export const useEquipmentOptimized = () => {
       const { data, error } = await supabase
         .from('equipment')
         .select('id, code, brand, model, sector, status, year, unit, photo, updated_at')
-        .order('code', { ascending: true });
+        .order('code', { ascending: true })
+        .limit(500); // Limita a 500 equipamentos
 
       if (error) throw error;
 
