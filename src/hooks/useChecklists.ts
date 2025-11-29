@@ -9,21 +9,17 @@ export const useChecklists = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch all checklist records with related data - memoizado para evitar loops
+  // Carrega apenas os registros principais primeiro, depois carrega detalhes sob demanda
   const fetchChecklists = useCallback(async () => {
     try {
       console.log('[useChecklists] Iniciando carregamento...');
       
+      // Query otimizada - apenas campos essenciais
       const { data: records, error } = await supabase
         .from('checklist_records')
-        .select(`
-          *,
-          checklist_answers (*),
-          checklist_photos (*),
-          checklist_approvals (*),
-          checklist_rejections (*)
-        `)
-        .order('timestamp', { ascending: false });
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(100); // Limita a 100 registros mais recentes
 
       if (error) {
         console.error('[useChecklists] Erro na query:', error);
@@ -32,21 +28,12 @@ export const useChecklists = () => {
 
       const transformedRecords = records?.map(record => {
         const camelRecord = keysToCamelCase(record);
-        
-        const photos: Record<string, string[]> = {};
-        if (camelRecord.checklistPhotos) {
-          camelRecord.checklistPhotos.forEach((photo: any) => {
-            if (!photos[photo.itemId]) photos[photo.itemId] = [];
-            photos[photo.itemId].push(photo.photoUrl);
-          });
-        }
-        
         return {
           ...camelRecord,
-          photos,
-          checklistAnswers: camelRecord.checklistAnswers || [],
-          checklistApprovals: camelRecord.checklistApprovals || [],
-          checklistRejections: camelRecord.checklistRejections || []
+          photos: {},
+          checklistAnswers: [],
+          checklistApprovals: [],
+          checklistRejections: []
         };
       }) || [];
 
@@ -81,57 +68,12 @@ export const useChecklists = () => {
           return;
         }
 
-        console.log('[useChecklists] Iniciando carregamento...');
-        
-        const { data: records, error } = await supabase
-          .from('checklist_records')
-          .select(`
-            *,
-            checklist_answers (*),
-            checklist_photos (*),
-            checklist_approvals (*),
-            checklist_rejections (*)
-          `)
-          .order('timestamp', { ascending: false });
-
-        if (error) {
-          console.error('[useChecklists] Erro na query:', error);
-          throw error;
-        }
-
         if (!isMounted) return;
-
-        const transformedRecords = records?.map(record => {
-          const camelRecord = keysToCamelCase(record);
-          
-          const photos: Record<string, string[]> = {};
-          if (camelRecord.checklistPhotos) {
-            camelRecord.checklistPhotos.forEach((photo: any) => {
-              if (!photos[photo.itemId]) photos[photo.itemId] = [];
-              photos[photo.itemId].push(photo.photoUrl);
-            });
-          }
-          
-          return {
-            ...camelRecord,
-            photos,
-            checklistAnswers: camelRecord.checklistAnswers || [],
-            checklistApprovals: camelRecord.checklistApprovals || [],
-            checklistRejections: camelRecord.checklistRejections || []
-          };
-        }) || [];
-
-        console.log('[useChecklists] Checklists carregados:', transformedRecords.length);
-        setChecklistRecords(transformedRecords);
-        setIsLoading(false);
+        
+        await fetchChecklists();
       } catch (error) {
         console.error('[useChecklists] Erro:', error);
         if (isMounted) {
-          toast({
-            title: "Erro ao carregar checklists",
-            description: "Não foi possível carregar os registros de checklist.",
-            variant: "destructive"
-          });
           setChecklistRecords([]);
           setIsLoading(false);
         }
@@ -142,7 +84,7 @@ export const useChecklists = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         if (isMounted) loadData();
-      }, 1000);
+      }, 2000); // Aumentado para 2 segundos para reduzir carga
     };
 
     const initializeData = async () => {
@@ -175,7 +117,7 @@ export const useChecklists = () => {
       
       authSubscription = subscription;
 
-      // Realtime subscription otimizada
+      // Realtime apenas para checklist_records - reduz sobrecarga
       const channel = supabase
         .channel('checklists-changes')
         .on(
@@ -186,31 +128,7 @@ export const useChecklists = () => {
             table: 'checklist_records'
           },
           (payload) => {
-            console.log('[useChecklists] Realtime update on checklist_records:', payload);
-            debouncedLoad();
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'checklist_approvals'
-          },
-          (payload) => {
-            console.log('[useChecklists] Realtime update on checklist_approvals:', payload);
-            debouncedLoad();
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'checklist_rejections'
-          },
-          (payload) => {
-            console.log('[useChecklists] Realtime update on checklist_rejections:', payload);
+            console.log('[useChecklists] Realtime update:', payload.eventType);
             debouncedLoad();
           }
         )
