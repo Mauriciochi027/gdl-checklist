@@ -16,8 +16,9 @@ export const useEquipment = () => {
       
       const { data, error } = await supabase
         .from('equipment')
-        .select('*')
-        .order('code', { ascending: true });
+        .select('id, code, brand, model, sector, status, year, unit, photo, updated_at, operator_name, operator_id, location, hour_meter, observations')
+        .order('code', { ascending: true })
+        .limit(500);
 
       if (error) {
         console.error('[useEquipment] Erro na query:', error);
@@ -51,8 +52,9 @@ export const useEquipment = () => {
         
         const { data, error } = await supabase
           .from('equipment')
-          .select('*')
-          .order('code', { ascending: true });
+          .select('id, code, brand, model, sector, status, year, unit, photo, updated_at, operator_name, operator_id, location, hour_meter, observations')
+          .order('code', { ascending: true })
+          .limit(500);
 
         if (error) {
           console.error('[useEquipment] Erro na query:', error);
