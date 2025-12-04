@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -248,27 +248,19 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
+                        onClick={async () => {
                           setSelectedRecord(record);
                           setSelectedRecordDetails(null);
                           setIsDetailDialogOpen(true);
                           setIsLoadingDetails(true);
-                          
-                          loadChecklistDetails(record.id)
-                            .then((details) => {
-                              if (details) {
-                                setSelectedRecordDetails({
-                                  checklistAnswers: details.checklistAnswers,
-                                  photos: details.photos
-                                });
-                              }
-                            })
-                            .catch((error) => {
-                              console.error('[ApprovalsPage] Erro ao carregar detalhes:', error);
-                            })
-                            .finally(() => {
-                              setIsLoadingDetails(false);
+                          const details = await loadChecklistDetails(record.id);
+                          if (details) {
+                            setSelectedRecordDetails({
+                              checklistAnswers: details.checklistAnswers,
+                              photos: details.photos
                             });
+                          }
+                          setIsLoadingDetails(false);
                         }}
                       >
                         <Eye className="w-4 h-4 mr-1" />
