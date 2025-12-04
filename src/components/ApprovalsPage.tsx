@@ -248,19 +248,27 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={async () => {
+                        onClick={() => {
                           setSelectedRecord(record);
                           setSelectedRecordDetails(null);
                           setIsDetailDialogOpen(true);
                           setIsLoadingDetails(true);
-                          const details = await loadChecklistDetails(record.id);
-                          if (details) {
-                            setSelectedRecordDetails({
-                              checklistAnswers: details.checklistAnswers,
-                              photos: details.photos
+                          
+                          loadChecklistDetails(record.id)
+                            .then((details) => {
+                              if (details) {
+                                setSelectedRecordDetails({
+                                  checklistAnswers: details.checklistAnswers,
+                                  photos: details.photos
+                                });
+                              }
+                            })
+                            .catch((error) => {
+                              console.error('[ApprovalsPage] Erro ao carregar detalhes:', error);
+                            })
+                            .finally(() => {
+                              setIsLoadingDetails(false);
                             });
-                          }
-                          setIsLoadingDetails(false);
                         }}
                       >
                         <Eye className="w-4 h-4 mr-1" />
