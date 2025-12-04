@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,28 +54,20 @@ interface ApprovalsPageProps {
 
 const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, currentUser }: ApprovalsPageProps) => {
   const { toast } = useToast();
-  const { loadChecklistDetails } = useChecklistDetails();
+  const { loadChecklistDetails, loading: detailsLoading } = useChecklistDetails();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [selectedRecord, setSelectedRecord] = useState<ChecklistRecord | null>(null);
+  const [selectedRecordDetails, setSelectedRecordDetails] = useState<{
+    checklistAnswers: ChecklistAnswer[];
+    photos: Record<string, string[]>;
+  } | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [approvalComment, setApprovalComment] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
-
-  // Carregar detalhes quando o dialog for aberto (mesmo padrão do histórico)
-  useEffect(() => {
-    const loadDetails = async () => {
-      if (isDetailDialogOpen && selectedRecord && !selectedRecord.checklistAnswers?.length) {
-        const details = await loadChecklistDetails(selectedRecord.id);
-        if (details) {
-          setSelectedRecord(prev => prev ? { ...prev, ...details } : null);
-        }
-      }
-    };
-    loadDetails();
-  }, [isDetailDialogOpen, selectedRecord?.id, loadChecklistDetails]);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // Filter records for pending approvals
   const pendingRecords = records.filter(record => record.status === 'pendente');
@@ -258,7 +250,25 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
                         size="sm"
                         onClick={() => {
                           setSelectedRecord(record);
+                          setSelectedRecordDetails(null);
                           setIsDetailDialogOpen(true);
+                          setIsLoadingDetails(true);
+                          
+                          loadChecklistDetails(record.id)
+                            .then((details) => {
+                              if (details) {
+                                setSelectedRecordDetails({
+                                  checklistAnswers: details.checklistAnswers,
+                                  photos: details.photos
+                                });
+                              }
+                            })
+                            .catch((error) => {
+                              console.error('[ApprovalsPage] Erro ao carregar detalhes:', error);
+                            })
+                            .finally(() => {
+                              setIsLoadingDetails(false);
+                            });
                         }}
                       >
                         <Eye className="w-4 h-4 mr-1" />
@@ -338,7 +348,7 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
               </div>
 
               {/* Loading state for details */}
-              {(!selectedRecord.checklistAnswers || selectedRecord.checklistAnswers.length === 0) && (
+              {isLoadingDetails && (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-industrial-blue mr-2" />
                   <span className="text-gray-600">Carregando detalhes...</span>
@@ -346,14 +356,14 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
               )}
 
               {/* Answers */}
-              {selectedRecord.checklistAnswers && selectedRecord.checklistAnswers.length > 0 && (
+              {!isLoadingDetails && selectedRecordDetails && selectedRecordDetails.checklistAnswers.length > 0 && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <FileText className="w-5 h-5" />
-                    Respostas do Checklist ({selectedRecord.checklistAnswers.length} itens):
+                    Respostas do Checklist ({selectedRecordDetails.checklistAnswers.length} itens):
                   </h4>
                   <div className="space-y-4">
-                    {transformAnswersForDisplay(selectedRecord.checklistAnswers, selectedRecord.photos).map((answer, index) => (
+                    {transformAnswersForDisplay(selectedRecordDetails.checklistAnswers, selectedRecordDetails.photos).map((answer, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-white">
                         <div className="space-y-3">
                           {/* Question */}
@@ -407,6 +417,14 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Empty state for no answers */}
+              {!isLoadingDetails && selectedRecordDetails && selectedRecordDetails.checklistAnswers.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p>Nenhuma resposta encontrada para este checklist.</p>
                 </div>
               )}
 
