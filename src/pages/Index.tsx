@@ -147,7 +147,7 @@ const Index = () => {
     await addChecklist({
       equipmentId: data.equipmentId || null,
       equipmentCode: eq?.code || (isLiftingAccessory ? data.checklistType : data.equipmentNumber || 'N/A'),
-      equipmentModel: eq ? `${eq.brand} ${eq.model}` : data.checklistType,
+      equipmentModel: eq ? `${eq.brand} ${eq.model}` : data.equipmentModel,
       operatorName: user.name,
       operatorId: user.matricula || user.id,
       answers: data.answers,
@@ -155,7 +155,12 @@ const Index = () => {
       photos: data.photos,
       checklistType: data.checklistType,
       operationDescription: data.operationDescription,
-      loadDescription: data.loadDescription
+      loadDescription: data.loadDescription,
+      location: data.location,
+      unit: data.unit,
+      equipmentSeries: data.equipmentSeries,
+      equipmentNumber: data.equipmentNumber,
+      hourMeter: data.hourMeter
     });
     
     // Volta para seleção de tipo
