@@ -573,11 +573,33 @@ const ChecklistForm = ({
                 // Auto-preencher dados do equipamento selecionado
                 const equipment = equipments.find(eq => eq.id === value);
                 if (equipment) {
-                  setEquipmentModel(equipment.model.toLowerCase().includes('eletrica') ? 'eletrica' : 'combustao');
-                  setLocation(equipment.location || equipment.sector);
+                  // Determinar tipo do modelo
+                  const modelLower = equipment.model.toLowerCase();
+                  if (modelLower.includes('eletrica') || modelLower.includes('elétrica') || modelLower.includes('electric')) {
+                    setEquipmentModel('eletrica');
+                  } else {
+                    setEquipmentModel('combustao');
+                  }
+                  
+                  // Preencher location
+                  setLocation(equipment.location || equipment.sector || '');
+                  
+                  // Preencher série do equipamento
                   setEquipmentSeries(equipment.equipmentSeries || `${equipment.brand}-${equipment.model}`);
+                  
+                  // Preencher número do equipamento
                   setEquipmentNumber(equipment.equipmentNumber || equipment.code);
-                  setUnit(equipment.unit as "01" | "02" | "03" || "01");
+                  
+                  // Preencher unidade
+                  const unitValue = equipment.unit;
+                  if (unitValue === '01' || unitValue === '02' || unitValue === '03') {
+                    setUnit(unitValue);
+                  } else {
+                    setUnit('01');
+                  }
+                  
+                  // Preencher horímetro
+                  setHourMeter(equipment.hourMeter || '');
                 }
               }} disabled={qrScanned}>
                     <SelectTrigger>
