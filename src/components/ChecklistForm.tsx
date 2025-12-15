@@ -601,7 +601,7 @@ const ChecklistForm = ({
                   // Preencher horímetro
                   setHourMeter(equipment.hourMeter || '');
                 }
-              }} disabled={qrScanned}>
+              }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o equipamento" />
                     </SelectTrigger>
@@ -618,7 +618,7 @@ const ChecklistForm = ({
 
                   <div className="space-y-2">
                     <Label htmlFor="location">Local *</Label>
-                    <Select value={location} onValueChange={setLocation} disabled={qrScanned}>
+                    <Select value={location} onValueChange={setLocation}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -637,15 +637,15 @@ const ChecklistForm = ({
                     <Label>Unidade *</Label>
                     <div className="flex gap-4">
                       <label className="flex items-center space-x-2">
-                        <input type="radio" value="01" checked={unit === "01"} onChange={e => setUnit(e.target.value as "01")} disabled={qrScanned} />
+                        <input type="radio" value="01" checked={unit === "01"} onChange={e => setUnit(e.target.value as "01")} />
                         <span>01</span>
                       </label>
                       <label className="flex items-center space-x-2">
-                        <input type="radio" value="02" checked={unit === "02"} onChange={e => setUnit(e.target.value as "02")} disabled={qrScanned} />
+                        <input type="radio" value="02" checked={unit === "02"} onChange={e => setUnit(e.target.value as "02")} />
                         <span>02</span>
                       </label>
                       <label className="flex items-center space-x-2">
-                        <input type="radio" value="03" checked={unit === "03"} onChange={e => setUnit(e.target.value as "03")} disabled={qrScanned} />
+                        <input type="radio" value="03" checked={unit === "03"} onChange={e => setUnit(e.target.value as "03")} />
                         <span>03</span>
                       </label>
                     </div>
@@ -655,11 +655,11 @@ const ChecklistForm = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="series">Série da Empilhadeira *</Label>
-                    <Input id="series" value={equipmentSeries} onChange={e => setEquipmentSeries(e.target.value)} placeholder="Ex: ABC123" disabled={qrScanned} />
+                    <Input id="series" value={equipmentSeries} onChange={e => setEquipmentSeries(e.target.value)} placeholder="Ex: ABC123" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="number">Número de Identificação *</Label>
-                    <Input id="number" value={equipmentNumber} onChange={e => setEquipmentNumber(e.target.value)} placeholder="Ex: EMP-001" disabled={qrScanned} />
+                    <Input id="number" value={equipmentNumber} onChange={e => setEquipmentNumber(e.target.value)} placeholder="Ex: EMP-001" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="hour-meter">Horímetro Atual *</Label>
