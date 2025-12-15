@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/hooks/useSupabaseAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useEquipmentOptimized } from '@/hooks/useEquipment.optimized';
+import { useEquipment } from '@/hooks/useEquipment';
 import { useChecklists } from '@/hooks/useChecklists';
 import { LoginForm } from '@/components/LoginForm';
 import Layout from '@/components/Layout';
@@ -31,7 +31,7 @@ const LoadingFallback = () => (
 const Index = () => {
   const { user, isLoading } = useAuth();
   const { canAccess } = usePermissions(user);
-  const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment, refreshEquipments } = useEquipmentOptimized();
+  const { equipments, isLoading: isLoadingEquipments, addEquipment, updateEquipment, refreshEquipments } = useEquipment();
   const { checklistRecords, isLoading: isLoadingChecklists, addChecklist, approveChecklist, rejectChecklist } = useChecklists();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedChecklistType, setSelectedChecklistType] = useState<ChecklistType | null>(null);
