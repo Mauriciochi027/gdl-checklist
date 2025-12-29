@@ -114,6 +114,12 @@ export const LoginForm = () => {
       return;
     }
 
+    // Validar matrícula
+    if (!signupMatricula.trim()) {
+      setSignupError('Matrícula é obrigatória');
+      return;
+    }
+
     // Validar confirmação de senha
     if (signupPassword !== signupConfirmPassword) {
       setSignupError('As senhas não coincidem');
@@ -281,7 +287,7 @@ export const LoginForm = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-matricula">Matrícula (opcional)</Label>
+                    <Label htmlFor="signup-matricula">Matrícula *</Label>
                     <Input 
                       id="signup-matricula" 
                       type="text" 
@@ -290,6 +296,7 @@ export const LoginForm = () => {
                       onChange={e => setSignupMatricula(e.target.value)} 
                       disabled={isSignupLoading}
                       maxLength={20}
+                      required
                     />
                   </div>
 
