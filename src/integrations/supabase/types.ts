@@ -386,6 +386,94 @@ export type Database = {
         }
         Relationships: []
       }
+      tire_measurements: {
+        Row: {
+          created_at: string | null
+          depth: number
+          id: string
+          measured_at: string
+          measured_by: string | null
+          notes: string | null
+          tire_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          depth: number
+          id?: string
+          measured_at?: string
+          measured_by?: string | null
+          notes?: string | null
+          tire_id: string
+        }
+        Update: {
+          created_at?: string | null
+          depth?: number
+          id?: string
+          measured_at?: string
+          measured_by?: string | null
+          notes?: string | null
+          tire_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tire_measurements_tire_id_fkey"
+            columns: ["tire_id"]
+            isOneToOne: false
+            referencedRelation: "tires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tires: {
+        Row: {
+          code: string
+          created_at: string | null
+          equipment_id: string | null
+          id: string
+          initial_depth: number | null
+          initial_hour_meter: number | null
+          model: string | null
+          mounted_at: string | null
+          position: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          equipment_id?: string | null
+          id?: string
+          initial_depth?: number | null
+          initial_hour_meter?: number | null
+          model?: string | null
+          mounted_at?: string | null
+          position?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          equipment_id?: string | null
+          id?: string
+          initial_depth?: number | null
+          initial_hour_meter?: number | null
+          model?: string | null
+          mounted_at?: string | null
+          position?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tires_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           created_at: string | null

@@ -36,6 +36,12 @@ export const LazyChecklistForm = lazy(() =>
   }))
 );
 
+export const LazyTireManagement = lazy(() => 
+  import('@/components/TireManagement').then(module => ({
+    default: module.default
+  }))
+);
+
 /**
  * Fallback padrão para lazy components
  */
