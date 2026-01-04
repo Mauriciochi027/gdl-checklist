@@ -1,4 +1,4 @@
-import { Truck, ClipboardCheck, BarChart3, Settings, Users, LogOut, Activity, LayoutDashboard, CheckSquare, Menu, X } from "lucide-react";
+import { Truck, ClipboardCheck, BarChart3, Settings, Users, LogOut, Activity, LayoutDashboard, CheckSquare, Menu, X, CircleDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useSupabaseAuth";
@@ -69,6 +69,12 @@ const Layout = ({
       label: 'Histórico',
       icon: Settings,
       permission: 'history' as const
+    },
+    {
+      id: 'tires',
+      label: 'Pneus',
+      icon: CircleDot,
+      permission: 'tires' as const
     }
   ];
 

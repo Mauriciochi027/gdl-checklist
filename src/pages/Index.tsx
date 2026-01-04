@@ -16,7 +16,8 @@ import {
   LazyChecklistHistory, 
   LazyApprovalsPage, 
   LazyUserManagement, 
-  LazyEquipmentManagement 
+  LazyEquipmentManagement,
+  LazyTireManagement
 } from '@/lib/lazyComponents';
 
 const LoadingFallback = () => (
@@ -300,6 +301,12 @@ const Index = () => {
               userProfile={user?.profile}
               currentUser={user}
             />
+          </Suspense>
+        );
+      case 'tires':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LazyTireManagement />
           </Suspense>
         );
       default:

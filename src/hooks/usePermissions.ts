@@ -10,7 +10,8 @@ export type Permission =
   | 'approvals'
   | 'equipments'
   | 'equipment-management'
-  | 'users';
+  | 'users'
+  | 'tires';
 
 interface UserPermissions {
   permissions: Permission[];
@@ -47,7 +48,8 @@ export const usePermissions = (user: User | null): UserPermissions => {
             'equipment-management',
             'checklist',
             'approvals',
-            'history'
+            'history',
+            'tires'
           ]);
           setIsLoading(false);
           return;
@@ -152,7 +154,7 @@ const getDefaultPermissionsByProfile = (profile: string): Permission[] => {
     operador: ['dashboard', 'checklist', 'history', 'status'],
     mecanico: ['dashboard', 'status', 'equipments', 'equipment-management', 'checklist', 'approvals', 'history'],
     gestor: ['dashboard', 'status', 'equipments', 'equipment-management', 'checklist', 'approvals', 'history'],
-    admin: ['dashboard', 'users', 'status', 'equipments', 'equipment-management', 'checklist', 'approvals', 'history']
+    admin: ['dashboard', 'users', 'status', 'equipments', 'equipment-management', 'checklist', 'approvals', 'history', 'tires']
   };
 
   return defaults[profile] || ['dashboard'];
