@@ -64,24 +64,42 @@ serve(async (req) => {
       throw new Error('Missing required fields: userId and newPassword');
     }
 
-    // Validate password length
-    if (newPassword.length < 8) {
-      throw new Error('Password must be at least 8 characters long');
+    // Validate password length (12+ chars as per NIST recommendations)
+    if (newPassword.length < 12) {
+      throw new Error('A senha deve ter no mínimo 12 caracteres');
     }
 
-    // Validate password complexity
+    // Validate password complexity - require uppercase, lowercase, number, and special character
     const hasUpperCase = /[A-Z]/.test(newPassword);
     const hasLowerCase = /[a-z]/.test(newPassword);
     const hasNumbers = /\d/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword);
 
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-      throw new Error('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+      throw new Error('A senha deve conter letra maiúscula, minúscula, número e caractere especial');
     }
 
-    // Check for common weak passwords
-    const weakPasswords = ['password', '12345678', 'qwerty123', 'admin123', 'senha123', 'abc12345'];
-    if (weakPasswords.includes(newPassword.toLowerCase())) {
-      throw new Error('Password is too common. Please choose a stronger password');
+    // Check for sequential or repeated characters (e.g., 'aaa', '123')
+    if (/(.)(\1){2,}/.test(newPassword)) {
+      throw new Error('A senha não pode conter caracteres repetidos em sequência');
+    }
+
+    // Check for obvious sequential patterns
+    if (/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789|890)/i.test(newPassword)) {
+      throw new Error('A senha não pode conter sequências óbvias');
+    }
+
+    // Expanded weak password patterns
+    const weakPasswordPatterns = [
+      'password', 'senha', 'admin', 'qwerty', 'welcome', 'letmein',
+      'login', 'master', 'access', 'dragon', 'monkey', 'shadow',
+      'sunshine', 'princess', 'football', 'baseball', 'iloveyou',
+      'trustno1', 'superman', 'batman', 'abcdef', 'abc123'
+    ];
+
+    const lowerPassword = newPassword.toLowerCase();
+    if (weakPasswordPatterns.some(pattern => lowerPassword.includes(pattern))) {
+      throw new Error('A senha contém padrões fracos conhecidos. Escolha uma senha mais forte');
     }
 
     // Update the user's password
