@@ -22,7 +22,10 @@ const usernameSchema = z.string()
   .transform(val => val.toLowerCase());
 
 const passwordSchema = z.string()
-  .min(6, 'Senha deve ter pelo menos 6 caracteres')
+  .min(8, 'Senha deve ter pelo menos 8 caracteres')
+  .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
+  .regex(/[a-z]/, 'Senha deve conter pelo menos uma letra minúscula')
+  .regex(/\d/, 'Senha deve conter pelo menos um número')
   .max(100, 'Senha muito longa');
 
 const nameSchema = z.string()

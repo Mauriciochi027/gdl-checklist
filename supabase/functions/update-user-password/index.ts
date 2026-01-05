@@ -65,8 +65,23 @@ serve(async (req) => {
     }
 
     // Validate password length
-    if (newPassword.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+    if (newPassword.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
+    }
+
+    // Validate password complexity
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumbers = /\d/.test(newPassword);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      throw new Error('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+    }
+
+    // Check for common weak passwords
+    const weakPasswords = ['password', '12345678', 'qwerty123', 'admin123', 'senha123', 'abc12345'];
+    if (weakPasswords.includes(newPassword.toLowerCase())) {
+      throw new Error('Password is too common. Please choose a stronger password');
     }
 
     // Update the user's password
