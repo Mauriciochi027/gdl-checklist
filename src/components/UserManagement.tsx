@@ -337,35 +337,6 @@ const UserManagement = ({
     setNewPassword('');
   };
 
-  const validatePassword = (password: string): string | null => {
-    if (password.length < 12) {
-      return 'A senha deve ter no mínimo 12 caracteres.';
-    }
-    if (!/[A-Z]/.test(password)) {
-      return 'A senha deve conter pelo menos uma letra maiúscula.';
-    }
-    if (!/[a-z]/.test(password)) {
-      return 'A senha deve conter pelo menos uma letra minúscula.';
-    }
-    if (!/\d/.test(password)) {
-      return 'A senha deve conter pelo menos um número.';
-    }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      return 'A senha deve conter pelo menos um caractere especial.';
-    }
-    if (/(.)(\1){2,}/.test(password)) {
-      return 'A senha não pode conter caracteres repetidos em sequência.';
-    }
-    if (/(?:abc|bcd|cde|def|efg|123|234|345|456|567|678|789)/i.test(password)) {
-      return 'A senha não pode conter sequências óbvias.';
-    }
-    const weakPatterns = ['password', 'senha', 'admin', 'qwerty', 'welcome', 'letmein'];
-    if (weakPatterns.some(pattern => password.toLowerCase().includes(pattern))) {
-      return 'A senha contém padrões fracos conhecidos.';
-    }
-    return null;
-  };
-
   const handleChangePassword = async () => {
     if (!selectedUser || !newPassword) {
       toast({
@@ -376,11 +347,10 @@ const UserManagement = ({
       return;
     }
 
-    const validationError = validatePassword(newPassword);
-    if (validationError) {
+    if (newPassword.length < 6) {
       toast({
         title: 'Erro',
-        description: validationError,
+        description: 'A senha deve ter no mínimo 6 caracteres.',
         variant: 'destructive',
       });
       return;
@@ -864,7 +834,7 @@ const UserManagement = ({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                A senha deve ter no mínimo 12 caracteres, incluindo maiúscula, minúscula, número e caractere especial
+                A senha deve ter no mínimo 6 caracteres
               </p>
             </div>
           </div>
