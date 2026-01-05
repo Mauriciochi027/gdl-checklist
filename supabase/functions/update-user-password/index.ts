@@ -64,42 +64,9 @@ serve(async (req) => {
       throw new Error('Missing required fields: userId and newPassword');
     }
 
-    // Validate password length (12+ chars as per NIST recommendations)
-    if (newPassword.length < 12) {
-      throw new Error('A senha deve ter no mínimo 12 caracteres');
-    }
-
-    // Validate password complexity - require uppercase, lowercase, number, and special character
-    const hasUpperCase = /[A-Z]/.test(newPassword);
-    const hasLowerCase = /[a-z]/.test(newPassword);
-    const hasNumbers = /\d/.test(newPassword);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
-      throw new Error('A senha deve conter letra maiúscula, minúscula, número e caractere especial');
-    }
-
-    // Check for sequential or repeated characters (e.g., 'aaa', '123')
-    if (/(.)(\1){2,}/.test(newPassword)) {
-      throw new Error('A senha não pode conter caracteres repetidos em sequência');
-    }
-
-    // Check for obvious sequential patterns
-    if (/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789|890)/i.test(newPassword)) {
-      throw new Error('A senha não pode conter sequências óbvias');
-    }
-
-    // Expanded weak password patterns
-    const weakPasswordPatterns = [
-      'password', 'senha', 'admin', 'qwerty', 'welcome', 'letmein',
-      'login', 'master', 'access', 'dragon', 'monkey', 'shadow',
-      'sunshine', 'princess', 'football', 'baseball', 'iloveyou',
-      'trustno1', 'superman', 'batman', 'abcdef', 'abc123'
-    ];
-
-    const lowerPassword = newPassword.toLowerCase();
-    if (weakPasswordPatterns.some(pattern => lowerPassword.includes(pattern))) {
-      throw new Error('A senha contém padrões fracos conhecidos. Escolha uma senha mais forte');
+    // Validate password length (minimum 6 characters)
+    if (newPassword.length < 6) {
+      throw new Error('A senha deve ter no mínimo 6 caracteres');
     }
 
     // Update the user's password
