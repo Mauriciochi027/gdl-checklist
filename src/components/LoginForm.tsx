@@ -22,11 +22,27 @@ const usernameSchema = z.string()
   .transform(val => val.toLowerCase());
 
 const passwordSchema = z.string()
-  .min(8, 'Senha deve ter pelo menos 8 caracteres')
+  .min(12, 'Senha deve ter pelo menos 12 caracteres')
+  .max(100, 'Senha muito longa')
   .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
   .regex(/[a-z]/, 'Senha deve conter pelo menos uma letra minúscula')
   .regex(/\d/, 'Senha deve conter pelo menos um número')
-  .max(100, 'Senha muito longa');
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Senha deve conter pelo menos um caractere especial')
+  .refine(
+    (val) => !/(.)(\1){2,}/.test(val),
+    'Senha não pode conter caracteres repetidos em sequência'
+  )
+  .refine(
+    (val) => !/(?:abc|bcd|cde|def|efg|123|234|345|456|567|678|789)/i.test(val),
+    'Senha não pode conter sequências óbvias'
+  )
+  .refine(
+    (val) => {
+      const weakPatterns = ['password', 'senha', 'admin', 'qwerty', 'welcome', 'letmein'];
+      return !weakPatterns.some(pattern => val.toLowerCase().includes(pattern));
+    },
+    'Senha contém padrões fracos conhecidos'
+  );
 
 const nameSchema = z.string()
   .min(2, 'Nome deve ter pelo menos 2 caracteres')
