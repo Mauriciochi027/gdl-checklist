@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PhotoGrid } from "@/components/ui/photo-viewer";
+import { useChecklistDetails } from "@/hooks/useChecklistDetails";
 import { 
   Clock, 
   CheckCircle, 
@@ -21,7 +22,8 @@ import {
   Calendar,
   FileText,
   Camera,
-  PenTool
+  PenTool,
+  Loader2
 } from "lucide-react";
 
 import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
@@ -52,9 +54,14 @@ interface ApprovalsPageProps {
 
 const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, currentUser }: ApprovalsPageProps) => {
   const { toast } = useToast();
+  const { loadChecklistDetails, loading: detailsLoading } = useChecklistDetails();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [selectedRecord, setSelectedRecord] = useState<ChecklistRecord | null>(null);
+  const [recordDetails, setRecordDetails] = useState<{
+    checklistAnswers: ChecklistAnswer[];
+    photos: Record<string, string[]>;
+  } | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
@@ -145,6 +152,30 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
     const dateStr = date.toLocaleDateString('pt-BR');
     const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     return { dateStr, timeStr };
+  };
+
+  // Carregar detalhes quando o dialog de detalhes abrir
+  useEffect(() => {
+    const loadDetails = async () => {
+      if (isDetailDialogOpen && selectedRecord && !recordDetails) {
+        const details = await loadChecklistDetails(selectedRecord.id);
+        if (details) {
+          setRecordDetails({
+            checklistAnswers: details.checklistAnswers,
+            photos: details.photos
+          });
+        }
+      }
+    };
+    loadDetails();
+  }, [isDetailDialogOpen, selectedRecord, loadChecklistDetails, recordDetails]);
+
+  // Limpar detalhes quando fechar dialog
+  const handleCloseDetailDialog = (open: boolean) => {
+    setIsDetailDialogOpen(open);
+    if (!open) {
+      setRecordDetails(null);
+    }
   };
 
   return (
@@ -296,7 +327,7 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
       )}
 
       {/* Detail Dialog */}
-      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+      <Dialog open={isDetailDialogOpen} onOpenChange={handleCloseDetailDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Checklist</DialogTitle>
@@ -321,15 +352,23 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
                 </div>
               </div>
 
+              {/* Loading State */}
+              {detailsLoading[selectedRecord.id] && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-industrial-blue" />
+                  <span className="ml-2 text-gray-600">Carregando respostas...</span>
+                </div>
+              )}
+
               {/* Answers */}
-              {selectedRecord.checklistAnswers && (
+              {!detailsLoading[selectedRecord.id] && recordDetails?.checklistAnswers && recordDetails.checklistAnswers.length > 0 && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <FileText className="w-5 h-5" />
                     Respostas do Checklist:
                   </h4>
                   <div className="space-y-4">
-                    {transformAnswersForDisplay(selectedRecord.checklistAnswers, selectedRecord.photos).map((answer, index) => (
+                    {transformAnswersForDisplay(recordDetails.checklistAnswers, recordDetails.photos).map((answer, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-white">
                         <div className="space-y-3">
                           {/* Question */}
@@ -383,6 +422,14 @@ const ApprovalsPage = ({ records, isLoading, onApproveRecord, onRejectRecord, cu
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* No answers message */}
+              {!detailsLoading[selectedRecord.id] && (!recordDetails?.checklistAnswers || recordDetails.checklistAnswers.length === 0) && (
+                <div className="text-center py-6 text-gray-500">
+                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Nenhuma resposta encontrada para este checklist.</p>
                 </div>
               )}
 
