@@ -10,9 +10,12 @@ export const useChecklists = () => {
   const { toast } = useToast();
 
   // Carrega apenas os registros principais primeiro, depois carrega detalhes sob demanda
-  const fetchChecklists = useCallback(async () => {
+  // COM RETRY para conexões instáveis (4G)
+  const fetchChecklists = useCallback(async (retryCount = 0) => {
+    const maxRetries = 3;
+    
     try {
-      console.log('[useChecklists] Iniciando carregamento...');
+      console.log('[useChecklists] Iniciando carregamento...', retryCount > 0 ? `(tentativa ${retryCount + 1})` : '');
       
       // Query otimizada - apenas campos essenciais
       const { data: records, error } = await supabase
@@ -23,6 +26,15 @@ export const useChecklists = () => {
 
       if (error) {
         console.error('[useChecklists] Erro na query:', error);
+        
+        // Retry em caso de erro de rede
+        if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.code === 'PGRST301')) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+          console.log(`[useChecklists] Tentando novamente em ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchChecklists(retryCount + 1);
+        }
+        
         throw error;
       }
 
@@ -39,11 +51,20 @@ export const useChecklists = () => {
 
       console.log('[useChecklists] Checklists carregados:', transformedRecords.length);
       setChecklistRecords(transformedRecords);
-    } catch (error) {
+    } catch (error: any) {
       console.error('[useChecklists] Erro:', error);
+      
+      // Retry em caso de erro genérico de rede
+      if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.name === 'TypeError')) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+        console.log(`[useChecklists] Tentando novamente em ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchChecklists(retryCount + 1);
+      }
+      
       toast({
         title: "Erro ao carregar checklists",
-        description: "Não foi possível carregar os registros de checklist.",
+        description: "Verifique sua conexão e tente novamente.",
         variant: "destructive"
       });
       setChecklistRecords([]);

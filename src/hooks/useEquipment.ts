@@ -11,17 +11,21 @@ export const useEquipment = () => {
   const hasLoadedRef = useRef(false);
   const isLoadingRef = useRef(false);
 
-  // Fetch all equipment - com proteção contra chamadas múltiplas
-  const fetchEquipments = useCallback(async (showToastOnError = true) => {
+  // Fetch all equipment - com proteção contra chamadas múltiplas e retry para 4G
+  const fetchEquipments = useCallback(async (showToastOnError = true, retryCount = 0) => {
+    const maxRetries = 3;
+    
     // Evitar chamadas múltiplas simultâneas
-    if (isLoadingRef.current) {
+    if (isLoadingRef.current && retryCount === 0) {
       console.log('[useEquipment] Já está carregando, ignorando...');
       return;
     }
 
     try {
-      isLoadingRef.current = true;
-      console.log('[useEquipment] Carregando equipamentos...');
+      if (retryCount === 0) {
+        isLoadingRef.current = true;
+      }
+      console.log('[useEquipment] Carregando equipamentos...', retryCount > 0 ? `(tentativa ${retryCount + 1})` : '');
       
       // Verificar sessão antes de fazer query
       const { data: { session } } = await supabase.auth.getSession();
@@ -29,6 +33,7 @@ export const useEquipment = () => {
         console.log('[useEquipment] Sem sessão, ignorando fetch');
         setEquipments([]);
         setIsLoading(false);
+        isLoadingRef.current = false;
         return;
       }
       
@@ -39,6 +44,15 @@ export const useEquipment = () => {
 
       if (error) {
         console.error('[useEquipment] Erro na query:', error);
+        
+        // Retry em caso de erro de rede
+        if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.code === 'PGRST301')) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+          console.log(`[useEquipment] Tentando novamente em ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchEquipments(showToastOnError, retryCount + 1);
+        }
+        
         throw error;
       }
 
@@ -48,10 +62,19 @@ export const useEquipment = () => {
       hasLoadedRef.current = true;
     } catch (error: any) {
       console.error('[useEquipment] ERRO:', error);
+      
+      // Retry em caso de erro genérico de rede
+      if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.name === 'TypeError')) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+        console.log(`[useEquipment] Tentando novamente em ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchEquipments(showToastOnError, retryCount + 1);
+      }
+      
       if (showToastOnError) {
         toast({
           title: "Erro ao carregar equipamentos",
-          description: error.message || "Não foi possível carregar a lista de equipamentos.",
+          description: "Verifique sua conexão e tente novamente.",
           variant: "destructive"
         });
       }
