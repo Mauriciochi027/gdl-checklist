@@ -36,10 +36,12 @@ export const useSupabaseAuthState = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // Fetch user profile from database - MEMOIZADO para evitar loops
-  const fetchUserProfile = useCallback(async (userId: string): Promise<User | null> => {
+  // Fetch user profile from database - COM RETRY para conexões instáveis (4G)
+  const fetchUserProfile = useCallback(async (userId: string, retryCount = 0): Promise<User | null> => {
+    const maxRetries = 3;
+    
     try {
-      console.log('[useAuth] Buscando perfil do usuário:', userId);
+      console.log('[useAuth] Buscando perfil do usuário:', userId, retryCount > 0 ? `(tentativa ${retryCount + 1})` : '');
       
       const { data, error } = await supabase
         .from('profiles')
@@ -49,6 +51,15 @@ export const useSupabaseAuthState = () => {
 
       if (error) {
         console.error('[useAuth] Erro ao buscar perfil:', error);
+        
+        // Retry em caso de erro de rede
+        if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.code === 'PGRST301')) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+          console.log(`[useAuth] Tentando novamente em ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchUserProfile(userId, retryCount + 1);
+        }
+        
         return null;
       }
 
@@ -59,8 +70,17 @@ export const useSupabaseAuthState = () => {
 
       console.log('[useAuth] Nenhum perfil encontrado');
       return null;
-    } catch (error) {
+    } catch (error: any) {
       console.error('[useAuth] Erro inesperado ao buscar perfil:', error);
+      
+      // Retry em caso de erro de rede
+      if (retryCount < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+        console.log(`[useAuth] Tentando novamente em ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchUserProfile(userId, retryCount + 1);
+      }
+      
       return null;
     }
   }, []);

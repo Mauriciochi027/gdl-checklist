@@ -14,7 +14,14 @@ const queryClient = new QueryClient({
       refetchOnReconnect: true,
       staleTime: 0,
       gcTime: 1000 * 60 * 2, // 2 minutos - reduzido para PWA
-      retry: 1,
+      retry: 3, // Aumentado para conexões instáveis (4G)
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Backoff exponencial
+      networkMode: 'offlineFirst', // Tenta cache primeiro em conexões instáveis
+    },
+    mutations: {
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      networkMode: 'offlineFirst',
     },
   },
 });
