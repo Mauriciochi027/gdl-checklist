@@ -599,62 +599,88 @@ const ChecklistHistory = ({ records, isLoading }: ChecklistHistoryProps) => {
               {/* Answers */}
               {selectedRecord.checklistAnswers && selectedRecord.checklistAnswers.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2 sticky top-0 bg-white py-2 z-10">
+                  <h4 className="font-medium text-gray-900 mb-4 flex items-center gap-2 sticky top-0 bg-white py-2 z-10 print:static">
                     <FileText className="w-5 h-5" />
                     Respostas do Checklist:
                   </h4>
                   <div className="space-y-3">
-                    {transformAnswersForDisplay(selectedRecord.checklistAnswers, selectedRecord.photos).map((answer, index) => (
-                      <div key={index} className="border rounded-lg p-3 bg-white hover:shadow-sm transition-shadow">
-                        <div className="space-y-2">
-                          <div>
-                            <h5 className="font-semibold text-gray-900 text-sm">
-                              {index + 1}. {answer.question}
-                            </h5>
-                          </div>
-                          
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <div className="flex-1">
-                              <span className="text-xs text-gray-500">Resposta:</span>
-                              <p className="text-gray-900 font-medium">{answer.answer}</p>
+                    {transformAnswersForDisplay(selectedRecord.checklistAnswers, selectedRecord.photos).map((answer, index) => {
+                      const hasPhotos = answer.photos && answer.photos.length > 0;
+                      return (
+                        <div 
+                          key={index} 
+                          className={`border rounded-lg p-3 bg-white hover:shadow-sm transition-shadow print-answer-item ${hasPhotos ? 'has-photos border-amber-400 border-2' : ''}`}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <h5 className="font-semibold text-gray-900 text-sm flex-1">
+                                {index + 1}. {answer.question}
+                              </h5>
+                              {hasPhotos && (
+                                <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded print-photo-indicator">
+                                  <Camera className="w-3 h-3" />
+                                  {answer.photos!.length} foto{answer.photos!.length > 1 ? 's' : ''}
+                                </span>
+                              )}
                             </div>
-                             <Badge 
-                               variant={answer.conformidade === 'conforme' ? 'default' : 'destructive'}
-                               className={`${
-                                 answer.conformidade === 'conforme' 
-                                   ? 'bg-safety-green text-white' 
+                            
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                              <div className="flex-1">
+                                <span className="text-xs text-gray-500">Resposta:</span>
+                                <p className="text-gray-900 font-medium">{answer.answer}</p>
+                              </div>
+                               <Badge 
+                                 variant={answer.conformidade === 'conforme' ? 'default' : 'destructive'}
+                                 className={`${
+                                   answer.conformidade === 'conforme' 
+                                     ? 'bg-safety-green text-white print-badge-conforme' 
+                                     : answer.conformidade === 'nao_conforme'
+                                       ? 'bg-safety-red text-white print-badge-nao-conforme'
+                                       : 'bg-gray-500 text-white'
+                                 } shrink-0`}
+                               >
+                                 {answer.conformidade === 'conforme' 
+                                   ? 'Conforme' 
                                    : answer.conformidade === 'nao_conforme'
-                                     ? 'bg-safety-red text-white'
-                                     : 'bg-gray-500 text-white'
-                               } shrink-0`}
-                             >
-                               {answer.conformidade === 'conforme' 
-                                 ? 'Conforme' 
-                                 : answer.conformidade === 'nao_conforme'
-                                   ? 'Não Conforme'
-                                   : 'N/A'}
-                             </Badge>
+                                     ? 'Não Conforme'
+                                     : 'N/A'}
+                               </Badge>
+                            </div>
+
+                            {hasPhotos && (
+                              <div className="border-t-2 border-amber-300 pt-3 mt-3 bg-amber-50 -mx-3 px-3 pb-3 rounded-b-lg print-photo-section">
+                                <h6 className="text-sm font-bold text-amber-800 mb-3 flex items-center gap-2">
+                                  <Camera className="w-4 h-4" />
+                                  📷 FOTOS ANEXADAS ({answer.photos!.length}):
+                                </h6>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 print-photo-grid">
+                                  {answer.photos!.map((photo, photoIndex) => (
+                                    <div key={photoIndex} className="print-photo-item border-2 border-gray-300 rounded-lg overflow-hidden shadow-md bg-white">
+                                      <img 
+                                        src={photo} 
+                                        alt={`Foto ${photoIndex + 1} - ${answer.question}`}
+                                        className="w-full h-32 md:h-40 object-cover print:h-auto print:max-h-48"
+                                        loading="lazy"
+                                      />
+                                      <div className="text-center text-xs py-1 bg-gray-100 font-medium text-gray-700">
+                                        Foto {photoIndex + 1}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {answer.observation && (
+                              <div className="border-t pt-2 mt-2">
+                                <span className="text-xs font-medium text-gray-700">Observação:</span>
+                                <p className="text-sm text-gray-600 mt-1">{answer.observation}</p>
+                              </div>
+                            )}
                           </div>
-
-                          {answer.photos && answer.photos.length > 0 && (
-                            <div className="border-t pt-2 mt-2">
-                              <h6 className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
-                                <Camera className="w-3 h-3" />
-                                Fotos Anexadas ({answer.photos.length}):
-                              </h6>
-                              <PhotoGrid photos={answer.photos} />
-                            </div>
-                          )}
-
-                          {answer.observation && (
-                            <div className="border-t pt-2 mt-2">
-                              <span className="text-xs font-medium text-gray-700">Observação:</span>
-                              <p className="text-sm text-gray-600 mt-1">{answer.observation}</p>
-                            </div>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

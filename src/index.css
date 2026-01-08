@@ -148,12 +148,13 @@
 @media print {
   @page {
     size: A4;
-    margin: 1.5cm;
+    margin: 1cm;
   }
 
   body {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+    font-size: 11pt;
   }
 
   .print-only {
@@ -185,7 +186,8 @@
   }
 
   /* Better page breaks */
-  .space-y-4 > * {
+  .space-y-4 > *,
+  .space-y-3 > * {
     page-break-inside: avoid;
   }
 
@@ -202,10 +204,58 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* Optimize images for print */
+  /* Enhanced image styling for print */
   img {
     max-width: 100%;
     page-break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Photo grid styling for print */
+  .print-photo-section {
+    page-break-inside: avoid;
+    margin-top: 8px;
+    padding: 12px;
+    background: #fff8dc !important;
+    border: 2px solid #d4a574 !important;
+    border-radius: 8px;
+  }
+
+  .print-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .print-photo-item {
+    border: 2px solid #333;
+    border-radius: 4px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .print-photo-item img {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: contain;
+    display: block;
+  }
+
+  /* Checklist answer styling for print */
+  .print-answer-item {
+    page-break-inside: avoid;
+    border: 1px solid #ccc !important;
+    margin-bottom: 8px;
+    background: white !important;
+  }
+
+  .print-answer-item.has-photos {
+    border: 2px solid #d4a574 !important;
+    background: #fffef5 !important;
   }
 
   /* Better borders and spacing for print */
@@ -215,5 +265,40 @@
 
   .rounded-lg {
     border: 1px solid #ddd;
+  }
+
+  /* Print header styling */
+  .print-header {
+    border-bottom: 3px solid #333;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Status badges for print */
+  .print-badge-conforme {
+    background: #22c55e !important;
+    color: white !important;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+
+  .print-badge-nao-conforme {
+    background: #ef4444 !important;
+    color: white !important;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+
+  /* Photo indicator styling */
+  .print-photo-indicator {
+    background: #fef3c7 !important;
+    border: 2px solid #f59e0b !important;
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #92400e;
   }
 }
