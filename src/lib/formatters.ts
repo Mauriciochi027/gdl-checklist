@@ -53,3 +53,13 @@ export const formatNumber = (num: number): string => {
 export const formatPercentage = (value: number, decimals: number = 0): string => {
   return `${value.toFixed(decimals)}%`;
 };
+
+/**
+ * Formata valor monetário no padrão brasileiro (R$)
+ */
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+};
