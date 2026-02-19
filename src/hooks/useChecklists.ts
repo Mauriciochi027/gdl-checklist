@@ -38,14 +38,41 @@ export const useChecklists = () => {
         throw error;
       }
 
+      // Fetch approvals and rejections in parallel
+      const recordIds = records?.map(r => r.id) || [];
+      
+      const [approvalsResult, rejectionsResult] = await Promise.all([
+        recordIds.length > 0 
+          ? supabase.from('checklist_approvals').select('*').in('checklist_record_id', recordIds)
+          : Promise.resolve({ data: [], error: null }),
+        recordIds.length > 0
+          ? supabase.from('checklist_rejections').select('*').in('checklist_record_id', recordIds)
+          : Promise.resolve({ data: [], error: null })
+      ]);
+
+      // Group approvals and rejections by record id
+      const approvalsByRecord = new Map<string, any[]>();
+      (approvalsResult.data || []).forEach(a => {
+        const list = approvalsByRecord.get(a.checklist_record_id) || [];
+        list.push({ mechanicName: a.mechanic_name, timestamp: a.timestamp, comment: a.comment });
+        approvalsByRecord.set(a.checklist_record_id, list);
+      });
+
+      const rejectionsByRecord = new Map<string, any[]>();
+      (rejectionsResult.data || []).forEach(r => {
+        const list = rejectionsByRecord.get(r.checklist_record_id) || [];
+        list.push({ mechanicName: r.mechanic_name, timestamp: r.timestamp, reason: r.reason });
+        rejectionsByRecord.set(r.checklist_record_id, list);
+      });
+
       const transformedRecords = records?.map(record => {
         const camelRecord = keysToCamelCase(record);
         return {
           ...camelRecord,
           photos: {},
           checklistAnswers: [],
-          checklistApprovals: [],
-          checklistRejections: []
+          approvals: approvalsByRecord.get(record.id) || [],
+          rejections: rejectionsByRecord.get(record.id) || []
         };
       }) || [];
 
@@ -138,7 +165,7 @@ export const useChecklists = () => {
       
       authSubscription = subscription;
 
-      // Realtime apenas para checklist_records - reduz sobrecarga
+      // Realtime para checklist_records, approvals e rejections
       const channel = supabase
         .channel('checklists-changes')
         .on(
@@ -149,7 +176,31 @@ export const useChecklists = () => {
             table: 'checklist_records'
           },
           (payload) => {
-            console.log('[useChecklists] Realtime update:', payload.eventType);
+            console.log('[useChecklists] Realtime update (records):', payload.eventType);
+            debouncedLoad();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'checklist_approvals'
+          },
+          (payload) => {
+            console.log('[useChecklists] Realtime update (approval):', payload.eventType);
+            debouncedLoad();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'checklist_rejections'
+          },
+          (payload) => {
+            console.log('[useChecklists] Realtime update (rejection):', payload.eventType);
             debouncedLoad();
           }
         )
