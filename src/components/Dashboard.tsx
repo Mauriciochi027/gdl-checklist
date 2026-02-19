@@ -389,9 +389,26 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
                         <p className="font-medium text-xs sm:text-sm text-foreground truncate">{checklist.equipmentCode}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(checklist.timestamp)}</p>
                         {checklist.status === 'negado' && checklist.rejections && checklist.rejections.length > 0 && (
-                          <p className="text-sm text-safety-red mt-1">
-                            Motivo: {checklist.rejections[checklist.rejections.length - 1].reason}
-                          </p>
+                          <div className="mt-1 p-1.5 bg-safety-red/10 rounded border-l-2 border-safety-red">
+                            <p className="text-xs text-safety-red font-medium">
+                              Negado por: {checklist.rejections[checklist.rejections.length - 1].mechanicName}
+                            </p>
+                            <p className="text-xs text-safety-red">
+                              Motivo: {checklist.rejections[checklist.rejections.length - 1].reason}
+                            </p>
+                          </div>
+                        )}
+                        {checklist.status === 'conforme' && checklist.approvals && checklist.approvals.length > 0 && (
+                          <div className="mt-1 p-1.5 bg-safety-green/10 rounded border-l-2 border-safety-green">
+                            <p className="text-xs text-safety-green font-medium">
+                              Aprovado por: {checklist.approvals[checklist.approvals.length - 1].mechanicName}
+                            </p>
+                            {checklist.approvals[checklist.approvals.length - 1].comment && (
+                              <p className="text-xs text-muted-foreground">
+                                {checklist.approvals[checklist.approvals.length - 1].comment}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                       {getStatusBadge(checklist.status)}
