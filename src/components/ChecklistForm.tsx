@@ -721,13 +721,15 @@ const ChecklistForm = ({
                         </label>
                       </div>
 
-                      {answers[item.id]?.value === 'nao' && <div className="space-y-2">
-                          <Label htmlFor={`observation-${item.id}`}>Observação (obrigatória para NOK)</Label>
-                          <Textarea id={`observation-${item.id}`} value={answers[item.id]?.observation || ""} onChange={e => handleObservationChange(item.id, e.target.value)} placeholder="Descreva o problema encontrado..." className="min-h-[60px]" />
+                      {answers[item.id] && <div className="space-y-2">
+                          <Label htmlFor={`observation-${item.id}`}>
+                            {answers[item.id]?.value === 'nao' ? 'Observação (obrigatória para NOK)' : 'Observação (opcional)'}
+                          </Label>
+                          <Textarea id={`observation-${item.id}`} value={answers[item.id]?.observation || ""} onChange={e => handleObservationChange(item.id, e.target.value)} placeholder={answers[item.id]?.value === 'nao' ? "Descreva o problema encontrado..." : "Adicione uma observação se necessário..."} className="min-h-[60px]" />
                           <div className="flex items-center gap-2">
                             <Label htmlFor={`photo-${item.id}`} className="flex items-center gap-2 cursor-pointer text-sm">
                               <Camera className="w-4 h-4" />
-                              Anexar foto do defeito
+                              {answers[item.id]?.value === 'nao' ? 'Anexar foto do defeito' : 'Anexar foto'}
                             </Label>
                             <input id={`photo-${item.id}`} type="file" accept="image/*" onChange={e => handlePhotoUpload(item.id, e)} className="hidden" />
                           </div>
