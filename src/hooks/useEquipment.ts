@@ -46,7 +46,7 @@ export const useEquipment = () => {
         console.error('[useEquipment] Erro na query:', error);
         
         // Retry em caso de erro de rede
-        if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.code === 'PGRST301')) {
+        if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.message?.includes('Failed to fetch') || error.message?.includes('timeout') || error.message?.includes('CORS') || error.code === 'PGRST301')) {
           const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
           console.log(`[useEquipment] Tentando novamente em ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -64,7 +64,7 @@ export const useEquipment = () => {
       console.error('[useEquipment] ERRO:', error);
       
       // Retry em caso de erro genérico de rede
-      if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.name === 'TypeError')) {
+      if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.message?.includes('Failed to fetch') || error.message?.includes('timeout') || error.name === 'TypeError' || error.name === 'AbortError')) {
         const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
         console.log(`[useEquipment] Tentando novamente em ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));

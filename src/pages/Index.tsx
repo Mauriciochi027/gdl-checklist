@@ -6,6 +6,7 @@ import { useChecklists } from '@/hooks/useChecklists';
 import { LoginForm } from '@/components/LoginForm';
 import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
+import { ConnectionBanner } from '@/components/common/ConnectionBanner';
 import EquipmentList from '@/components/EquipmentList';
 import { ChecklistTypeSelection, LiftingAccessorySelection } from '@/components/ChecklistTypeSelection';
 import { ChecklistType } from '@/lib/liftingAccessoryChecklists';
@@ -336,16 +337,19 @@ const Index = () => {
   }
 
   return (
-    <Layout currentPage={currentPage} onPageChange={(page) => {
-      setCurrentPage(page);
-      // Reset checklist state when navigating away
-      if (page !== 'checklist') {
-        setSelectedChecklistType(null);
-        setShowLiftingAccessorySelection(false);
-      }
-    }}>
-      {renderPage()}
-    </Layout>
+    <>
+      <ConnectionBanner />
+      <Layout currentPage={currentPage} onPageChange={(page) => {
+        setCurrentPage(page);
+        // Reset checklist state when navigating away
+        if (page !== 'checklist') {
+          setSelectedChecklistType(null);
+          setShowLiftingAccessorySelection(false);
+        }
+      }}>
+        {renderPage()}
+      </Layout>
+    </>
   );
 };
 
