@@ -53,7 +53,7 @@ export const useSupabaseAuthState = () => {
         console.error('[useAuth] Erro ao buscar perfil:', error);
         
         // Retry em caso de erro de rede
-        if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.code === 'PGRST301')) {
+        if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.message?.includes('Failed to fetch') || error.message?.includes('timeout') || error.code === 'PGRST301')) {
           const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
           console.log(`[useAuth] Tentando novamente em ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
