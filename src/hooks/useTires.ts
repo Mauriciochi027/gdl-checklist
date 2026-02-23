@@ -14,6 +14,7 @@ export interface Tire {
   mounted_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+  latest_depth: number | null;
   equipment?: {
     id: string;
     code: string;
@@ -70,7 +71,25 @@ export const useTires = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTires(data as Tire[] || []);
+
+      // Fetch latest measurement for each tire
+      const tiresWithDepth = await Promise.all(
+        (data || []).map(async (tire: any) => {
+          const { data: measurements } = await supabase
+            .from('tire_measurements')
+            .select('depth')
+            .eq('tire_id', tire.id)
+            .order('measured_at', { ascending: false })
+            .limit(1);
+          
+          return {
+            ...tire,
+            latest_depth: measurements?.[0]?.depth ?? null,
+          } as Tire;
+        })
+      );
+
+      setTires(tiresWithDepth);
     } catch (error: any) {
       console.error('Erro ao carregar pneus:', error);
       toast({
