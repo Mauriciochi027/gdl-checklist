@@ -34,6 +34,8 @@ const AVAILABLE_PERMISSIONS = [
   { id: 'status', label: 'Acesso ao Status' },
   { id: 'approvals', label: 'Acesso às Aprovações' },
   { id: 'equipments', label: 'Acesso aos Equipamentos' },
+  { id: 'equipment-management', label: 'Gestão de Equipamentos' },
+  { id: 'tires', label: 'Controle de Pneus' },
   { id: 'accounts', label: 'Gerenciar Contas' },
 ];
 
