@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Edit, Trash2, Eye, Search, CircleDot } from 'lucide-react';
+import { TireLifeBar } from './TireLifeBar';
 import { Tire } from '@/hooks/useTires';
 
 interface TireListProps {
@@ -95,6 +96,7 @@ export const TireList = ({ tires, isLoading, isAdmin, onEdit, onDelete, onView }
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Modelo</TableHead>
+                  <TableHead>Vida Útil</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Equipamento</TableHead>
                   <TableHead>Posição</TableHead>
@@ -109,6 +111,13 @@ export const TireList = ({ tires, isLoading, isAdmin, onEdit, onDelete, onView }
                     <TableRow key={tire.id}>
                       <TableCell className="font-medium">{tire.code}</TableCell>
                       <TableCell>{tire.model || '-'}</TableCell>
+                      <TableCell>
+                        <TireLifeBar
+                          initialDepth={tire.initial_depth}
+                          currentDepth={tire.latest_depth}
+                          compact
+                        />
+                      </TableCell>
                       <TableCell>
                         <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
                       </TableCell>
