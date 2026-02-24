@@ -37,24 +37,33 @@ export const useEquipment = () => {
         return;
       }
       
-      const { data, error } = await supabase
-        .from('equipment')
-        .select('*')
-        .order('code', { ascending: true });
+      // Fetch all equipment with pagination to avoid 1000-row limit
+      const allData: any[] = [];
+      const batchSize = 1000;
+      let offset = 0;
+      let hasMore = true;
 
-      if (error) {
-        console.error('[useEquipment] Erro na query:', error);
-        
-        // Retry em caso de erro de rede
-        if (retryCount < maxRetries && (error.message?.includes('network') || error.message?.includes('fetch') || error.message?.includes('Failed to fetch') || error.message?.includes('timeout') || error.message?.includes('CORS') || error.code === 'PGRST301')) {
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-          console.log(`[useEquipment] Tentando novamente em ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return fetchEquipments(showToastOnError, retryCount + 1);
+      while (hasMore) {
+        const { data, error: batchError } = await supabase
+          .from('equipment')
+          .select('id,code,brand,model,sector,status,year,observations,photo,operator_name,operator_id,location,unit,equipment_series,equipment_number,hour_meter,cost_center,business_unit,last_check,next_maintenance,last_checklist_id,last_operation_start,created_at,updated_at')
+          .order('code', { ascending: true })
+          .range(offset, offset + batchSize - 1);
+
+        if (batchError) {
+          throw batchError;
         }
-        
-        throw error;
+
+        if (data && data.length > 0) {
+          allData.push(...data);
+          offset += batchSize;
+          hasMore = data.length === batchSize;
+        } else {
+          hasMore = false;
+        }
       }
+
+      const data = allData;
 
       const transformedData = keysToCamelCase<Equipment[]>(data || []);
       console.log('[useEquipment] Equipamentos carregados:', transformedData.length);
