@@ -72,22 +72,31 @@ export const useTires = () => {
 
       if (error) throw error;
 
-      // Fetch latest measurement for each tire
-      const tiresWithDepth = await Promise.all(
-        (data || []).map(async (tire: any) => {
-          const { data: measurements } = await supabase
-            .from('tire_measurements')
-            .select('depth')
-            .eq('tire_id', tire.id)
-            .order('measured_at', { ascending: false })
-            .limit(1);
-          
-          return {
-            ...tire,
-            latest_depth: measurements?.[0]?.depth ?? null,
-          } as Tire;
-        })
-      );
+      // Fetch all latest measurements in a single query using distinct on tire_id
+      const tireIds = (data || []).map((t: any) => t.id);
+      let latestDepthMap = new Map<string, number>();
+      
+      if (tireIds.length > 0) {
+        const { data: allMeasurements } = await supabase
+          .from('tire_measurements')
+          .select('tire_id, depth, measured_at')
+          .in('tire_id', tireIds)
+          .order('measured_at', { ascending: false });
+        
+        // Keep only the latest measurement per tire
+        if (allMeasurements) {
+          for (const m of allMeasurements) {
+            if (!latestDepthMap.has(m.tire_id)) {
+              latestDepthMap.set(m.tire_id, m.depth);
+            }
+          }
+        }
+      }
+
+      const tiresWithDepth = (data || []).map((tire: any) => ({
+        ...tire,
+        latest_depth: latestDepthMap.get(tire.id) ?? null,
+      } as Tire));
 
       setTires(tiresWithDepth);
     } catch (error: any) {
