@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Truck, FileText, XCircle, ThumbsUp, ThumbsDown, Bell, BarChart3, Timer } from "lucide-react";
+import { OperatorNotifications } from "./OperatorNotifications";
 
 interface ChecklistRecord {
   id: string;
@@ -76,6 +77,11 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
 
   return (
     <div className="space-y-4">
+      {/* Operator Notifications - prominent banner */}
+      {isOperator && currentUser?.name && (
+        <OperatorNotifications operatorName={currentUser.name} />
+      )}
+
       <div className="flex flex-col gap-2">
         <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
           {isOperator ? 'Meu Painel' : isMechanic ? 'Painel do Mecânico' : 'Painel de Gestão'}
