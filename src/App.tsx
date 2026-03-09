@@ -10,17 +10,17 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-      staleTime: 0,
-      gcTime: 1000 * 60 * 2, // 2 minutos - reduzido para PWA
-      retry: 3, // Aumentado para conexões instáveis (4G)
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Backoff exponencial
-      networkMode: 'offlineFirst', // Tenta cache primeiro em conexões instáveis
+      staleTime: 2 * 60 * 1000,    // 2 min - dados considerados frescos
+      gcTime: 5 * 60 * 1000,       // 5 min - tempo no garbage collector
+      refetchOnWindowFocus: true,   // Refetch ao voltar para a aba
+      refetchOnReconnect: true,     // Refetch ao reconectar
+      retry: 3,                     // 3 tentativas em falha
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+      networkMode: 'offlineFirst',  // Cache primeiro em conexões instáveis
     },
     mutations: {
       retry: 2,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
       networkMode: 'offlineFirst',
     },
   },
