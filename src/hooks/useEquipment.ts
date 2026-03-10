@@ -50,9 +50,9 @@ export const useEquipment = () => {
     queryKey: EQUIPMENT_KEY,
     queryFn: fetchAllEquipment,
     enabled: !!user,
-    staleTime: 2 * 60 * 1000, // 2 min - considerar dados frescos
-    gcTime: 5 * 60 * 1000,    // 5 min no cache
-    refetchOnMount: 'always',
+    staleTime: 5 * 60 * 1000, // 5 min - dados de equipamento mudam pouco
+    gcTime: 10 * 60 * 1000,   // 10 min no cache
+    refetchOnMount: false,     // Usa cache do prefetch
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });

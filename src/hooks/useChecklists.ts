@@ -67,9 +67,9 @@ export const useChecklists = () => {
     queryKey: CHECKLISTS_KEY,
     queryFn: fetchChecklists,
     enabled: !!user,
-    staleTime: 60 * 1000,      // 1 min fresh
-    gcTime: 5 * 60 * 1000,     // 5 min cache
-    refetchOnMount: 'always',
+    staleTime: 2 * 60 * 1000,  // 2 min fresh
+    gcTime: 10 * 60 * 1000,    // 10 min cache
+    refetchOnMount: false,      // Usa cache do prefetch
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
