@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Truck, FileText, XCircle, ThumbsUp, ThumbsDown, Bell, BarChart3, Timer } from "lucide-react";
 import { OperatorNotifications } from "./OperatorNotifications";
+import { AdminDashboardCharts } from "./AdminDashboardCharts";
 
 interface ChecklistRecord {
   id: string;
@@ -31,19 +32,21 @@ interface DashboardProps {
     avgResponseTime: number;
     topIssues: Array<{ equipment: string; issues: number }>;
     recentAlerts?: Array<{ id: string; type: string; title: string; message: string; time: Date }>;
-    recentChecklists?: ChecklistRecord[]; // Add recent checklists for operators
+    recentChecklists?: ChecklistRecord[];
   };
+  allChecklistRecords?: ChecklistRecord[];
   userProfile?: string;
   currentUser?: { name: string; matricula?: string };
   onApproveRecord?: (recordId: string, comment: string) => void;
   onRejectRecord?: (recordId: string, reason: string) => void;
 }
 
-const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRecord }: DashboardProps) => {
+const Dashboard = ({ data, allChecklistRecords, userProfile, currentUser, onApproveRecord, onRejectRecord }: DashboardProps) => {
   const { toast } = useToast();
   // Operator dashboard shows only personal data
   const isOperator = userProfile === 'operador';
   const isMechanic = userProfile === 'mecanico' || userProfile === 'gestor';
+  const isAdmin = userProfile === 'admin';
   const stats = [
     {
       title: "Total de Equipamentos",
@@ -126,6 +129,11 @@ const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRe
           );
         })}
       </div>
+
+      {/* Admin Analytics Charts */}
+      {isAdmin && allChecklistRecords && (
+        <AdminDashboardCharts checklistRecords={allChecklistRecords} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         {/* Performance Metrics */}
