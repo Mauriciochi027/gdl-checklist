@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, Truck, FileText, XCircle, ThumbsUp, ThumbsDown, Bell, BarChart3, Timer } from "lucide-react";
 import { OperatorNotifications } from "./OperatorNotifications";
+import { AdminDashboardCharts } from "./AdminDashboardCharts";
 
 interface ChecklistRecord {
   id: string;
