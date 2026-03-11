@@ -46,6 +46,7 @@ const Dashboard = ({ data, allChecklistRecords, userProfile, currentUser, onAppr
   // Operator dashboard shows only personal data
   const isOperator = userProfile === 'operador';
   const isMechanic = userProfile === 'mecanico' || userProfile === 'gestor';
+  const isAdmin = userProfile === 'admin';
   const stats = [
     {
       title: "Total de Equipamentos",
