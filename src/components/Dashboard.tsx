@@ -32,8 +32,9 @@ interface DashboardProps {
     avgResponseTime: number;
     topIssues: Array<{ equipment: string; issues: number }>;
     recentAlerts?: Array<{ id: string; type: string; title: string; message: string; time: Date }>;
-    recentChecklists?: ChecklistRecord[]; // Add recent checklists for operators
+    recentChecklists?: ChecklistRecord[];
   };
+  allChecklistRecords?: ChecklistRecord[];
   userProfile?: string;
   currentUser?: { name: string; matricula?: string };
   onApproveRecord?: (recordId: string, comment: string) => void;
