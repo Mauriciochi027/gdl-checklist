@@ -130,6 +130,11 @@ const Dashboard = ({ data, allChecklistRecords, userProfile, currentUser, onAppr
         })}
       </div>
 
+      {/* Admin Analytics Charts */}
+      {isAdmin && allChecklistRecords && (
+        <AdminDashboardCharts checklistRecords={allChecklistRecords} />
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         {/* Performance Metrics */}
         <Card>

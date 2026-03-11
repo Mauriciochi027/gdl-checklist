@@ -255,6 +255,7 @@ const Index = () => {
       case 'dashboard':
         return <Dashboard 
           data={dashboardData}
+          allChecklistRecords={checklistRecords}
           userProfile={user?.profile}
           currentUser={user}
           onApproveRecord={(recordId: string, comment: string) => handleApproveRecord(recordId, user?.name || 'Mecânico', comment)}
