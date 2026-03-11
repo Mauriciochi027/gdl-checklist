@@ -41,7 +41,7 @@ interface DashboardProps {
   onRejectRecord?: (recordId: string, reason: string) => void;
 }
 
-const Dashboard = ({ data, userProfile, currentUser, onApproveRecord, onRejectRecord }: DashboardProps) => {
+const Dashboard = ({ data, allChecklistRecords, userProfile, currentUser, onApproveRecord, onRejectRecord }: DashboardProps) => {
   const { toast } = useToast();
   // Operator dashboard shows only personal data
   const isOperator = userProfile === 'operador';
