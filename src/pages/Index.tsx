@@ -314,6 +314,7 @@ const Index = () => {
       default:
         return <Dashboard 
           data={dashboardData} 
+          allChecklistRecords={checklistRecords}
           userProfile={user?.profile} 
           currentUser={user} 
         />;
