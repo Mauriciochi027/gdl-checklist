@@ -13,7 +13,14 @@ const EQUIPMENT_KEY = ['equipment'] as const;
  */
 const fetchAllEquipment = async (): Promise<Equipment[]> => {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return [];
+  if (!session) {
+    console.warn('[useEquipment] Sem sessão ativa, tentando refresh...');
+    const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+    if (!refreshedSession) {
+      console.error('[useEquipment] Falha ao obter sessão');
+      return [];
+    }
+  }
 
   const allData: any[] = [];
   const batchSize = 1000;
@@ -27,7 +34,10 @@ const fetchAllEquipment = async (): Promise<Equipment[]> => {
       .order('code', { ascending: true })
       .range(offset, offset + batchSize - 1);
 
-    if (error) throw error;
+    if (error) {
+      console.error('[useEquipment] Erro na query:', error);
+      throw error;
+    }
 
     if (data && data.length > 0) {
       allData.push(...data);
@@ -38,6 +48,7 @@ const fetchAllEquipment = async (): Promise<Equipment[]> => {
     }
   }
 
+  console.log(`[useEquipment] Carregados ${allData.length} equipamentos`);
   return keysToCamelCase<Equipment[]>(allData);
 };
 
@@ -46,16 +57,22 @@ export const useEquipment = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: equipments = [], isLoading } = useQuery({
+  const { data: equipments = [], isLoading, error } = useQuery({
     queryKey: EQUIPMENT_KEY,
     queryFn: fetchAllEquipment,
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 min - dados de equipamento mudam pouco
     gcTime: 10 * 60 * 1000,   // 10 min no cache
-    refetchOnMount: false,     // Usa cache do prefetch
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    refetchOnMount: 'always',  // Sempre buscar ao montar para garantir dados frescos
+    retry: 5,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
+
+  // Log para debug
+  useEffect(() => {
+    console.log('[useEquipment] Status:', { count: equipments.length, isLoading, hasError: !!error });
+    if (error) console.error('[useEquipment] Erro:', error);
+  }, [equipments.length, isLoading, error]);
 
   // Realtime subscription para atualizações automáticas
   useEffect(() => {

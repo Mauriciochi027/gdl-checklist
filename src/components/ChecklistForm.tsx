@@ -605,10 +605,17 @@ const ChecklistForm = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o equipamento" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {equipments.map(equipment => <SelectItem key={equipment.id} value={equipment.id}>
+                     <SelectContent>
+                      {equipments.length === 0 ? (
+                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                          Carregando equipamentos...
+                        </div>
+                      ) : (
+                        equipments.map(equipment => <SelectItem key={equipment.id} value={equipment.id}>
                           {equipment.code} - {equipment.brand} {equipment.model} ({equipment.sector})
-                        </SelectItem>)}
+                        </SelectItem>)
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
