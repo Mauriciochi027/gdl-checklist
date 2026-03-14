@@ -1,60 +1,73 @@
 import { useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ChecklistRecord, ChecklistAnswer } from '@/types/equipment';
+import { ChecklistAnswer } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
 import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 import { useAuth } from '@/hooks/useSupabaseAuth';
-
-const CHECKLISTS_KEY = ['checklists'] as const;
+import { 
+  QUERY_KEYS, CACHE_TIMES, CHECKLIST_LIGHT_COLUMNS, 
+  withTiming, getAbortSignal, RETRY_CONFIG 
+} from '@/lib/queryConfig';
 
 /**
- * Fetch checklists with approvals/rejections in parallel
+ * Fetch checklists with light columns and parallel sub-queries
  */
 const fetchChecklists = async (): Promise<any[]> => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return [];
+  return withTiming('fetchChecklists', async () => {
+    const signal = getAbortSignal('checklists', 15000);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return [];
 
-  const { data: records, error } = await supabase
-    .from('checklist_records')
-    .select('*')
-    .order('timestamp', { ascending: false })
-    .limit(200);
+    const { data: records, error } = await supabase
+      .from('checklist_records')
+      .select(CHECKLIST_LIGHT_COLUMNS)
+      .order('timestamp', { ascending: false })
+      .limit(200)
+      .abortSignal(signal);
 
-  if (error) throw error;
-  if (!records || records.length === 0) return [];
+    if (error) throw error;
+    if (!records || records.length === 0) return [];
 
-  const recordIds = records.map(r => r.id);
+    const recordIds = records.map(r => r.id);
 
-  // Fetch approvals and rejections in parallel
-  const [approvalsResult, rejectionsResult] = await Promise.all([
-    supabase.from('checklist_approvals').select('*').in('checklist_record_id', recordIds),
-    supabase.from('checklist_rejections').select('*').in('checklist_record_id', recordIds),
-  ]);
+    // Parallel fetch with only needed columns
+    const [approvalsResult, rejectionsResult] = await Promise.all([
+      supabase.from('checklist_approvals')
+        .select('checklist_record_id,mechanic_name,timestamp,comment')
+        .in('checklist_record_id', recordIds)
+        .abortSignal(signal),
+      supabase.from('checklist_rejections')
+        .select('checklist_record_id,mechanic_name,timestamp,reason')
+        .in('checklist_record_id', recordIds)
+        .abortSignal(signal),
+    ]);
 
-  const approvalsByRecord = new Map<string, any[]>();
-  (approvalsResult.data || []).forEach(a => {
-    const list = approvalsByRecord.get(a.checklist_record_id) || [];
-    list.push({ mechanicName: a.mechanic_name, timestamp: a.timestamp, comment: a.comment });
-    approvalsByRecord.set(a.checklist_record_id, list);
-  });
+    const approvalsByRecord = new Map<string, any[]>();
+    (approvalsResult.data || []).forEach(a => {
+      const list = approvalsByRecord.get(a.checklist_record_id) || [];
+      list.push({ mechanicName: a.mechanic_name, timestamp: a.timestamp, comment: a.comment });
+      approvalsByRecord.set(a.checklist_record_id, list);
+    });
 
-  const rejectionsByRecord = new Map<string, any[]>();
-  (rejectionsResult.data || []).forEach(r => {
-    const list = rejectionsByRecord.get(r.checklist_record_id) || [];
-    list.push({ mechanicName: r.mechanic_name, timestamp: r.timestamp, reason: r.reason });
-    rejectionsByRecord.set(r.checklist_record_id, list);
-  });
+    const rejectionsByRecord = new Map<string, any[]>();
+    (rejectionsResult.data || []).forEach(r => {
+      const list = rejectionsByRecord.get(r.checklist_record_id) || [];
+      list.push({ mechanicName: r.mechanic_name, timestamp: r.timestamp, reason: r.reason });
+      rejectionsByRecord.set(r.checklist_record_id, list);
+    });
 
-  return records.map(record => {
-    const camelRecord = keysToCamelCase(record);
-    return {
-      ...camelRecord,
-      photos: {},
-      checklistAnswers: [],
-      approvals: approvalsByRecord.get(record.id) || [],
-      rejections: rejectionsByRecord.get(record.id) || [],
-    };
+    return records.map(record => {
+      const camelRecord = keysToCamelCase(record);
+      return {
+        ...camelRecord,
+        photos: {},
+        checklistAnswers: [],
+        approvals: approvalsByRecord.get(record.id) || [],
+        rejections: rejectionsByRecord.get(record.id) || [],
+      };
+    });
   });
 };
 
@@ -64,17 +77,15 @@ export const useChecklists = () => {
   const queryClient = useQueryClient();
 
   const { data: checklistRecords = [], isLoading } = useQuery({
-    queryKey: CHECKLISTS_KEY,
+    queryKey: QUERY_KEYS.checklists,
     queryFn: fetchChecklists,
     enabled: !!user,
-    staleTime: 2 * 60 * 1000,  // 2 min fresh
-    gcTime: 10 * 60 * 1000,    // 10 min cache
-    refetchOnMount: false,      // Usa cache do prefetch
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    ...CACHE_TIMES.checklists,
+    ...RETRY_CONFIG,
+    refetchOnMount: false, // Use prefetch cache
   });
 
-  // Realtime: invalidar cache quando há mudanças
+  // Debounced realtime invalidation
   useEffect(() => {
     if (!user) return;
     let debounceTimer: NodeJS.Timeout;
@@ -82,8 +93,8 @@ export const useChecklists = () => {
     const debouncedInvalidate = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: CHECKLISTS_KEY });
-      }, 1500);
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.checklists });
+      }, 2000); // 2s debounce to batch rapid changes
     };
 
     const channel = supabase
@@ -99,7 +110,7 @@ export const useChecklists = () => {
     };
   }, [user?.id, queryClient]);
 
-  const addChecklist = async (checklistData: {
+  const addChecklist = useCallback(async (checklistData: {
     equipmentId: string | null;
     equipmentCode: string;
     equipmentModel: string;
@@ -160,7 +171,10 @@ export const useChecklists = () => {
 
       if (recordError) throw recordError;
 
-      // Insert answers
+      // Insert answers and photos in parallel
+      const parallelOps: Promise<any>[] = [];
+
+      // Answers
       const answersToInsert = checklistData.answers.map(answer =>
         keysToSnakeCase({
           checklistRecordId: record.id,
@@ -169,28 +183,40 @@ export const useChecklists = () => {
           observation: answer.observation,
         })
       );
-      const { error: answersError } = await supabase.from('checklist_answers').insert(answersToInsert);
-      if (answersError) throw answersError;
+      parallelOps.push(
+        supabase.from('checklist_answers').insert(answersToInsert).then(({ error }) => {
+          if (error) throw error;
+        })
+      );
 
-      // Insert photos
+      // Photos
       if (checklistData.photos) {
         const photosToInsert = Object.entries(checklistData.photos).flatMap(([itemId, urls]) =>
           urls.map(url => keysToSnakeCase({ checklistRecordId: record.id, itemId, photoUrl: url }))
         );
         if (photosToInsert.length > 0) {
-          const { error: photosError } = await supabase.from('checklist_photos').insert(photosToInsert);
-          if (photosError) throw photosError;
+          parallelOps.push(
+            supabase.from('checklist_photos').insert(photosToInsert).then(({ error }) => {
+              if (error) throw error;
+            })
+          );
         }
       }
 
-      // Auto-approve empilhadeira conformes
+      // Auto-approve conformes
       if (status === 'conforme' && !isLiftingAccessory) {
-        await supabase.from('checklist_approvals').insert([keysToSnakeCase({
-          checklistRecordId: record.id,
-          mechanicName: 'Sistema',
-          comment: 'Checklist aprovado automaticamente - todos os itens conformes',
-        })]);
+        parallelOps.push(
+          supabase.from('checklist_approvals').insert([keysToSnakeCase({
+            checklistRecordId: record.id,
+            mechanicName: 'Sistema',
+            comment: 'Checklist aprovado automaticamente - todos os itens conformes',
+          })]).then(({ error }) => {
+            if (error) console.warn('Auto-approve failed:', error);
+          })
+        );
       }
+
+      await Promise.all(parallelOps);
 
       let toastDescription = '';
       if (isLiftingAccessory) {
@@ -204,74 +230,64 @@ export const useChecklists = () => {
       }
 
       toast({ title: "Checklist registrado", description: toastDescription, variant: status === 'negado' ? 'destructive' : 'default' });
-
-      // Invalidar cache para atualizar lista
-      queryClient.invalidateQueries({ queryKey: CHECKLISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.checklists });
       return record;
     } catch (error: any) {
       console.error('[useChecklists] Erro:', error);
       toast({ title: "Erro ao registrar checklist", description: error.message || "Erro desconhecido.", variant: "destructive" });
       return null;
     }
-  };
+  }, [toast, queryClient]);
 
-  const approveChecklist = async (recordId: string, mechanicName: string, comment: string) => {
+  const approveChecklist = useCallback(async (recordId: string, mechanicName: string, comment: string) => {
     try {
-      const { error: updateError } = await supabase
-        .from('checklist_records')
-        .update({ status: 'conforme' })
-        .eq('id', recordId);
-      if (updateError) throw updateError;
-
-      const { error: approvalError } = await supabase
-        .from('checklist_approvals')
-        .insert([keysToSnakeCase({ checklistRecordId: recordId, mechanicName, comment })]);
-      if (approvalError) throw approvalError;
+      // Parallel update + insert
+      const [updateResult, insertResult] = await Promise.all([
+        supabase.from('checklist_records').update({ status: 'conforme' }).eq('id', recordId),
+        supabase.from('checklist_approvals').insert([keysToSnakeCase({ checklistRecordId: recordId, mechanicName, comment })]),
+      ]);
+      if (updateResult.error) throw updateResult.error;
+      if (insertResult.error) throw insertResult.error;
 
       toast({ title: "Checklist aprovado", description: "O checklist foi aprovado com sucesso." });
-      queryClient.invalidateQueries({ queryKey: CHECKLISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.checklists });
       return true;
     } catch (error: any) {
-      toast({ title: "Erro ao aprovar checklist", description: error.message || "Erro desconhecido.", variant: "destructive" });
+      toast({ title: "Erro ao aprovar checklist", description: error.message, variant: "destructive" });
       return false;
     }
-  };
+  }, [toast, queryClient]);
 
-  const rejectChecklist = async (recordId: string, mechanicName: string, reason: string) => {
+  const rejectChecklist = useCallback(async (recordId: string, mechanicName: string, reason: string) => {
     try {
-      const { error: updateError } = await supabase
-        .from('checklist_records')
-        .update({ status: 'negado' })
-        .eq('id', recordId);
-      if (updateError) throw updateError;
-
-      const { error: rejectionError } = await supabase
-        .from('checklist_rejections')
-        .insert([keysToSnakeCase({ checklistRecordId: recordId, mechanicName, reason })]);
-      if (rejectionError) throw rejectionError;
+      const [updateResult, insertResult] = await Promise.all([
+        supabase.from('checklist_records').update({ status: 'negado' }).eq('id', recordId),
+        supabase.from('checklist_rejections').insert([keysToSnakeCase({ checklistRecordId: recordId, mechanicName, reason })]),
+      ]);
+      if (updateResult.error) throw updateResult.error;
+      if (insertResult.error) throw insertResult.error;
 
       toast({ title: "Checklist negado", description: "O checklist foi negado e o operador será notificado." });
-      queryClient.invalidateQueries({ queryKey: CHECKLISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.checklists });
       return true;
     } catch (error: any) {
-      toast({ title: "Erro ao negar checklist", description: error.message || "Erro desconhecido.", variant: "destructive" });
+      toast({ title: "Erro ao negar checklist", description: error.message, variant: "destructive" });
       return false;
     }
-  };
+  }, [toast, queryClient]);
 
-  const deleteChecklist = async (recordId: string) => {
+  const deleteChecklist = useCallback(async (recordId: string) => {
     try {
       const { error } = await supabase.from('checklist_records').delete().eq('id', recordId);
       if (error) throw error;
-
       toast({ title: "Checklist excluído", description: "Registro removido com sucesso." });
-      queryClient.invalidateQueries({ queryKey: CHECKLISTS_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.checklists });
       return true;
     } catch (error: any) {
-      toast({ title: "Erro ao excluir checklist", description: error.message || "Erro desconhecido.", variant: "destructive" });
+      toast({ title: "Erro ao excluir checklist", description: error.message, variant: "destructive" });
       return false;
     }
-  };
+  }, [toast, queryClient]);
 
   return {
     checklistRecords,
@@ -280,6 +296,6 @@ export const useChecklists = () => {
     approveChecklist,
     rejectChecklist,
     deleteChecklist,
-    refreshChecklists: () => queryClient.invalidateQueries({ queryKey: CHECKLISTS_KEY }),
+    refreshChecklists: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.checklists }),
   };
 };

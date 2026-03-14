@@ -1,55 +1,56 @@
 import { useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Equipment } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
 import { keysToSnakeCase, keysToCamelCase } from '@/lib/utils';
 import { useAuth } from '@/hooks/useSupabaseAuth';
-
-const EQUIPMENT_KEY = ['equipment'] as const;
+import { 
+  QUERY_KEYS, CACHE_TIMES, EQUIPMENT_LIGHT_COLUMNS, 
+  withTiming, getAbortSignal, RETRY_CONFIG 
+} from '@/lib/queryConfig';
 
 /**
- * Fetch all equipment with batch pagination to avoid 1000-row limit
+ * Fetch equipment WITHOUT photo field to reduce payload dramatically.
+ * Uses abort signal for timeout protection.
  */
 const fetchAllEquipment = async (): Promise<Equipment[]> => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    console.warn('[useEquipment] Sem sessão ativa, tentando refresh...');
-    const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-    if (!refreshedSession) {
-      console.error('[useEquipment] Falha ao obter sessão');
-      return [];
-    }
-  }
-
-  const allData: any[] = [];
-  const batchSize = 1000;
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    const { data, error } = await supabase
-      .from('equipment')
-      .select('*')
-      .order('code', { ascending: true })
-      .range(offset, offset + batchSize - 1);
-
-    if (error) {
-      console.error('[useEquipment] Erro na query:', error);
-      throw error;
+  return withTiming('fetchAllEquipment', async () => {
+    const signal = getAbortSignal('equipment', 20000);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+      if (!refreshed) return [];
     }
 
-    if (data && data.length > 0) {
-      allData.push(...data);
-      offset += batchSize;
-      hasMore = data.length === batchSize;
-    } else {
-      hasMore = false;
-    }
-  }
+    const allData: any[] = [];
+    const batchSize = 1000;
+    let offset = 0;
+    let hasMore = true;
 
-  console.log(`[useEquipment] Carregados ${allData.length} equipamentos`);
-  return keysToCamelCase<Equipment[]>(allData);
+    while (hasMore) {
+      if (signal.aborted) throw new Error('Query aborted - timeout');
+      
+      const { data, error } = await supabase
+        .from('equipment')
+        .select(EQUIPMENT_LIGHT_COLUMNS)
+        .order('code', { ascending: true })
+        .range(offset, offset + batchSize - 1)
+        .abortSignal(signal);
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        allData.push(...data);
+        offset += batchSize;
+        hasMore = data.length === batchSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return keysToCamelCase<Equipment[]>(allData);
+  });
 };
 
 export const useEquipment = () => {
@@ -58,41 +59,31 @@ export const useEquipment = () => {
   const queryClient = useQueryClient();
 
   const { data: equipments = [], isLoading, error } = useQuery({
-    queryKey: EQUIPMENT_KEY,
+    queryKey: QUERY_KEYS.equipment,
     queryFn: fetchAllEquipment,
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 min - dados de equipamento mudam pouco
-    gcTime: 10 * 60 * 1000,   // 10 min no cache
-    refetchOnMount: 'always',  // Sempre buscar ao montar para garantir dados frescos
-    retry: 5,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+    ...CACHE_TIMES.equipment,
+    ...RETRY_CONFIG,
+    refetchOnMount: false, // Use prefetch cache - don't refetch every mount
   });
 
-  // Log para debug
-  useEffect(() => {
-    console.log('[useEquipment] Status:', { count: equipments.length, isLoading, hasError: !!error });
-    if (error) console.error('[useEquipment] Erro:', error);
-  }, [equipments.length, isLoading, error]);
-
-  // Realtime subscription para atualizações automáticas
+  // Single realtime subscription - optimistic cache updates
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
       .channel('equipment-changes-rq')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' }, (payload) => {
-        console.log('[useEquipment] Realtime:', payload.eventType);
-        
         if (payload.eventType === 'INSERT') {
           const newEq = keysToCamelCase<Equipment>(payload.new);
-          queryClient.setQueryData<Equipment[]>(EQUIPMENT_KEY, (old = []) => [...old, newEq]);
+          queryClient.setQueryData<Equipment[]>(QUERY_KEYS.equipment, (old = []) => [...old, newEq]);
         } else if (payload.eventType === 'UPDATE') {
           const updated = keysToCamelCase<Equipment>(payload.new);
-          queryClient.setQueryData<Equipment[]>(EQUIPMENT_KEY, (old = []) =>
+          queryClient.setQueryData<Equipment[]>(QUERY_KEYS.equipment, (old = []) =>
             old.map(eq => eq.id === updated.id ? updated : eq)
           );
         } else if (payload.eventType === 'DELETE') {
-          queryClient.setQueryData<Equipment[]>(EQUIPMENT_KEY, (old = []) =>
+          queryClient.setQueryData<Equipment[]>(QUERY_KEYS.equipment, (old = []) =>
             old.filter(eq => eq.id !== payload.old.id)
           );
         }
@@ -102,26 +93,25 @@ export const useEquipment = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user?.id, queryClient]);
 
-  const addMutation = useMutation({
-    mutationFn: async (equipment: Omit<Equipment, 'id'>) => {
+  const addEquipment = useCallback(async (equipment: Omit<Equipment, 'id'>) => {
+    try {
       const { data, error } = await supabase
         .from('equipment')
         .insert([keysToSnakeCase(equipment)])
         .select()
         .single();
       if (error) throw error;
-      return keysToCamelCase<Equipment>(data);
-    },
-    onSuccess: (data) => {
-      toast({ title: "Equipamento cadastrado", description: `${data.code} foi adicionado com sucesso.` });
-    },
-    onError: (error: any) => {
-      toast({ title: "Erro ao cadastrar equipamento", description: error.message || "Erro desconhecido.", variant: "destructive" });
-    },
-  });
+      const result = keysToCamelCase<Equipment>(data);
+      toast({ title: "Equipamento cadastrado", description: `${result.code} foi adicionado com sucesso.` });
+      return result;
+    } catch (error: any) {
+      toast({ title: "Erro ao cadastrar equipamento", description: error.message, variant: "destructive" });
+      return null;
+    }
+  }, [toast]);
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Equipment> }) => {
+  const updateEquipment = useCallback(async (id: string, updates: Partial<Equipment>) => {
+    try {
       const { data, error } = await supabase
         .from('equipment')
         .update(keysToSnakeCase(updates))
@@ -129,59 +119,29 @@ export const useEquipment = () => {
         .select()
         .single();
       if (error) throw error;
-      return keysToCamelCase<Equipment>(data);
-    },
-    onSuccess: () => {
       toast({ title: "Equipamento atualizado", description: "Informações atualizadas com sucesso." });
-    },
-    onError: (error: any) => {
-      toast({ title: "Erro ao atualizar equipamento", description: error.message || "Erro desconhecido.", variant: "destructive" });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('equipment').delete().eq('id', id);
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: () => {
-      toast({ title: "Equipamento removido", description: "Removido com sucesso." });
-    },
-    onError: (error: any) => {
-      toast({ title: "Erro ao remover equipamento", description: error.message || "Erro desconhecido.", variant: "destructive" });
-    },
-  });
-
-  const addEquipment = useCallback(async (equipment: Omit<Equipment, 'id'>) => {
-    try {
-      return await addMutation.mutateAsync(equipment);
-    } catch { return null; }
-  }, [addMutation]);
-
-  const updateEquipment = useCallback(async (id: string, updates: Partial<Equipment>) => {
-    try {
-      return await updateMutation.mutateAsync({ id, updates });
-    } catch { return null; }
-  }, [updateMutation]);
+      return keysToCamelCase<Equipment>(data);
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar equipamento", description: error.message, variant: "destructive" });
+      return null;
+    }
+  }, [toast]);
 
   const deleteEquipment = useCallback(async (id: string) => {
     try {
-      await deleteMutation.mutateAsync(id);
+      const { error } = await supabase.from('equipment').delete().eq('id', id);
+      if (error) throw error;
+      toast({ title: "Equipamento removido", description: "Removido com sucesso." });
       return true;
-    } catch { return false; }
-  }, [deleteMutation]);
+    } catch (error: any) {
+      toast({ title: "Erro ao remover equipamento", description: error.message, variant: "destructive" });
+      return false;
+    }
+  }, [toast]);
 
   const refreshEquipments = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: EQUIPMENT_KEY });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.equipment });
   }, [queryClient]);
 
-  return {
-    equipments,
-    isLoading,
-    addEquipment,
-    updateEquipment,
-    deleteEquipment,
-    refreshEquipments,
-  };
+  return { equipments, isLoading, addEquipment, updateEquipment, deleteEquipment, refreshEquipments };
 };

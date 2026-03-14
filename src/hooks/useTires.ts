@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useSupabaseAuth';
+import { QUERY_KEYS, CACHE_TIMES, withTiming, RETRY_CONFIG } from '@/lib/queryConfig';
 
 export interface Tire {
   id: string;
@@ -48,40 +49,41 @@ export interface MeasurementFormData {
   measured_by?: string;
 }
 
-const TIRES_KEY = ['tires'] as const;
-const TIRE_MEASUREMENTS_KEY = (tireId: string) => ['tire-measurements', tireId] as const;
-
 const fetchTires = async (): Promise<Tire[]> => {
-  const { data, error } = await supabase
-    .from('tires')
-    .select(`*, equipment:equipment_id (id, code, model)`)
-    .order('created_at', { ascending: false });
+  return withTiming('fetchTires', async () => {
+    // Select only needed columns from equipment join
+    const { data, error } = await supabase
+      .from('tires')
+      .select(`id,code,model,status,equipment_id,position,initial_depth,initial_hour_meter,mounted_at,created_at,updated_at, equipment:equipment_id (id, code, model)`)
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  const tireIds = (data || []).map((t: any) => t.id);
-  let latestDepthMap = new Map<string, number>();
+    const tireIds = (data || []).map((t: any) => t.id);
+    let latestDepthMap = new Map<string, number>();
 
-  if (tireIds.length > 0) {
-    const { data: allMeasurements } = await supabase
-      .from('tire_measurements')
-      .select('tire_id, depth, measured_at')
-      .in('tire_id', tireIds)
-      .order('measured_at', { ascending: false });
+    if (tireIds.length > 0) {
+      // Only fetch needed columns
+      const { data: allMeasurements } = await supabase
+        .from('tire_measurements')
+        .select('tire_id, depth, measured_at')
+        .in('tire_id', tireIds)
+        .order('measured_at', { ascending: false });
 
-    if (allMeasurements) {
-      for (const m of allMeasurements) {
-        if (!latestDepthMap.has(m.tire_id)) {
-          latestDepthMap.set(m.tire_id, m.depth);
+      if (allMeasurements) {
+        for (const m of allMeasurements) {
+          if (!latestDepthMap.has(m.tire_id)) {
+            latestDepthMap.set(m.tire_id, m.depth);
+          }
         }
       }
     }
-  }
 
-  return (data || []).map((tire: any) => ({
-    ...tire,
-    latest_depth: latestDepthMap.get(tire.id) ?? null,
-  } as Tire));
+    return (data || []).map((tire: any) => ({
+      ...tire,
+      latest_depth: latestDepthMap.get(tire.id) ?? null,
+    } as Tire));
+  });
 };
 
 export const useTires = () => {
@@ -90,13 +92,11 @@ export const useTires = () => {
   const queryClient = useQueryClient();
 
   const { data: tires = [], isLoading } = useQuery({
-    queryKey: TIRES_KEY,
+    queryKey: QUERY_KEYS.tires,
     queryFn: fetchTires,
     enabled: !!user,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    ...CACHE_TIMES.tires,
+    ...RETRY_CONFIG,
   });
 
   const createTire = useCallback(async (formData: TireFormData) => {
@@ -113,7 +113,7 @@ export const useTires = () => {
       });
       if (error) throw error;
       toast({ title: 'Pneu cadastrado', description: `Pneu ${formData.code} cadastrado com sucesso.` });
-      queryClient.invalidateQueries({ queryKey: TIRES_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tires });
       return true;
     } catch (error: any) {
       toast({ title: 'Erro ao cadastrar pneu', description: error.message, variant: 'destructive' });
@@ -130,7 +130,7 @@ export const useTires = () => {
       const { error } = await supabase.from('tires').update(updateData).eq('id', id);
       if (error) throw error;
       toast({ title: 'Pneu atualizado', description: 'Informações atualizadas com sucesso.' });
-      queryClient.invalidateQueries({ queryKey: TIRES_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tires });
       return true;
     } catch (error: any) {
       toast({ title: 'Erro ao atualizar pneu', description: error.message, variant: 'destructive' });
@@ -143,7 +143,7 @@ export const useTires = () => {
       const { error } = await supabase.from('tires').delete().eq('id', id);
       if (error) throw error;
       toast({ title: 'Pneu excluído', description: 'Pneu removido com sucesso.' });
-      queryClient.invalidateQueries({ queryKey: TIRES_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tires });
       return true;
     } catch (error: any) {
       toast({ title: 'Erro ao excluir pneu', description: error.message, variant: 'destructive' });
@@ -162,7 +162,7 @@ export const useTires = () => {
     tires,
     isLoading,
     stats,
-    fetchTires: () => queryClient.invalidateQueries({ queryKey: TIRES_KEY }),
+    fetchTires: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tires }),
     createTire,
     updateTire,
     deleteTire,
@@ -174,19 +174,19 @@ export const useTireMeasurements = (tireId: string) => {
   const queryClient = useQueryClient();
 
   const { data: measurements = [], isLoading } = useQuery({
-    queryKey: TIRE_MEASUREMENTS_KEY(tireId),
+    queryKey: QUERY_KEYS.tireMeasurements(tireId),
     queryFn: async () => {
       if (!tireId) return [];
       const { data, error } = await supabase
         .from('tire_measurements')
-        .select('*')
+        .select('id,tire_id,depth,measured_at,notes,measured_by,created_at')
         .eq('tire_id', tireId)
         .order('measured_at', { ascending: false });
       if (error) throw error;
       return (data as TireMeasurement[]) || [];
     },
     enabled: !!tireId,
-    staleTime: 2 * 60 * 1000,
+    ...CACHE_TIMES.tires,
   });
 
   const addMeasurement = useCallback(async (formData: MeasurementFormData) => {
@@ -200,8 +200,8 @@ export const useTireMeasurements = (tireId: string) => {
       });
       if (error) throw error;
       toast({ title: 'Medição registrada', description: 'Medição registrada com sucesso.' });
-      queryClient.invalidateQueries({ queryKey: TIRE_MEASUREMENTS_KEY(tireId) });
-      queryClient.invalidateQueries({ queryKey: TIRES_KEY }); // refresh latest_depth
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tireMeasurements(tireId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tires });
       return true;
     } catch (error: any) {
       toast({ title: 'Erro ao registrar medição', description: error.message, variant: 'destructive' });
@@ -214,8 +214,8 @@ export const useTireMeasurements = (tireId: string) => {
       const { error } = await supabase.from('tire_measurements').delete().eq('id', id);
       if (error) throw error;
       toast({ title: 'Medição excluída', description: 'Medição removida com sucesso.' });
-      queryClient.invalidateQueries({ queryKey: TIRE_MEASUREMENTS_KEY(tireId) });
-      queryClient.invalidateQueries({ queryKey: TIRES_KEY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tireMeasurements(tireId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tires });
       return true;
     } catch (error: any) {
       toast({ title: 'Erro ao excluir medição', description: error.message, variant: 'destructive' });
@@ -226,7 +226,7 @@ export const useTireMeasurements = (tireId: string) => {
   return {
     measurements,
     isLoading,
-    fetchMeasurements: () => queryClient.invalidateQueries({ queryKey: TIRE_MEASUREMENTS_KEY(tireId) }),
+    fetchMeasurements: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tireMeasurements(tireId) }),
     addMeasurement,
     deleteMeasurement,
   };

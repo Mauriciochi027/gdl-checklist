@@ -9,8 +9,8 @@ interface ConnectionStatus {
 }
 
 /**
- * Hook para detectar problemas de conectividade com o backend.
- * Útil para redes Wi-Fi com firewall/proxy que bloqueiam requisições.
+ * Lightweight connectivity check - uses HEAD-style query with minimal payload.
+ * Only polls when offline to avoid unnecessary requests.
  */
 export const useConnectionStatus = () => {
   const [status, setStatus] = useState<ConnectionStatus>({
@@ -26,53 +26,34 @@ export const useConnectionStatus = () => {
     checkingRef.current = true;
 
     try {
-      // Tenta uma query leve para verificar conectividade com o backend
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      const timeout = setTimeout(() => controller.abort(), 8000);
 
+      // Minimal query - just check connectivity, select only 1 column
       const { error } = await supabase
-        .from('profiles')
+        .from('equipment')
         .select('id')
         .limit(1)
         .abortSignal(controller.signal);
 
       clearTimeout(timeout);
 
-      if (error) {
-        // Erros de RLS ou auth não são problemas de conectividade
-        if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
-          setStatus(prev => ({
-            ...prev,
-            isBackendReachable: true,
-            lastChecked: new Date(),
-            error: null,
-          }));
-        } else {
-          setStatus(prev => ({
-            ...prev,
-            isBackendReachable: false,
-            lastChecked: new Date(),
-            error: error.message,
-          }));
-        }
-      } else {
-        setStatus(prev => ({
-          ...prev,
-          isBackendReachable: true,
-          lastChecked: new Date(),
-          error: null,
-        }));
-      }
+      const isReachable = !error || error.code === 'PGRST301' || error.message?.includes('JWT');
+      
+      setStatus(prev => ({
+        ...prev,
+        isBackendReachable: isReachable,
+        lastChecked: new Date(),
+        error: isReachable ? null : error?.message || null,
+      }));
     } catch (err: any) {
-      const errorMsg = err.name === 'AbortError'
-        ? 'Tempo limite excedido ao conectar ao servidor'
-        : err.message || 'Erro de conexão desconhecido';
-
       setStatus(prev => ({
         ...prev,
         isBackendReachable: false,
         lastChecked: new Date(),
-        error: errorMsg,
+        error: err.name === 'AbortError'
+          ? 'Tempo limite excedido ao conectar ao servidor'
+          : err.message || 'Erro de conexão desconhecido',
       }));
     } finally {
       checkingRef.current = false;
@@ -96,10 +77,10 @@ export const useConnectionStatus = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Verificar conectividade na montagem
+    // Initial check
     checkBackendConnection();
 
-    // Verificar periodicamente a cada 30s se estiver offline do backend
+    // Only poll when backend is unreachable (every 30s)
     const interval = setInterval(() => {
       if (!status.isBackendReachable) {
         checkBackendConnection();

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from './useSupabaseAuth';
+import { QUERY_KEYS, CACHE_TIMES } from '@/lib/queryConfig';
 
 export type Permission = 
   | 'dashboard'
@@ -22,8 +23,6 @@ interface UserPermissions {
   canDelete: (resource: string) => boolean;
 }
 
-const PERMISSIONS_KEY = (userId: string) => ['permissions', userId] as const;
-
 const getDefaultPermissionsByProfile = (profile: string): Permission[] => {
   const defaults: Record<string, Permission[]> = {
     operador: ['dashboard', 'checklist', 'history', 'status'],
@@ -38,9 +37,10 @@ export const usePermissions = (user: User | null): UserPermissions => {
   const queryClient = useQueryClient();
 
   const { data: permissions = [], isLoading } = useQuery({
-    queryKey: PERMISSIONS_KEY(user?.id || ''),
+    queryKey: QUERY_KEYS.permissions(user?.id || ''),
     queryFn: async (): Promise<Permission[]> => {
       if (!user) return [];
+      // Admin gets all permissions without DB query
       if (user.profile === 'admin') {
         return getDefaultPermissionsByProfile('admin');
       }
@@ -59,11 +59,10 @@ export const usePermissions = (user: User | null): UserPermissions => {
       return (configuredPerms.length > 0 ? configuredPerms : getDefaultPermissionsByProfile(user.profile)) as Permission[];
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // permissions rarely change
-    gcTime: 10 * 60 * 1000,
+    ...CACHE_TIMES.permissions,
   });
 
-  // Realtime subscription for permission changes
+  // Realtime subscription for permission changes (skip for admin)
   useEffect(() => {
     if (!user || user.profile === 'admin') return;
 
@@ -73,7 +72,7 @@ export const usePermissions = (user: User | null): UserPermissions => {
         event: '*', schema: 'public', table: 'user_permissions',
         filter: `user_id=eq.${user.id}`,
       }, () => {
-        queryClient.invalidateQueries({ queryKey: PERMISSIONS_KEY(user.id) });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.permissions(user.id) });
       })
       .subscribe();
 
