@@ -3,13 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { keysToCamelCase } from '@/lib/utils';
 import { Equipment } from '@/types/equipment';
-
-const EQUIPMENT_KEY = ['equipment'] as const;
-const CHECKLISTS_KEY = ['checklists'] as const;
+import { 
+  QUERY_KEYS, CACHE_TIMES, EQUIPMENT_LIGHT_COLUMNS, 
+  CHECKLIST_LIGHT_COLUMNS, withTiming 
+} from '@/lib/queryConfig';
 
 /**
  * Prefetch critical data right after authentication.
- * This ensures data is already in React Query cache before components mount.
+ * Uses light columns to minimize payload and speed up initial load.
  */
 export const usePrefetchData = (userId: string | undefined) => {
   const queryClient = useQueryClient();
@@ -17,15 +18,15 @@ export const usePrefetchData = (userId: string | undefined) => {
   useEffect(() => {
     if (!userId) return;
 
-    // Prefetch equipment and checklists in parallel immediately
     const prefetch = async () => {
       const start = performance.now();
-      console.log('[Prefetch] Starting data prefetch...');
+      console.log('[Prefetch] Starting optimized data prefetch...');
 
       await Promise.allSettled([
+        // Equipment - light payload (no photos)
         queryClient.prefetchQuery({
-          queryKey: EQUIPMENT_KEY,
-          queryFn: async () => {
+          queryKey: QUERY_KEYS.equipment,
+          queryFn: () => withTiming('prefetch:equipment', async () => {
             const allData: any[] = [];
             const batchSize = 1000;
             let offset = 0;
@@ -34,7 +35,7 @@ export const usePrefetchData = (userId: string | undefined) => {
             while (hasMore) {
               const { data, error } = await supabase
                 .from('equipment')
-                .select('*')
+                .select(EQUIPMENT_LIGHT_COLUMNS)
                 .order('code', { ascending: true })
                 .range(offset, offset + batchSize - 1);
 
@@ -47,18 +48,18 @@ export const usePrefetchData = (userId: string | undefined) => {
                 hasMore = false;
               }
             }
-
             return keysToCamelCase<Equipment[]>(allData);
-          },
-          staleTime: 5 * 60 * 1000,
+          }),
+          staleTime: CACHE_TIMES.equipment.staleTime,
         }),
 
+        // Checklists - light columns, limited, with parallel sub-queries
         queryClient.prefetchQuery({
-          queryKey: CHECKLISTS_KEY,
-          queryFn: async () => {
+          queryKey: QUERY_KEYS.checklists,
+          queryFn: () => withTiming('prefetch:checklists', async () => {
             const { data: records, error } = await supabase
               .from('checklist_records')
-              .select('*')
+              .select(CHECKLIST_LIGHT_COLUMNS)
               .order('timestamp', { ascending: false })
               .limit(200);
 
@@ -67,9 +68,14 @@ export const usePrefetchData = (userId: string | undefined) => {
 
             const recordIds = records.map(r => r.id);
 
+            // Fetch only needed columns from approvals/rejections
             const [approvalsResult, rejectionsResult] = await Promise.all([
-              supabase.from('checklist_approvals').select('*').in('checklist_record_id', recordIds),
-              supabase.from('checklist_rejections').select('*').in('checklist_record_id', recordIds),
+              supabase.from('checklist_approvals')
+                .select('checklist_record_id,mechanic_name,timestamp,comment')
+                .in('checklist_record_id', recordIds),
+              supabase.from('checklist_rejections')
+                .select('checklist_record_id,mechanic_name,timestamp,reason')
+                .in('checklist_record_id', recordIds),
             ]);
 
             const approvalsByRecord = new Map<string, any[]>();
@@ -96,8 +102,8 @@ export const usePrefetchData = (userId: string | undefined) => {
                 rejections: rejectionsByRecord.get(record.id) || [],
               };
             });
-          },
-          staleTime: 2 * 60 * 1000,
+          }),
+          staleTime: CACHE_TIMES.checklists.staleTime,
         }),
       ]);
 
