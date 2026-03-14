@@ -92,7 +92,7 @@ export const usePermissions = (user: User | null): UserPermissions => {
     return false;
   }, [user]);
 
-  const canDelete = useCallback((resource: string): boolean => {
+  const canDelete = useCallback((_resource: string): boolean => {
     return user?.profile === 'admin';
   }, [user?.profile]);
 

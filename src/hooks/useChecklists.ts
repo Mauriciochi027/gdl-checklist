@@ -184,9 +184,10 @@ export const useChecklists = () => {
         })
       );
       parallelOps.push(
-        supabase.from('checklist_answers').insert(answersToInsert).then(({ error }) => {
+        (async () => {
+          const { error } = await supabase.from('checklist_answers').insert(answersToInsert);
           if (error) throw error;
-        })
+        })()
       );
 
       // Photos
@@ -196,9 +197,10 @@ export const useChecklists = () => {
         );
         if (photosToInsert.length > 0) {
           parallelOps.push(
-            supabase.from('checklist_photos').insert(photosToInsert).then(({ error }) => {
+            (async () => {
+              const { error } = await supabase.from('checklist_photos').insert(photosToInsert);
               if (error) throw error;
-            })
+            })()
           );
         }
       }
@@ -206,13 +208,14 @@ export const useChecklists = () => {
       // Auto-approve conformes
       if (status === 'conforme' && !isLiftingAccessory) {
         parallelOps.push(
-          supabase.from('checklist_approvals').insert([keysToSnakeCase({
-            checklistRecordId: record.id,
-            mechanicName: 'Sistema',
-            comment: 'Checklist aprovado automaticamente - todos os itens conformes',
-          })]).then(({ error }) => {
+          (async () => {
+            const { error } = await supabase.from('checklist_approvals').insert([keysToSnakeCase({
+              checklistRecordId: record.id,
+              mechanicName: 'Sistema',
+              comment: 'Checklist aprovado automaticamente - todos os itens conformes',
+            })]);
             if (error) console.warn('Auto-approve failed:', error);
-          })
+          })()
         );
       }
 

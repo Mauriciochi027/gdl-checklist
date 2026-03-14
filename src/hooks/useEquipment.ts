@@ -58,7 +58,7 @@ export const useEquipment = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: equipments = [], isLoading, error } = useQuery({
+  const { data: equipments = [], isLoading } = useQuery({
     queryKey: QUERY_KEYS.equipment,
     queryFn: fetchAllEquipment,
     enabled: !!user,
