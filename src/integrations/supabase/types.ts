@@ -524,6 +524,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_latest_tire_depths: {
+        Args: { tire_ids: string[] }
+        Returns: {
+          depth: number
+          tire_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

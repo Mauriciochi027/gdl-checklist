@@ -113,8 +113,8 @@ export const OperatorNotifications = ({ operatorName }: OperatorNotificationsPro
     queryKey: NOTIFICATIONS_KEY(operatorName),
     queryFn: () => fetchNotifications(operatorName),
     enabled: !!operatorName,
-    staleTime: 60 * 1000,
-    refetchInterval: 30 * 1000, // Poll every 30s for new notifications
+    staleTime: 2 * 60 * 1000,
+    // No refetchInterval — realtime listener handles updates
   });
 
   // Realtime listener

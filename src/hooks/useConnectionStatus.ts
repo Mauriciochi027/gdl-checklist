@@ -9,8 +9,9 @@ interface ConnectionStatus {
 }
 
 /**
- * Lightweight connectivity check - uses HEAD-style query with minimal payload.
- * Only polls when offline to avoid unnecessary requests.
+ * Lightweight connectivity check.
+ * Uses auth.getSession() instead of querying a table — zero DB load.
+ * Only polls when offline.
  */
 export const useConnectionStatus = () => {
   const [status, setStatus] = useState<ConnectionStatus>({
@@ -29,22 +30,15 @@ export const useConnectionStatus = () => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
 
-      // Minimal query - just check connectivity, select only 1 column
-      const { error } = await supabase
-        .from('equipment')
-        .select('id')
-        .limit(1)
-        .abortSignal(controller.signal);
-
+      // Use auth session check — no DB query needed
+      const { error } = await supabase.auth.getSession();
       clearTimeout(timeout);
 
-      const isReachable = !error || error.code === 'PGRST301' || error.message?.includes('JWT');
-      
       setStatus(prev => ({
         ...prev,
-        isBackendReachable: isReachable,
+        isBackendReachable: !error,
         lastChecked: new Date(),
-        error: isReachable ? null : error?.message || null,
+        error: error ? error.message : null,
       }));
     } catch (err: any) {
       setStatus(prev => ({
