@@ -51,7 +51,6 @@ export interface MeasurementFormData {
 
 const fetchTires = async (): Promise<Tire[]> => {
   return withTiming('fetchTires', async () => {
-    // Select only needed columns from equipment join
     const { data, error } = await supabase
       .from('tires')
       .select(`id,code,model,status,equipment_id,position,initial_depth,initial_hour_meter,mounted_at,created_at,updated_at, equipment:equipment_id (id, code, model)`)
@@ -63,18 +62,13 @@ const fetchTires = async (): Promise<Tire[]> => {
     let latestDepthMap = new Map<string, number>();
 
     if (tireIds.length > 0) {
-      // Only fetch needed columns
-      const { data: allMeasurements } = await supabase
-        .from('tire_measurements')
-        .select('tire_id, depth, measured_at')
-        .in('tire_id', tireIds)
-        .order('measured_at', { ascending: false });
+      // Use DB function instead of fetching all measurements
+      const { data: depths, error: depthError } = await supabase
+        .rpc('get_latest_tire_depths', { tire_ids: tireIds });
 
-      if (allMeasurements) {
-        for (const m of allMeasurements) {
-          if (!latestDepthMap.has(m.tire_id)) {
-            latestDepthMap.set(m.tire_id, m.depth);
-          }
+      if (!depthError && depths) {
+        for (const d of depths) {
+          latestDepthMap.set(d.tire_id, d.depth);
         }
       }
     }
@@ -97,6 +91,7 @@ export const useTires = () => {
     enabled: !!user,
     ...CACHE_TIMES.tires,
     ...RETRY_CONFIG,
+    refetchOnMount: false,
   });
 
   const createTire = useCallback(async (formData: TireFormData) => {
@@ -124,6 +119,7 @@ export const useTires = () => {
   const updateTire = useCallback(async (id: string, formData: Partial<TireFormData>) => {
     try {
       const updateData: any = { ...formData };
+      if (!updateData.equipment_id) updateData.equipment_id = null;
       if (formData.status === 'em_uso' && formData.equipment_id) {
         updateData.mounted_at = new Date().toISOString();
       }
@@ -181,7 +177,8 @@ export const useTireMeasurements = (tireId: string) => {
         .from('tire_measurements')
         .select('id,tire_id,depth,measured_at,notes,measured_by,created_at')
         .eq('tire_id', tireId)
-        .order('measured_at', { ascending: false });
+        .order('measured_at', { ascending: false })
+        .limit(50);
       if (error) throw error;
       return (data as TireMeasurement[]) || [];
     },
