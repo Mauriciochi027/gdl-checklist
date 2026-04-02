@@ -64,6 +64,23 @@ serve(async (req) => {
       throw new Error('Missing required fields: userId and newPassword');
     }
 
+    // Prevent mechanics from resetting admin passwords
+    const callerIsAdmin = userRoles?.some(r => r.role === 'admin');
+    if (!callerIsAdmin) {
+      const { data: targetRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      const targetIsAdmin = targetRoles?.some(r => r.role === 'admin');
+      if (targetIsAdmin) {
+        return new Response(
+          JSON.stringify({ error: 'Mecânicos não podem alterar senhas de administradores' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        );
+      }
+    }
+
     // Validate password length (minimum 6 characters)
     if (newPassword.length < 6) {
       throw new Error('A senha deve ter no mínimo 6 caracteres');
