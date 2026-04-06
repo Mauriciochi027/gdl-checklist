@@ -21,7 +21,6 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Verify caller is admin
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) throw new Error('Unauthorized');
@@ -35,17 +34,37 @@ serve(async (req) => {
       throw new Error('Only admins can delete users');
     }
 
-    const { userId } = await req.json();
-    if (!userId) throw new Error('Missing userId');
+    const { userId, email } = await req.json();
+    
+    let targetUserId = userId;
+    
+    // If email provided instead of userId, look up the user
+    if (!targetUserId && email) {
+      const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+      if (listError) throw listError;
+      const found = users?.find(u => u.email === email);
+      if (!found) throw new Error('User not found');
+      targetUserId = found.id;
+    }
 
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (!targetUserId) throw new Error('Missing userId or email');
+
+    // Clean up related data
+    await supabaseAdmin.from('user_roles').delete().eq('user_id', targetUserId);
+    await supabaseAdmin.from('user_permissions').delete().eq('user_id', targetUserId);
+    await supabaseAdmin.from('profiles').delete().eq('id', targetUserId);
+
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
     if (deleteError) throw deleteError;
+
+    console.log(`Orphan user ${targetUserId} deleted successfully`);
 
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
+    console.error('Error deleting user:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
