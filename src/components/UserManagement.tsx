@@ -191,10 +191,32 @@ const UserManagement = ({
     } catch (error: any) {
       console.error('Error adding user:', error);
       
-      // Tratamento específico para usuário já existente
       let errorMessage = 'Não foi possível criar o usuário.';
       
       if (error.message?.includes('User already registered') || error.code === 'user_already_exists') {
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', formData.username)
+          .maybeSingle();
+        
+        if (!existingProfile) {
+          try {
+            const response = await supabase.functions.invoke('delete-orphan-user', {
+              body: { email: `${formData.username}@gdl.com` }
+            });
+            if (response.data?.success) {
+              toast({
+                title: 'Registro antigo removido',
+                description: 'Um cadastro incompleto foi limpo. Tente criar o usuário novamente.',
+              });
+              setIsLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error('Cleanup failed:', e);
+          }
+        }
         errorMessage = `O nome de usuário "${formData.username}" já está em uso. Por favor, escolha outro nome de usuário.`;
       } else if (error.message) {
         errorMessage = error.message;
